@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
 import { GraphNode } from '../../models/graph-node.model';
+import { GraphEdge } from '../../models/graph-edge.model';
 import { GraphStateService } from '../../services/graph-state.service';
 
 interface AvailableNode {
@@ -26,12 +27,15 @@ interface SelectionBox {
 export class GraphEditorComponent implements OnInit, OnDestroy {
   @ViewChild('svgCanvas', { static: true }) svgCanvas!: ElementRef<SVGElement>;
 
-  // Expose the nodes observable directly to the template
+  // Expose the nodes and edges observables directly to the template
   nodes$!: Observable<GraphNode[]>;
+  edges$!: Observable<GraphEdge[]>;
 
-  // Keep a local copy of nodes for imperative operations
+  // Keep a local copy of nodes and edges for imperative operations
   private currentNodes: GraphNode[] = [];
+  private currentEdges: GraphEdge[] = [];
   private nodesSubscription?: Subscription;
+  private edgesSubscription?: Subscription;
 
   availableNodes: AvailableNode[] = [
     { type: 'power', label: '9V Battery', width: 80, height: 60 },
@@ -49,23 +53,32 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   selectionBox: SelectionBox | null = null;
   isCtrlPressed = false;
   initialPositions: { [key: string]: { x: number, y: number } } = {};
+  
+  // Connection creation state
+  connectingFrom: { nodeId: string; pinName: string } | null = null;
 
   Math = Math;
 
   constructor(private graphState: GraphStateService) {}
 
   ngOnInit(): void {
-    // Assign the observable for use with the async pipe in the template
+    // Assign the observables for use with the async pipe in the template
     this.nodes$ = this.graphState.nodes$;
+    this.edges$ = this.graphState.edges$;
 
-    // Subscribe to keep a local copy for imperative operations
+    // Subscribe to keep local copies for imperative operations
     this.nodesSubscription = this.nodes$.subscribe(nodes => {
       this.currentNodes = nodes;
+    });
+    
+    this.edgesSubscription = this.edges$.subscribe(edges => {
+      this.currentEdges = edges;
     });
   }
 
   ngOnDestroy(): void {
     this.nodesSubscription?.unsubscribe();
+    this.edgesSubscription?.unsubscribe();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -104,8 +117,13 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   }
 
   clearConnections(): void {
-    // Placeholder for connection clearing logic
-    console.log('Edges cleared');
+    // Clear all edges
+    const currentEdges = this.graphState.getEdges();
+    currentEdges.forEach(edge => {
+      if (edge.id) {
+        this.graphState.removeEdge(edge.id);
+      }
+    });
   }
 
   deleteSelectedNodes(): void {
@@ -243,5 +261,52 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
              node.x > maxX || 
              node.y + node.height < minY || 
              node.y > maxY);
+  }
+
+  // Connection methods for template
+  onPinMouseDown(event: MouseEvent, nodeId: string, pinName: string): void {
+    event.stopPropagation();
+    
+    if (this.connectingFrom === null) {
+      // Start a new connection
+      this.connectingFrom = { nodeId, pinName };
+      console.log(`Starting connection from ${nodeId}.${pinName}`);
+    } else {
+      // Complete the connection
+      const newEdge: GraphEdge = {
+        from: `${this.connectingFrom.nodeId}.${this.connectingFrom.pinName}`,
+        to: `${nodeId}.${pinName}`
+      };
+      
+      this.graphState.addEdge(newEdge);
+      console.log(`Created connection: ${newEdge.from} -> ${newEdge.to}`);
+      
+      // Reset connection state
+      this.connectingFrom = null;
+    }
+  }
+
+  getConnectionStartX(edge: GraphEdge): number {
+    const [nodeId, pinName] = edge.from.split('.');
+    const position = this.graphState.getPinPosition(nodeId, pinName);
+    return position ? position.x : 0;
+  }
+
+  getConnectionStartY(edge: GraphEdge): number {
+    const [nodeId, pinName] = edge.from.split('.');
+    const position = this.graphState.getPinPosition(nodeId, pinName);
+    return position ? position.y : 0;
+  }
+
+  getConnectionEndX(edge: GraphEdge): number {
+    const [nodeId, pinName] = edge.to.split('.');
+    const position = this.graphState.getPinPosition(nodeId, pinName);
+    return position ? position.x : 0;
+  }
+
+  getConnectionEndY(edge: GraphEdge): number {
+    const [nodeId, pinName] = edge.to.split('.');
+    const position = this.graphState.getPinPosition(nodeId, pinName);
+    return position ? position.y : 0;
   }
 }

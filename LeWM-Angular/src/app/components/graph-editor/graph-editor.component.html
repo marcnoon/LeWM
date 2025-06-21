@@ -38,6 +38,25 @@
       </defs>
       <rect width="100%" height="100%" fill="url(#grid)" />
       
+      <!-- Connection Lines -->
+      <g *ngFor="let edge of edges$ | async" class="connection-line">
+        <line [attr.x1]="getConnectionStartX(edge)" 
+              [attr.y1]="getConnectionStartY(edge)"
+              [attr.x2]="getConnectionEndX(edge)" 
+              [attr.y2]="getConnectionEndY(edge)"
+              stroke="#2196F3" 
+              stroke-width="2"
+              marker-end="url(#arrowhead)" />
+      </g>
+
+      <!-- Arrow marker definition -->
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#2196F3" />
+        </marker>
+      </defs>
+
       <!-- Graph Nodes -->
       <g *ngFor="let node of nodes$ | async" 
          [attr.id]="node.id"
@@ -58,6 +77,29 @@
               font-weight="bold">
           {{ node.label }}
         </text>
+        
+        <!-- Connection Pins -->
+        <g *ngIf="node.pins" class="pins">
+          <circle *ngFor="let pin of node.pins"
+                  [attr.cx]="node.x + pin.x"
+                  [attr.cy]="node.y + pin.y"
+                  r="3"
+                  fill="#FF5722"
+                  stroke="#333"
+                  stroke-width="1"
+                  class="pin"
+                  [attr.data-node-id]="node.id"
+                  [attr.data-pin-name]="pin.name"
+                  (mousedown)="onPinMouseDown($event, node.id, pin.name)" />
+          <text *ngFor="let pin of node.pins"
+                [attr.x]="node.x + pin.x + 8"
+                [attr.y]="node.y + pin.y + 4"
+                font-size="10"
+                fill="#666"
+                class="pin-label">
+            {{ pin.name }}
+          </text>
+        </g>
       </g>
       
       <!-- Selection box -->
