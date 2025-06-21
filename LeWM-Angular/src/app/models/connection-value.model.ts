@@ -134,3 +134,9 @@ export const UNIT_DEFINITIONS: Record<UnitType, UnitDefinition[]> = {
     { type: 'none', symbol: '', name: 'No Unit', baseUnit: '', conversionFactor: 1 }
   ]
 };
+
+// Export available unit types for dropdowns
+export const AVAILABLE_UNITS = Object.keys(UNIT_DEFINITIONS).map(type => ({
+  type: type as UnitType,
+  name: type.charAt(0).toUpperCase() + type.slice(1)
+}));

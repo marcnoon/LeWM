@@ -1,0 +1,248 @@
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  
+  h3 {
+    margin: 0;
+    padding: 20px 24px 16px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    font-size: 18px;
+  }
+}
+
+.dialog-content {
+  padding: 20px 24px;
+}
+
+.section {
+  margin-bottom: 24px;
+  
+  h4 {
+    margin: 0 0 12px 0;
+    color: #555;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  
+  label {
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #333;
+    font-size: 13px;
+  }
+  
+  input, select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    
+    &:focus {
+      outline: none;
+      border-color: #2196F3;
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+  }
+  
+  input[type="color"] {
+    height: 36px;
+    padding: 4px;
+  }
+  
+  small {
+    margin-top: 4px;
+    color: #666;
+    font-size: 12px;
+  }
+}
+
+.common-values {
+  .common-value {
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    
+    .value-info {
+      display: block;
+      margin-bottom: 4px;
+      
+      strong {
+        color: #2196F3;
+      }
+    }
+    
+    small {
+      color: #666;
+      font-size: 11px;
+    }
+  }
+}
+
+.compatible-units {
+  .unit-group {
+    padding: 10px;
+    background: #e3f2fd;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    
+    strong {
+      color: #1976d2;
+      text-transform: capitalize;
+    }
+    
+    .key-list {
+      margin-left: 8px;
+      color: #555;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  }
+}
+
+.info-text {
+  margin: 12px 0 0 0;
+  color: #666;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.new-value-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1.5fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  
+  .key-input, .value-input {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  
+  .type-select, .unit-select {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  
+  .remove-btn {
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    
+    &:hover {
+      background: #d32f2f;
+    }
+  }
+}
+
+.add-value-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 8px;
+  
+  &:hover {
+    background: #45a049;
+  }
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  
+  button {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .cancel-btn {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+    
+    &:hover {
+      background: #eeeeee;
+    }
+  }
+  
+  .apply-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    
+    &:hover {
+      background: #1976d2;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .dialog {
+    width: 95%;
+    margin: 10px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .new-value-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

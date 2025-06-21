@@ -75,6 +75,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   // Connection dialog state
   showConnectionDialog = false;
   selectedConnectionForEdit: GraphEdge | null = null;
+  
+  // Connection bulk edit dialog state
+  showConnectionBulkDialog = false;
+  selectedConnectionsForBulkEdit: GraphEdge[] = [];
 
   Math = Math;
 
@@ -476,6 +480,34 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   onConnectionDialogCancelled(): void {
     this.showConnectionDialog = false;
     this.selectedConnectionForEdit = null;
+  }
+  
+  // Connection bulk edit dialog methods
+  showConnectionBulkEditDialog(connectionIds: string[]): void {
+    const connections = connectionIds.map(id => 
+      this.currentEdges.find(e => e.id === id)
+    ).filter(conn => conn !== undefined) as GraphEdge[];
+    
+    if (connections.length > 0) {
+      this.selectedConnectionsForBulkEdit = connections;
+      this.showConnectionBulkDialog = true;
+    }
+  }
+  
+  onConnectionsBulkUpdated(updatedConnections: GraphEdge[]): void {
+    // Update all connections in the service
+    updatedConnections.forEach(connection => {
+      if (connection.id) {
+        this.graphState.updateEdge(connection.id, connection);
+      }
+    });
+    this.showConnectionBulkDialog = false;
+    this.selectedConnectionsForBulkEdit = [];
+  }
+  
+  onConnectionBulkDialogCancelled(): void {
+    this.showConnectionBulkDialog = false;
+    this.selectedConnectionsForBulkEdit = [];
   }
   
   // Method for connection mode to update connection states

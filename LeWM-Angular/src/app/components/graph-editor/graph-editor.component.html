@@ -29,7 +29,7 @@
         <p>Selected: {{ selectedNodes.size }}</p>
         <small *ngIf="currentMode?.name === 'normal'">Click to select • Ctrl+Click for multi-select • Delete to remove • P for Pin Mode</small>
         <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Double-click pins to rename • Esc to exit</small>
-        <small *ngIf="currentMode?.name === 'connection'">Click connections to select • Double-click to edit properties • Delete to remove • Esc to exit</small>
+        <small *ngIf="currentMode?.name === 'connection'">Click connections to select • Ctrl+Click for multi-select • Enter to edit • Delete to remove • Esc to exit</small>
       </div>
     </div>
   </div>
@@ -190,4 +190,13 @@
     (connectionUpdated)="onConnectionUpdated($event)"
     (cancelled)="onConnectionDialogCancelled()">
   </app-connection-properties-dialog>
+  
+  <!-- Connection Bulk Edit Dialog -->
+  <app-connection-bulk-edit-dialog
+    #connectionBulkDialog
+    [isVisible]="showConnectionBulkDialog"
+    [connections]="selectedConnectionsForBulkEdit"
+    (connectionsUpdated)="onConnectionsBulkUpdated($event)"
+    (cancelled)="onConnectionBulkDialogCancelled()">
+  </app-connection-bulk-edit-dialog>
 </div>

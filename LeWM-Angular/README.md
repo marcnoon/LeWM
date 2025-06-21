@@ -50,20 +50,69 @@ An advanced mode for customizing node pins and their distribution:
 
 ## Connection Mode
 
-In addition to standard and pin modes, the application includes a **Connection Mode** for creating and managing relationships between points. This mode allows you to draw, select, and modify connections.
+A specialized mode for creating and managing relationships between pins. This mode provides comprehensive connection editing capabilities including single and bulk editing operations.
 
-### Features
+### Basic Features
 
--   **Create Connections:** Draw lines between two pins to establish a connection.
--   **Selection & Highlighting:** Select one or more connections to view or modify their properties.
--   **Properties Dialog:** A dedicated dialog allows for editing connection metadata, including:
-    -   **Label:** A unique name or identifier for the connection.
-    -   **Direction:** Switch the connection's flow (forward, backward, or bidirectional).
--   **Value & Units:** Edit the connection's value (of type `ValueType`) and select units (from `UnitType`) as defined in `src/app/models/connection-value.model.ts`.
-    -   ValueType: 'string' | 'number' | 'decimal' | 'integer' | 'boolean' | 'calculated'
-    -   UnitType includes electrical (voltage, current, resistance, ...), physical (length, mass, time, ...), data (bits, bytes, bitrate, ...), etc.
--   **Type:** Categorize the connection (e.g., `signal`, `power`).
--   **Bulk Edit:** Update or rename a ValueType or UnitType in one place and have those changes automatically propagate to all connections using that type, enabled by composable SOLID-based architecture.
+-   **Enter Connection Mode:** Click the "Connection" button in the toolbar
+-   **Create Connections:** Click one pin, then another to draw a connection line
+-   **Select Connections:** Click on connection lines to select them (highlighted in green)
+-   **Multi-Select:** Ctrl+click or use selection box to select multiple connections
+-   **Delete Connections:** Press Delete key to remove selected connections
+-   **Edit Properties:** Double-click a connection to open the properties dialog
+
+### Connection Properties
+
+Each connection supports rich metadata through the properties dialog:
+
+-   **Label:** A unique name or identifier for the connection
+-   **Direction:** Control connection flow (forward →, backward ←, or bidirectional ↔)
+-   **Type:** Categorize connections (signal, power, data, control, etc.)
+-   **Visual Style:** Customize color, stroke width, and line style (solid, dashed, dotted)
+-   **Key-Value Pairs:** Assign typed values with comprehensive unit support
+
+### Value System
+
+Connection values support multiple data types and extensive unit systems:
+
+-   **ValueType:** 'string' | 'number' | 'decimal' | 'integer' | 'boolean' | 'calculated'
+-   **UnitType:** Electrical (volts, amps, ohms), Physical (meters, grams, seconds), Data (bits, bytes, Hz), and more
+-   **Calculated Values:** Support for formula-based values that compute from other connection properties
+
+### Multi-Connection Bulk Editing
+
+**New Feature:** When multiple connections are selected, press **Enter** to open the bulk edit dialog:
+
+#### Bulk Edit Capabilities
+
+-   **Common Properties:** Edit shared properties across all selected connections
+    -   Type (if all connections have the same type)
+    -   Direction (if all connections have the same direction)  
+    -   Color and visual styling
+    -   Label prefix/suffix application
+
+-   **Value Management:**
+    -   **Common Units:** Change units for values that share the same unit type
+    -   **Common Values:** Update values that have identical keys and types
+    -   **Key Prefixing:** Add prefixes to all keys across selected connections
+    -   **Bulk Value Addition:** Add new key-value pairs to all selected connections
+
+#### Bulk Edit Workflow
+
+1. **Select Multiple Connections:** Use Ctrl+click or selection box to select multiple connections
+2. **Activate Bulk Edit:** Press **Enter** key to open the bulk edit dialog
+3. **Common Property Detection:** The dialog automatically detects which properties are shared
+4. **Selective Editing:** Only properties with commonality across selections can be modified
+5. **Key Management:** Apply prefixes to key names or add new key-value pairs to all connections
+6. **Apply Changes:** Confirm to update all selected connections simultaneously
+
+#### Smart Property Detection
+
+The bulk edit system intelligently identifies:
+- **Identical Values:** Properties that have exactly the same value across all selections
+- **Compatible Units:** Values that use the same unit type but may have different values
+- **Shared Types:** Connections that use the same connection type or direction
+- **Prefix Opportunities:** Key names that can benefit from consistent prefixing
 
 ### Development Roadmap
 

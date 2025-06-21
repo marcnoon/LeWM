@@ -203,6 +203,15 @@ export class ConnectionMode implements GraphMode {
       return true;
     }
     
+    if (event.key === 'Enter' && this.state.selectedConnections.size > 1) {
+      // Open bulk edit dialog for multiple selected connections
+      const connectionIds = Array.from(this.state.selectedConnections);
+      if (this.componentRef) {
+        this.componentRef.showConnectionBulkEditDialog(connectionIds);
+      }
+      return true;
+    }
+    
     return false;
   }
   

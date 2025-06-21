@@ -1,0 +1,274 @@
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
+import { GraphEdge } from '../../models/graph-edge.model';
+import { ConnectionValue, ValueType, UnitType, AVAILABLE_UNITS } from '../../models/connection-value.model';
+
+export interface BulkEditData {
+  connections: GraphEdge[];
+  commonProperties: {
+    label?: string;
+    direction?: string;
+    type?: string;
+    color?: string;
+    strokeWidth?: number;
+    strokeStyle?: string;
+  };
+  commonValues: {
+    key: string;
+    value: any;
+    valueType: ValueType;
+    unitType?: UnitType;
+    unitSymbol?: string;
+    count: number; // How many connections have this exact value
+  }[];
+  compatibleUnits: {
+    unitType: UnitType;
+    keys: string[];
+    count: number;
+  }[];
+}
+
+@Component({
+  selector: 'app-connection-bulk-edit-dialog',
+  standalone: false,
+  templateUrl: './connection-bulk-edit-dialog.component.html',
+  styleUrl: './connection-bulk-edit-dialog.component.scss'
+})
+export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
+  @Input() isVisible = false;
+  @Input() connections: GraphEdge[] = [];
+  @Output() connectionsUpdated = new EventEmitter<GraphEdge[]>();
+  @Output() cancelled = new EventEmitter<void>();
+
+  bulkEditData: BulkEditData | null = null;
+  
+  // Bulk edit form data
+  bulkChanges = {
+    labelPrefix: '',
+    labelSuffix: '',
+    direction: '',
+    type: '',
+    color: '',
+    strokeWidth: null as number | null,
+    strokeStyle: '',
+    keyPrefix: '',
+    newValues: [] as ConnectionValue[]
+  };
+  
+  // Available options
+  availableUnits = AVAILABLE_UNITS;
+  directionOptions = [
+    { value: '', label: 'Keep Current' },
+    { value: 'forward', label: 'Forward →' },
+    { value: 'backward', label: 'Backward ←' },
+    { value: 'bidirectional', label: 'Bidirectional ↔' }
+  ];
+  
+  typeOptions = [
+    { value: '', label: 'Keep Current' },
+    { value: 'signal', label: 'Signal' },
+    { value: 'power', label: 'Power' },
+    { value: 'data', label: 'Data' },
+    { value: 'control', label: 'Control' },
+    { value: 'clock', label: 'Clock' },
+    { value: 'ground', label: 'Ground' },
+    { value: 'other', label: 'Other' }
+  ];
+  
+  strokeStyleOptions = [
+    { value: '', label: 'Keep Current' },
+    { value: 'solid', label: 'Solid' },
+    { value: 'dashed', label: 'Dashed' },
+    { value: 'dotted', label: 'Dotted' }
+  ];
+  
+  valueTypeOptions = [
+    { value: 'string', label: 'String' },
+    { value: 'number', label: 'Number' },
+    { value: 'decimal', label: 'Decimal' },
+    { value: 'integer', label: 'Integer' },
+    { value: 'boolean', label: 'Boolean' },
+    { value: 'calculated', label: 'Calculated' }
+  ];
+
+  ngOnInit(): void {
+    if (this.connections.length > 0) {
+      this.analyzeBulkEditData();
+    }
+  }
+
+  ngOnChanges(): void {
+    if (this.connections.length > 0) {
+      this.analyzeBulkEditData();
+    }
+  }
+
+  private analyzeBulkEditData(): void {
+    if (this.connections.length === 0) return;
+
+    const commonProperties: any = {};
+    const valuesByKey = new Map<string, Map<string, { value: ConnectionValue; count: number }>>();
+    const unitsByType = new Map<UnitType, Set<string>>();
+
+    // Analyze common properties
+    const first = this.connections[0];
+    if (this.connections.every(c => c.direction === first.direction)) {
+      commonProperties.direction = first.direction;
+    }
+    if (this.connections.every(c => c.type === first.type)) {
+      commonProperties.type = first.type;
+    }
+    if (this.connections.every(c => c.color === first.color)) {
+      commonProperties.color = first.color;
+    }
+    if (this.connections.every(c => c.strokeWidth === first.strokeWidth)) {
+      commonProperties.strokeWidth = first.strokeWidth;
+    }
+    if (this.connections.every(c => c.strokeStyle === first.strokeStyle)) {
+      commonProperties.strokeStyle = first.strokeStyle;
+    }
+
+    // Analyze values
+    this.connections.forEach(connection => {
+      if (connection.values) {
+        connection.values.forEach(value => {
+          if (!valuesByKey.has(value.key)) {
+            valuesByKey.set(value.key, new Map());
+          }
+          
+          const keyValues = valuesByKey.get(value.key)!;
+          const valueKey = `${value.value}_${value.valueType}_${value.unitType || ''}_${value.unitSymbol || ''}`;
+          
+          if (keyValues.has(valueKey)) {
+            keyValues.get(valueKey)!.count++;
+          } else {
+            keyValues.set(valueKey, { value: { ...value }, count: 1 });
+          }
+
+          // Track units by type
+          if (value.unitType) {
+            if (!unitsByType.has(value.unitType)) {
+              unitsByType.set(value.unitType, new Set());
+            }
+            unitsByType.get(value.unitType)!.add(value.key);
+          }
+        });
+      }
+    });
+
+    // Extract common values (values that appear in multiple connections)
+    const commonValues: any[] = [];
+    valuesByKey.forEach((values, key) => {
+      values.forEach((data, valueKey) => {
+        if (data.count > 1) {
+          commonValues.push({
+            ...data.value,
+            key,  // Put key after the spread to ensure it overwrites
+            count: data.count
+          });
+        }
+      });
+    });
+
+    // Extract compatible units
+    const compatibleUnits: any[] = [];
+    unitsByType.forEach((keys, unitType) => {
+      if (keys.size > 0) {
+        compatibleUnits.push({
+          unitType,
+          keys: Array.from(keys),
+          count: keys.size
+        });
+      }
+    });
+
+    this.bulkEditData = {
+      connections: this.connections,
+      commonProperties,
+      commonValues,
+      compatibleUnits
+    };
+  }
+
+  addNewValue(): void {
+    this.bulkChanges.newValues.push({
+      key: '',
+      value: '',
+      valueType: 'string'
+    });
+  }
+
+  removeNewValue(index: number): void {
+    this.bulkChanges.newValues.splice(index, 1);
+  }
+
+  onApply(): void {
+    const updatedConnections: GraphEdge[] = this.connections.map(connection => {
+      const updated = { ...connection };
+
+      // Apply property changes
+      if (this.bulkChanges.labelPrefix || this.bulkChanges.labelSuffix) {
+        const currentLabel = updated.label || '';
+        updated.label = `${this.bulkChanges.labelPrefix}${currentLabel}${this.bulkChanges.labelSuffix}`;
+      }
+
+      if (this.bulkChanges.direction) {
+        updated.direction = this.bulkChanges.direction as any;
+      }
+
+      if (this.bulkChanges.type) {
+        updated.type = this.bulkChanges.type as any;
+      }
+
+      if (this.bulkChanges.color) {
+        updated.color = this.bulkChanges.color;
+      }
+
+      if (this.bulkChanges.strokeWidth !== null) {
+        updated.strokeWidth = this.bulkChanges.strokeWidth;
+      }
+
+      if (this.bulkChanges.strokeStyle) {
+        updated.strokeStyle = this.bulkChanges.strokeStyle as any;
+      }
+
+      // Apply key prefix to existing values
+      if (this.bulkChanges.keyPrefix && updated.values) {
+        updated.values = updated.values.map(value => ({
+          ...value,
+          key: `${this.bulkChanges.keyPrefix}${value.key}`
+        }));
+      }
+
+      // Add new values
+      if (this.bulkChanges.newValues.length > 0) {
+        const validNewValues = this.bulkChanges.newValues.filter(v => v.key.trim() !== '');
+        if (validNewValues.length > 0) {
+          if (!updated.values) {
+            updated.values = [];
+          }
+          updated.values.push(...validNewValues.map(v => ({ ...v })));
+        }
+      }
+
+      return updated;
+    });
+
+    this.connectionsUpdated.emit(updatedConnections);
+  }
+
+  onCancel(): void {
+    this.cancelled.emit();
+  }
+
+  hasCommonProperties(): boolean {
+    return this.bulkEditData ? Object.keys(this.bulkEditData.commonProperties).length > 0 : false;
+  }
+
+  hasCommonValues(): boolean {
+    return this.bulkEditData ? this.bulkEditData.commonValues.length > 0 : false;
+  }
+
+  hasCompatibleUnits(): boolean {
+    return this.bulkEditData ? this.bulkEditData.compatibleUnits.length > 0 : false;
+  }
+}
