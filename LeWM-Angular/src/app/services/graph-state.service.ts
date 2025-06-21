@@ -122,6 +122,34 @@ export class GraphStateService {
   }
 
   /**
+   * Updates an existing edge in the graph.
+   * @param edgeId The ID of the edge to update.
+   * @param updatedEdge The updated edge data.
+   */
+  updateEdge(edgeId: string, updatedEdge: GraphEdge): void {
+    const currentEdges = this._edges.getValue();
+    const edgeIndex = currentEdges.findIndex(e => e.id === edgeId);
+    
+    if (edgeIndex === -1) {
+      console.warn(`Edge with id ${edgeId} not found`);
+      return;
+    }
+    
+    const updatedEdges = [...currentEdges];
+    updatedEdges[edgeIndex] = { ...updatedEdge };
+    this._edges.next(updatedEdges);
+  }
+
+  /**
+   * Notifies subscribers of edge state changes (for selection, hover, etc.)
+   */
+  notifyEdgeStateChange(): void {
+    // Force notification by re-emitting current edges
+    const currentEdges = this._edges.getValue();
+    this._edges.next([...currentEdges]);
+  }
+
+  /**
    * Gets the absolute position of a pin on a node.
    * @param nodeId The ID of the node.
    * @param pinName The name of the pin.
