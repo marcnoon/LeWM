@@ -53,7 +53,7 @@ InteractiveCircuitEditor (Main Component)
 │   ├── selectedComponents - Selection state
 │   └── UI state (dragging, selection box, etc.)
 ├── Algorithm Layer
-│   ├── setupArrayPrototypes() - Math utilities
+│   ├── utils.js - Standalone math utilities
 │   ├── findOptimalPath() - A* pathfinding
 │   └── calculateOptimalGridSpacing() - GCD-based grid
 ├── Rendering Layer
@@ -163,7 +163,7 @@ LeWM provides the foundational layer for graph-based applications without imposi
 
 ### Mathematical Optimization
 - **GCD-based Grid Spacing**: Calculates optimal grid size using Greatest Common Divisor of component positions
-- **Array Extensions**: Custom array methods for statistical operations (min, max, median, average, gcd)
+- **Utility Functions**: Standalone functions for statistical operations (min, max, median, average, gcd)
 - **LCM Integration**: Prepared for Least Common Multiple calculations for wire spacing
 
 ### Routing System
@@ -223,4 +223,4 @@ This system demonstrates advanced graph visualization techniques applicable acro
 
 ## License
 
-*License information coming soon...*
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
