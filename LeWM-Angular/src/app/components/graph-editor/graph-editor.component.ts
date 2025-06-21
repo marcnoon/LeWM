@@ -168,7 +168,13 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     this.selectedNodes.clear();
   }
 
-  onMouseDown(event: MouseEvent): void {
+  onSvgMouseDown(event: MouseEvent): void {
+    // Delegate all svg mousedown events to modeManager.handleCanvasClick
+    if (this.modeManager.handleCanvasClick(event)) {
+      return; // Mode handled the event
+    }
+    
+    // Default logic
     if (event.target === this.svgCanvas.nativeElement || 
         (event.target as Element).id === 'grid-rect') {
       this.handleCanvasMouseDown(event);
@@ -180,9 +186,23 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const node = this.currentNodes.find(n => n.id === nodeId);
     if (!node) return;
 
-    // Let the mode handle the event first
+    // Pin-edit mode: first select, then handle edge click on same event
+    if (this.currentMode?.name === 'pin-edit') {
+      this.modeManager.handleNodeClick(node, event); // select node
+      if (this.modeManager.handleCanvasClick(event)) {
+        return; // dialog opened
+      }
+      return; // prevent dragging in pin-edit
+    }
+
+    // Normal and other modes: handle canvas clicks first (e.g. pin mid-clicks)
+    if (this.modeManager.handleCanvasClick(event)) {
+      return;
+    }
+
+    // Let modes handle node click (selection in other modes)
     if (this.modeManager.handleNodeClick(node, event)) {
-      return; // Mode handled the event
+      return;
     }
 
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
