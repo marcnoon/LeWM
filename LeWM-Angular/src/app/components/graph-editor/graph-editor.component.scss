@@ -52,6 +52,38 @@
   padding-top: 1rem;
 }
 
+.mode-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.mode-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+}
+
+.mode-btn.active {
+  background-color: #007bff;
+  transform: none;
+}
+
+.mode-btn.active:hover {
+  background-color: #0056b3;
+}
+
 .clear-btn {
   background-color: #dc3545;
   color: white;
