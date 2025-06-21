@@ -1,16 +1,9 @@
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+import { GraphNode } from '../../models/graph-node.model';
+import { GraphStateService } from '../../services/graph-state.service';
 
-interface CircuitComponent {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label: string;
-}
-
-interface AvailableComponent {
+interface AvailableNode {
   type: string;
   label: string;
   width: number;
@@ -25,50 +18,55 @@ interface SelectionBox {
 }
 
 @Component({
-  selector: 'app-circuit-editor',
+  selector: 'app-graph-editor',
   standalone: false,
-  templateUrl: './circuit-editor.component.html',
-  styleUrl: './circuit-editor.component.scss'
+  templateUrl: './graph-editor.component.html',
+  styleUrl: './graph-editor.component.scss'
 })
-export class CircuitEditor {
+export class GraphEditorComponent implements OnInit {
   @ViewChild('svgCanvas', { static: true }) svgCanvas!: ElementRef<SVGElement>;
 
-  components: CircuitComponent[] = [
-    { id: 'power1', type: 'power', x: 100, y: 150, width: 80, height: 60, label: '9V Battery' },
-    { id: 'resistor1', type: 'resistor', x: 250, y: 200, width: 60, height: 20, label: '10kΩ' },
-    { id: 'led1', type: 'led', x: 400, y: 190, width: 30, height: 20, label: 'LED' }
-  ];
+  // Property to expose nodes to the template
+  nodes: GraphNode[] = [];
 
-  availableComponents: AvailableComponent[] = [
+  availableNodes: AvailableNode[] = [
     { type: 'power', label: '9V Battery', width: 80, height: 60 },
     { type: 'resistor', label: 'Resistor', width: 60, height: 20 },
     { type: 'capacitor', label: 'Capacitor', width: 40, height: 40 },
     { type: 'led', label: 'LED', width: 30, height: 20 },
     { type: 'switch', label: 'Switch', width: 50, height: 30 },
     { type: 'ic', label: 'IC Chip', width: 80, height: 60 },
-    { type: 'component', label: 'Generic', width: 60, height: 40 }
+    { type: 'node', label: 'Generic Node', width: 60, height: 40 }
   ];
 
-  selectedComponents = new Set<string>();
+  selectedNodes = new Set<string>();
   dragging = false;
   dragOffset = { x: 0, y: 0 };
   selectionBox: SelectionBox | null = null;
   isCtrlPressed = false;
   initialPositions: { [key: string]: { x: number, y: number } } = {};
 
-  // Expose Math to template
   Math = Math;
+
+  constructor(private graphState: GraphStateService) {}
+
+  ngOnInit(): void {
+    // Subscribe to nodes from the service
+    this.graphState.nodes$.subscribe(nodes => {
+      this.nodes = nodes;
+    });
+  }
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
     if (event.key === 'Control' || event.key === 'Meta') {
       this.isCtrlPressed = true;
     }
-    if (event.key === 'Delete' && this.selectedComponents.size > 0) {
-      this.deleteSelectedComponents();
+    if (event.key === 'Delete' && this.selectedNodes.size > 0) {
+      this.deleteSelectedNodes();
     }
   }
-
+    
   @HostListener('window:keyup', ['$event'])
   onKeyUp(event: KeyboardEvent) {
     if (event.key === 'Control' || event.key === 'Meta') {
@@ -76,12 +74,12 @@ export class CircuitEditor {
     }
   }
 
-  addComponent(type: string): void {
-    const template = this.availableComponents.find(c => c.type === type);
+  addNode(type: string): void {
+    const template = this.availableNodes.find(c => c.type === type);
     if (!template) return;
 
     const newId = `${type}_${Date.now()}`;
-    const newComponent: CircuitComponent = {
+    const newNode: GraphNode = {
       id: newId,
       type: type,
       x: 50 + Math.random() * 200,
@@ -91,18 +89,17 @@ export class CircuitEditor {
       label: template.label
     };
 
-    this.components.push(newComponent);
+    this.graphState.addNode(newNode);
   }
 
   clearConnections(): void {
     // Placeholder for connection clearing logic
-    console.log('Connections cleared');
+    console.log('Edges cleared');
   }
 
-  deleteSelectedComponents(): void {
-    const idsToRemove = Array.from(this.selectedComponents);
-    this.components = this.components.filter(comp => !idsToRemove.includes(comp.id));
-    this.selectedComponents.clear();
+  deleteSelectedNodes(): void {
+    this.graphState.deleteNodes(Array.from(this.selectedNodes));
+    this.selectedNodes.clear();
   }
 
   onMouseDown(event: MouseEvent): void {
@@ -112,10 +109,10 @@ export class CircuitEditor {
     }
   }
 
-  onComponentMouseDown(event: MouseEvent, compId: string): void {
+  onNodeMouseDown(event: MouseEvent, nodeId: string): void {
     event.stopPropagation();
-    const comp = this.components.find(c => c.id === compId);
-    if (!comp) return;
+    const node = this.graphState.getNodes().find(n => n.id === nodeId);
+    if (!node) return;
 
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
     const mouseX = event.clientX - svgRect.left;
@@ -123,32 +120,32 @@ export class CircuitEditor {
 
     if (this.isCtrlPressed) {
       // Toggle selection with Ctrl
-      if (this.selectedComponents.has(compId)) {
-        this.selectedComponents.delete(compId);
+      if (this.selectedNodes.has(nodeId)) {
+        this.selectedNodes.delete(nodeId);
       } else {
-        this.selectedComponents.add(compId);
+        this.selectedNodes.add(nodeId);
       }
     } else {
-      // Regular click - select only this component or start dragging
-      if (!this.selectedComponents.has(compId)) {
-        this.selectedComponents.clear();
-        this.selectedComponents.add(compId);
+      // Regular click - select only this node or start dragging
+      if (!this.selectedNodes.has(nodeId)) {
+        this.selectedNodes.clear();
+        this.selectedNodes.add(nodeId);
       }
       
       // Start dragging
       this.dragging = true;
       
-      // Store initial positions of all selected components
+      // Store initial positions of all selected nodes
       this.initialPositions = {};
-      this.components.forEach(c => {
-        if (this.selectedComponents.has(c.id)) {
-          this.initialPositions[c.id] = { x: c.x, y: c.y };
+      this.nodes.forEach(n => {
+        if (this.selectedNodes.has(n.id)) {
+          this.initialPositions[n.id] = { x: n.x, y: n.y };
         }
       });
       
       this.dragOffset = {
-        x: mouseX - comp.x,
-        y: mouseY - comp.y
+        x: mouseX - node.x,
+        y: mouseY - node.y
       };
     }
   }
@@ -163,33 +160,39 @@ export class CircuitEditor {
       this.selectionBox.endX = mouseX;
       this.selectionBox.endY = mouseY;
 
-      // Update selected components based on selection box
-      this.selectedComponents.clear();
-      this.components.forEach(comp => {
-        if (this.isComponentInSelectionBox(comp, this.selectionBox!)) {
-          this.selectedComponents.add(comp.id);
+      // Update selected nodes based on selection box
+      this.selectedNodes.clear();
+      this.nodes.forEach(node => {
+        if (this.isNodeInSelectionBox(node, this.selectionBox!)) {
+          this.selectedNodes.add(node.id);
         }
       });
-    } else if (this.dragging && this.selectedComponents.size > 0) {
-      // Move all selected components
+    } else if (this.dragging && this.selectedNodes.size > 0) {
+      // Move all selected nodes
       const deltaX = mouseX - this.dragOffset.x;
       const deltaY = mouseY - this.dragOffset.y;
 
-      // Get the first selected component as reference
-      const firstSelectedId = Array.from(this.selectedComponents)[0];
+      // Get the first selected node as reference
+      const firstSelectedId = Array.from(this.selectedNodes)[0];
       const initialFirst = this.initialPositions[firstSelectedId];
 
       if (initialFirst) {
         const offsetX = deltaX - initialFirst.x;
         const offsetY = deltaY - initialFirst.y;
 
-        this.components.forEach(comp => {
-          if (this.selectedComponents.has(comp.id)) {
-            const initial = this.initialPositions[comp.id];
-            comp.x = Math.max(0, initial.x + offsetX);
-            comp.y = Math.max(0, initial.y + offsetY);
+        // Create updates map for the service
+        const updates = new Map<string, { x: number; y: number }>();
+        this.nodes.forEach(node => {
+          if (this.selectedNodes.has(node.id)) {
+            const initial = this.initialPositions[node.id];
+            updates.set(node.id, {
+              x: Math.max(0, initial.x + offsetX),
+              y: Math.max(0, initial.y + offsetY)
+            });
           }
         });
+        
+        this.graphState.updateNodePositions(updates);
       }
     }
   }
@@ -215,20 +218,20 @@ export class CircuitEditor {
       };
     } else {
       // Click on empty space without Ctrl - clear selection
-      this.selectedComponents.clear();
+      this.selectedNodes.clear();
     }
   }
 
-  private isComponentInSelectionBox(comp: CircuitComponent, box: SelectionBox): boolean {
+  private isNodeInSelectionBox(node: GraphNode, box: SelectionBox): boolean {
     const minX = Math.min(box.startX, box.endX);
     const maxX = Math.max(box.startX, box.endX);
     const minY = Math.min(box.startY, box.endY);
     const maxY = Math.max(box.startY, box.endY);
     
-    // Check if component rectangle intersects with selection box
-    return !(comp.x + comp.width < minX || 
-             comp.x > maxX || 
-             comp.y + comp.height < minY || 
-             comp.y > maxY);
+    // Check if node rectangle intersects with selection box
+    return !(node.x + node.width < minX || 
+             node.x > maxX || 
+             node.y + node.height < minY || 
+             node.y > maxY);
   }
 }

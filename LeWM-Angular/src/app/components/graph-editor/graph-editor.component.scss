@@ -1,11 +1,11 @@
-.circuit-editor {
+.graph-editor {
   display: flex;
   height: 100%;
   width: 100%;
 }
 
 .toolbar {
-  width: 280px;
+  width: 250px;
   background-color: white;
   border-right: 1px solid #ddd;
   padding: 1rem;
@@ -21,19 +21,19 @@
 
 .toolbar h4 {
   margin: 1.5rem 0 0.5rem 0;
-  color: #555;
+  color: #444;
   font-size: 1rem;
 }
 
-.component-buttons {
+.node-buttons {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
 
-.component-btn {
-  background-color: #007bff;
+.node-btn {
+  background-color: #28a745;
   color: white;
   border: none;
   padding: 0.75rem;
@@ -43,8 +43,8 @@
   transition: background-color 0.2s;
 }
 
-.component-btn:hover {
-  background-color: #0056b3;
+.node-btn:hover {
+  background-color: #218838;
 }
 
 .controls {
@@ -93,16 +93,16 @@
   background-color: white;
 }
 
-.circuit-canvas {
+.graph-canvas {
   display: block;
   cursor: crosshair;
 }
 
-.component {
+.graph-node-group {
   cursor: move;
 }
 
-.component.selected rect {
+.graph-node-group.selected rect {
   stroke: #007bff;
   stroke-width: 3;
 }

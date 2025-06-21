@@ -1,36 +1,36 @@
-<div class="circuit-editor">
+<div class="graph-editor">
   <div class="toolbar">
-    <h3>Component Library</h3>
-    <div class="component-buttons">
-      <button *ngFor="let comp of availableComponents" 
-              (click)="addComponent(comp.type)"
-              class="component-btn">
-        + {{ comp.label }}
+    <h3>Node Library</h3>
+    <div class="node-buttons">
+      <button *ngFor="let node of availableNodes" 
+              (click)="addNode(node.type)"
+              class="node-btn">
+        + {{ node.label }}
       </button>
     </div>
     
     <div class="controls">
       <h4>Controls</h4>
       <button (click)="clearConnections()" class="clear-btn">
-        Clear Connections
+        Clear Edges
       </button>
       <div class="info">
-        <p>Selected: {{ selectedComponents.size }}</p>
-        <small>Click to select • Ctrl+Click for multi-select • Delete to remove</small>
+        <p>Selected: {{ selectedNodes.size }}</p>
+        <small>Click to select • Ctrl+Click for multi-select • Delete to remove selected nodes</small>
       </div>
     </div>
   </div>
   
   <div class="canvas-container">
     <svg #svgCanvas 
-         class="circuit-canvas"
+         class="graph-canvas"
          width="100%" 
          height="100%"
          (mousedown)="onMouseDown($event)"
          (mousemove)="onMouseMove($event)"
          (mouseup)="onMouseUp($event)">
       
-      <!-- Grid pattern -->
+      <!-- Grid pattern (can be moved to a shared SVG defs component later) -->
       <defs>
         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
           <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" stroke-width="1"/>
@@ -38,24 +38,25 @@
       </defs>
       <rect width="100%" height="100%" fill="url(#grid)" />
       
-      <!-- Components -->
-      <g *ngFor="let component of components" 
-         (mousedown)="onComponentMouseDown($event, component.id)"
-         [attr.class]="'component ' + (selectedComponents.has(component.id) ? 'selected' : '')">
-        <rect [attr.x]="component.x" 
-              [attr.y]="component.y" 
-              [attr.width]="component.width" 
-              [attr.height]="component.height"
-              [attr.fill]="selectedComponents.has(component.id) ? '#4a90e2' : '#f0f0f0'"
+      <!-- Graph Nodes -->
+      <g *ngFor="let node of nodes" 
+         [attr.id]="node.id"
+         (mousedown)="onNodeMouseDown($event, node.id)"
+         [attr.class]="'graph-node-group ' + (selectedNodes.has(node.id) ? 'selected' : '')">
+        <rect [attr.x]="node.x" 
+              [attr.y]="node.y" 
+              [attr.width]="node.width" 
+              [attr.height]="node.height"
+              [attr.fill]="selectedNodes.has(node.id) ? '#4a90e2' : '#f0f0f0'"
               stroke="#333" 
               stroke-width="2"
-              style="cursor: move" />
-        <text [attr.x]="component.x + component.width/2" 
-              [attr.y]="component.y + component.height/2 + 5" 
+              class="graph-node-body" />
+        <text [attr.x]="node.x + node.width/2" 
+              [attr.y]="node.y + node.height/2 + 5" 
               text-anchor="middle" 
               font-size="12" 
               font-weight="bold">
-          {{ component.label }}
+          {{ node.label }}
         </text>
       </g>
       
