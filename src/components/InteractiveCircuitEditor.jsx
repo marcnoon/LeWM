@@ -1,58 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { getAverage, gcdArray } from './utils.js';
 
 const InteractiveCircuitEditor = () => {
-  // Enhanced Array prototype functions for mathematical optimization
-  const setupArrayPrototypes = () => {
-    if (!Array.prototype.min) {
-      Array.prototype.min = function () {
-        return Math.min.apply(Math, this);
-      };
-    }
-    
-    if (!Array.prototype.max) {
-      Array.prototype.max = function () {
-        return Math.max.apply(Math, this);
-      };
-    }
-    
-    if (!Array.prototype.median) {
-      Array.prototype.median = function () {
-        if (this.length === 0) return null;
-        const floatArr = this.map(function(num) {
-          return parseFloat(num).toPrecision(15);
-        });
-        const sortedArray = floatArr.sort(function(prev, curr) {
-          return parseFloat(prev) - parseFloat(curr);
-        });
-        return sortedArray[Math.trunc((floatArr.length - 1) / 2)];
-      };
-    }
-    
-    if (!Array.prototype.average) {
-      Array.prototype.average = function () {
-        if (this.length === 0) return null;
-        const sum = this.reduce((prev, curr) => prev + curr);
-        const avg = parseFloat(sum) / parseFloat(this.length);
-        return avg;
-      };
-    }
-    
-    if (!Array.prototype.gcd) {
-      Array.prototype.gcd = function () {
-        if (this.length === 0) return null;
-        return this.reduce((prev, curr) => {
-          if (curr <= 1.00000000001e-12)
-            return prev;
-          else
-            return [curr, prev % curr].gcd();
-        });
-      };
-    }
-  };
-
-  // Initialize array prototypes
-  setupArrayPrototypes();
-
   const [components, setComponents] = useState([
     { id: 'power', type: 'power', x: 100, y: 150, width: 80, height: 60, label: '9V Battery', pins: [{x: 80, y: 20, name: '+9V'}, {x: 80, y: 40, name: 'GND'}] },
     { id: 'reg', type: 'ic', x: 250, y: 150, width: 60, height: 40, label: 'LM7805', pins: [{x: 0, y: 20, name: 'IN'}, {x: 30, y: 40, name: 'GND'}, {x: 60, y: 20, name: 'OUT'}] },
@@ -142,10 +91,10 @@ const InteractiveCircuitEditor = () => {
     
     if (xPositions.length === 0 || yPositions.length === 0) return 20;
     
-    const xGcd = xPositions.gcd();
-    const yGcd = yPositions.gcd();
+    const xGcd = gcdArray(xPositions);
+    const yGcd = gcdArray(yPositions);
     
-    const optimalSpacing = Math.max(10, Math.min(40, (xGcd + yGcd) / 2));
+    const optimalSpacing = Math.max(10, Math.min(40, ((xGcd || 0) + (yGcd || 0)) / 2));
     return Math.round(optimalSpacing) || 20;
   };
 
@@ -432,10 +381,10 @@ const InteractiveCircuitEditor = () => {
         return acc + Math.sqrt(Math.pow(point.x - prev.x, 2) + Math.pow(point.y - prev.y, 2));
       }, 0);
       
-      const avgPathLength = existingPaths.flat().length > 0 ? 
-        existingPaths.map(p => p.length).average() : path.length;
+      const pathLengths = existingPaths.map(p => p.length);
+      const avgPathLength = pathLengths.length > 0 ? getAverage(pathLengths) : path.length;
       
-      const efficiency = Math.min(1, avgPathLength / Math.max(1, path.length));
+      const efficiency = Math.min(1, (avgPathLength || 0) / Math.max(1, path.length));
       const color = `hsl(${120 * efficiency}, 70%, 50%)`;
       
       const pathString = path.reduce((acc, point, index) => {
@@ -474,8 +423,9 @@ const InteractiveCircuitEditor = () => {
     });
   };
 
-  const handleMouseDown = (e, comp) => {
+  const handleMouseDown = (e, compId) => {
     e.preventDefault();
+    const comp = components.find(c => c.id === compId);
     const svgRect = svgRef.current.getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
@@ -488,23 +438,23 @@ const InteractiveCircuitEditor = () => {
         endX: mouseX,
         endY: mouseY
       });
-    } else if (comp) {
+    } else if (compId && comp) {
       // Component click
       if (isCtrlPressed) {
         // Toggle selection with Ctrl
         setSelectedComponents(prev => {
           const newSet = new Set(prev);
-          if (newSet.has(comp.id)) {
-            newSet.delete(comp.id);
+          if (newSet.has(compId)) {
+            newSet.delete(compId);
           } else {
-            newSet.add(comp.id);
+            newSet.add(compId);
           }
           return newSet;
         });
       } else {
         // Regular click - select only this component or start dragging
-        if (!selectedComponents.has(comp.id)) {
-          setSelectedComponents(new Set([comp.id]));
+        if (!selectedComponents.has(compId)) {
+          setSelectedComponents(new Set([compId]));
         }
         
         // Start dragging
@@ -513,7 +463,7 @@ const InteractiveCircuitEditor = () => {
         // Store initial positions of all selected components
         const positions = {};
         components.forEach(c => {
-          if (selectedComponents.has(c.id) || c.id === comp.id) {
+          if (selectedComponents.has(c.id) || c.id === compId) {
             positions[c.id] = { x: c.x, y: c.y };
           }
         });
@@ -715,7 +665,7 @@ const InteractiveCircuitEditor = () => {
       </div>
       
       <div className="flex-1">
-        <div className="bg-gray-200 p-4 border-b">
+        <div className="bg-gray-200 p-4 border-b border-gray-300">
           <h2 className="text-xl font-bold">Circuit Editor with Group Selection</h2>
           <p className="text-sm text-gray-600">Hold Ctrl and drag to select multiple components • Selected: {selectedComponents.size}</p>
         </div>
@@ -744,12 +694,12 @@ const InteractiveCircuitEditor = () => {
           </defs>
           <rect id="grid-rect" width="100%" height="100%" fill="url(#grid)" />
           
-          {renderConnections()}
+          {useMemo(() => renderConnections(), [components, connections])}
           
           {components.map(comp => (
             <g
               key={comp.id}
-              onMouseDown={(e) => handleMouseDown(e, comp)}
+              onMouseDown={(e) => handleMouseDown(e, comp.id)}
               style={{ cursor: dragging && selectedComponents.has(comp.id) ? 'grabbing' : 'grab' }}
             >
               {renderComponent(comp)}
