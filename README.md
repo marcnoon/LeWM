@@ -48,11 +48,24 @@ src/app/
 ```
 
 ### Usage (Angular)
+
+#### Normal Mode (Default)
 1. **Add Nodes**: Click component buttons to add different node types
 2. **Create Connections**: Click on a pin (red circle), then click on another pin to connect
 3. **Move Nodes**: Drag nodes individually or select multiple with Ctrl+click
 4. **Delete**: Select nodes and press Delete key (connections auto-delete)
 5. **Clear Connections**: Use "Clear Edges" button to remove all connections
+
+#### Pin Edit Mode
+1. **Enter Pin Mode**: Press 'P' key or click "Pin Edit" button
+2. **Select Node**: Click any node to see side indicators (blue dashed borders)
+3. **Add Pins**: 
+   - Hover over sides to see orange highlighting
+   - Click anywhere around a side to open pin naming dialog
+   - Enter pin name and press Enter (or click OK)
+   - Pin appears automatically with optimal placement
+4. **Remove Pins**: Left-click or right-click existing pins to delete them
+5. **Exit**: Press Escape or click "Normal" button to return to standard mode
 
 ## Core Features
 
@@ -334,35 +347,52 @@ interface PinEditMode extends GraphMode {
 
 #### User Experience Flow
 1. **Enter Pin Mode**: Press 'P' or click "Pin Edit" button
-   - UI changes: Pin editing toolbar appears
-   - Visual feedback: Node edges become interactive
+   - UI changes: Pin editing mode becomes active
+   - Visual feedback: Selected nodes show side indicators
    - Cursor changes to pin editing cursor
 
 2. **Select Node**: Click on a node to select it for pin editing
-   - Selected node highlighted with pin editing borders
-   - Side selection controls appear
-   - Existing pins show edit handles
+   - Selected node highlighted with colored side indicators
+   - Four sides (top, right, bottom, left) shown with dashed borders
+   - Hover over sides to see orange highlighting
 
-3. **Choose Side**: Click on desired side or use side selector buttons
-   - Selected side highlighted with placement indicators
-   - Preview grid shows where pins can be placed
-   - Pin count display shows current/max pins for side
+3. **Add Pins**: 
+   - **Hover Feedback**: Hover over any side to see orange highlight
+   - **Click Side**: Click anywhere around a side to trigger pin creation
+   - **Name Dialog**: Popup dialog appears asking for pin name
+   - **Auto-Placement**: Pin automatically placed with optimal spacing
+   - **Submit**: Press Enter or click OK to create pin
+   - **Cancel**: Press Escape or click Cancel to abort
 
-4. **Add Pins**: 
-   - **Click Method**: Click on highlighted edge to add pin at that position
-   - **Distributed Method**: Enter number of pins, system auto-distributes
-   - **Custom Positioning**: Drag pin preview to exact position
+4. **Remove Pins**:
+   - **Left-click existing pins** to delete them instantly
+   - **Right-click pins** also works for deletion
+   - Connections to deleted pins are automatically removed
 
-5. **Edit Existing Pins**:
-   - Double-click pin label to rename
-   - Drag pins along their side to reposition
-   - Right-click for pin context menu (delete, properties, type)
+5. **Exit Pin Mode**:
+   - Press **Escape** key to return to Normal mode
+   - Click **Normal** button in toolbar
+   - All pin editing indicators disappear
 
-6. **Pin Properties Panel**:
-   - **Name**: Text input for pin identifier
-   - **Type**: Dropdown (input/output/bidirectional/power/ground)
-   - **Color**: Color picker for visual customization
-   - **Description**: Optional metadata for documentation
+### Pin Creation Features
+
+#### Smart Pin Placement
+- **Automatic Spacing**: Pins distributed evenly along selected side
+- **Collision Avoidance**: New pins placed to avoid overlapping
+- **Side Detection**: Intelligent side detection based on click position relative to node center
+- **Visual Feedback**: Real-time highlighting shows which side will receive the pin
+
+#### Pin Naming Dialog
+- **Popup Interface**: Clean dialog for entering pin names
+- **Keyboard Support**: Enter to confirm, Escape to cancel
+- **Validation**: Empty names are rejected
+- **Focus Management**: Automatic input field focus for quick typing
+
+#### Visual Indicators
+- **Blue Borders**: Normal side indicators (available for pins)
+- **Orange Highlighting**: Hover state showing which side is targeted
+- **Green Borders**: Selected side (currently unused in new workflow)
+- **Dashed Lines**: All indicators use dashed borders for clear visual distinction
 
 #### Smart Pin Distribution Algorithm
 ```typescript

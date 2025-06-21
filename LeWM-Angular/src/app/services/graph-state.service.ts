@@ -61,6 +61,25 @@ export class GraphStateService {
     this._nodes.next(updatedNodes);
   }
 
+  /**
+   * Updates an entire node (including pins).
+   * @param nodeId The ID of the node to update.
+   * @param updatedNode The updated node data.
+   */
+  updateNode(nodeId: string, updatedNode: GraphNode): void {
+    const currentNodes = this._nodes.getValue();
+    const nodeIndex = currentNodes.findIndex(n => n.id === nodeId);
+    
+    if (nodeIndex === -1) {
+      console.warn(`Node with id ${nodeId} not found`);
+      return;
+    }
+    
+    const updatedNodes = [...currentNodes];
+    updatedNodes[nodeIndex] = { ...updatedNode };
+    this._nodes.next(updatedNodes);
+  }
+
   deleteNodes(ids: string[]): void {
     const currentNodes = this._nodes.getValue();
     this._nodes.next(currentNodes.filter(node => !ids.includes(node.id)));

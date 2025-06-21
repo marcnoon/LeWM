@@ -1,0 +1,33 @@
+import { GraphNode } from '../models/graph-node.model';
+
+export interface GraphMode {
+  name: string;
+  displayName: string;
+  isActive: boolean;
+  
+  // Lifecycle methods
+  activate(): void;
+  deactivate(): void;
+  
+  // Event handlers - return true if handled, false to pass through
+  handleNodeClick(node: GraphNode, event: MouseEvent): boolean;
+  handlePinClick(node: GraphNode, pin: { x: number; y: number; name: string }, event: MouseEvent): boolean;
+  handleCanvasClick(event: MouseEvent): boolean;
+  handleMouseMove(event: MouseEvent): boolean;
+  handleKeyDown(event: KeyboardEvent): boolean;
+  
+  // Visual rendering
+  renderOverlay(canvas: SVGElement): void;
+  
+  // Mode-specific cursor
+  getCursor(): string;
+}
+
+export interface PinEditState {
+  selectedNode: GraphNode | null;
+  selectedSide: 'top' | 'right' | 'bottom' | 'left' | null;
+  hoveredSide: 'top' | 'right' | 'bottom' | 'left' | null;
+  pinDraft: Partial<{ x: number; y: number; name: string }> | null;
+  isEditingPinName: boolean;
+  editingPinName: string | null;
+}

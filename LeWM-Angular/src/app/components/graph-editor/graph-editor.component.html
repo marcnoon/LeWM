@@ -10,13 +10,25 @@
     </div>
     
     <div class="controls">
+      <h4>Mode</h4>
+      <div class="mode-controls">
+        <button *ngFor="let mode of availableModes" 
+                (click)="switchMode(mode.name)"
+                [class.active]="currentMode?.name === mode.name"
+                class="mode-btn">
+          {{ mode.displayName }}
+        </button>
+      </div>
+      
       <h4>Controls</h4>
       <button (click)="clearConnections()" class="clear-btn">
         Clear Edges
       </button>
       <div class="info">
+        <p>Mode: {{ currentMode?.displayName || 'None' }}</p>
         <p>Selected: {{ selectedNodes.size }}</p>
-        <small>Click to select • Ctrl+Click for multi-select • Delete to remove selected nodes</small>
+        <small *ngIf="currentMode?.name === 'normal'">Click to select • Ctrl+Click for multi-select • Delete to remove • P for Pin Mode</small>
+        <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Double-click pins to rename • Esc to exit</small>
       </div>
     </div>
   </div>
@@ -115,4 +127,13 @@
             pointer-events="none" />
     </svg>
   </div>
+  
+  <!-- Pin Name Dialog -->
+  <app-pin-name-dialog
+    #pinDialog
+    [isVisible]="showPinDialog"
+    [side]="selectedSideForPin"
+    (pinCreated)="onPinCreated($event)"
+    (cancelled)="onPinDialogCancelled()">
+  </app-pin-name-dialog>
 </div>

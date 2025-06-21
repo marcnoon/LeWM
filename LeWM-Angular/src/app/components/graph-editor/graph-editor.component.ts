@@ -3,6 +3,10 @@ import { Observable, Subscription } from 'rxjs';
 import { GraphNode } from '../../models/graph-node.model';
 import { GraphEdge } from '../../models/graph-edge.model';
 import { GraphStateService } from '../../services/graph-state.service';
+import { ModeManagerService } from '../../services/mode-manager.service';
+import { GraphMode } from '../../interfaces/graph-mode.interface';
+import { NormalMode } from '../../modes/normal.mode';
+import { PinEditMode } from '../../modes/pin-edit.mode';
 
 interface AvailableNode {
   type: string;
@@ -56,10 +60,23 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   
   // Connection creation state
   connectingFrom: { nodeId: string; pinName: string } | null = null;
+  
+  // Mode system
+  currentMode: GraphMode | null = null;
+  availableModes: GraphMode[] = [];
+  private modeSubscription?: Subscription;
+  
+  // Pin dialog state
+  showPinDialog = false;
+  selectedSideForPin = '';
+  pendingPinNode: GraphNode | null = null;
 
   Math = Math;
 
-  constructor(private graphState: GraphStateService) {}
+  constructor(
+    private graphState: GraphStateService,
+    private modeManager: ModeManagerService
+  ) {}
 
   ngOnInit(): void {
     // Assign the observables for use with the async pipe in the template
@@ -74,15 +91,35 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     this.edgesSubscription = this.edges$.subscribe(edges => {
       this.currentEdges = edges;
     });
+    
+    // Initialize mode system
+    this.initializeModes();
   }
 
   ngOnDestroy(): void {
     this.nodesSubscription?.unsubscribe();
     this.edgesSubscription?.unsubscribe();
+    this.modeSubscription?.unsubscribe();
   }
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
+    // First, let the mode handle the event
+    if (this.modeManager.handleKeyDown(event)) {
+      // Handle mode-specific shortcuts
+      if (event.key === 'p' || event.key === 'P') {
+        this.switchMode('pin-edit');
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Escape') {
+        this.switchMode('normal');
+        event.preventDefault();
+        return;
+      }
+    }
+    
+    // Handle global shortcuts
     if (event.key === 'Control' || event.key === 'Meta') {
       this.isCtrlPressed = true;
     }
@@ -143,6 +180,11 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const node = this.currentNodes.find(n => n.id === nodeId);
     if (!node) return;
 
+    // Let the mode handle the event first
+    if (this.modeManager.handleNodeClick(node, event)) {
+      return; // Mode handled the event
+    }
+
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
     const mouseX = event.clientX - svgRect.left;
     const mouseY = event.clientY - svgRect.top;
@@ -180,6 +222,15 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   }
 
   onMouseMove(event: MouseEvent): void {
+    // Let the mode handle mouse move first
+    if (this.modeManager.handleMouseMove(event)) {
+      // Mode handled the event, trigger overlay re-render
+      if (this.svgCanvas?.nativeElement) {
+        this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
+      }
+      return;
+    }
+    
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
     const mouseX = event.clientX - svgRect.left;
     const mouseY = event.clientY - svgRect.top;
@@ -232,6 +283,11 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   }
 
   private handleCanvasMouseDown(event: MouseEvent): void {
+    // Let the mode handle canvas clicks first
+    if (this.modeManager.handleCanvasClick(event)) {
+      return; // Mode handled the event
+    }
+    
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
     const mouseX = event.clientX - svgRect.left;
     const mouseY = event.clientY - svgRect.top;
@@ -247,6 +303,113 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     } else {
       // Click on empty space without Ctrl - clear selection
       this.selectedNodes.clear();
+    }
+  }
+  
+  // Mode management methods
+  private initializeModes(): void {
+    // Create and register modes
+    const normalMode = new NormalMode(this.graphState);
+    const pinEditMode = new PinEditMode(this.graphState);
+    
+    // Set component reference for pin edit mode
+    pinEditMode.setComponentRef(this);
+    
+    this.modeManager.registerMode(normalMode);
+    this.modeManager.registerMode(pinEditMode);
+    
+    this.availableModes = this.modeManager.getAvailableModes();
+    
+    // Subscribe to mode changes
+    this.modeSubscription = this.modeManager.activeMode$.subscribe(mode => {
+      this.currentMode = mode;
+      // Update cursor based on mode
+      if (this.svgCanvas?.nativeElement) {
+        this.svgCanvas.nativeElement.style.cursor = this.modeManager.getActiveCursor();
+      }
+    });
+    
+    // Activate normal mode by default
+    this.modeManager.activateMode('normal');
+  }
+  
+  switchMode(modeName: string): void {
+    this.modeManager.activateMode(modeName);
+  }
+  
+  // Pin dialog methods
+  showPinCreationDialog(node: GraphNode, side: string): void {
+    this.pendingPinNode = node;
+    this.selectedSideForPin = side;
+    this.showPinDialog = true;
+  }
+  
+  onPinCreated(pinName: string): void {
+    if (this.pendingPinNode && this.selectedSideForPin) {
+      this.createPinOnSide(this.pendingPinNode, this.selectedSideForPin, pinName);
+    }
+    this.showPinDialog = false;
+    this.pendingPinNode = null;
+    this.selectedSideForPin = '';
+  }
+  
+  onPinDialogCancelled(): void {
+    this.showPinDialog = false;
+    this.pendingPinNode = null;
+    this.selectedSideForPin = '';
+  }
+  
+  private createPinOnSide(node: GraphNode, side: string, pinName: string): void {
+    const updatedNode = { ...node };
+    if (!updatedNode.pins) updatedNode.pins = [];
+    
+    // Calculate position based on side and existing pins
+    const position = this.calculateOptimalPinPosition(updatedNode, side);
+    
+    updatedNode.pins.push({
+      x: Math.round(position.x),
+      y: Math.round(position.y),
+      name: pinName
+    });
+    
+    // Update the node in the service
+    this.graphState.updateNode(node.id, updatedNode);
+    
+    console.log(`Added pin ${pinName} to node ${node.id} on ${side} side`);
+  }
+  
+  private calculateOptimalPinPosition(node: GraphNode, side: string): { x: number; y: number } {
+    const existingPins = node.pins || [];
+    const sideId = ['top', 'right', 'bottom', 'left'].indexOf(side);
+    
+    // Count pins on this side (simplified - assumes pins are distributed evenly)
+    const pinsOnSide = Math.floor(existingPins.length / 4) + 1;
+    const spacing = 15; // Minimum spacing between pins
+    const margin = 10;   // Margin from edges
+    
+    switch (side) {
+      case 'top':
+        return { 
+          x: margin + (pinsOnSide * spacing), 
+          y: 0 
+        };
+      case 'right':
+        return { 
+          x: node.width, 
+          y: margin + (pinsOnSide * spacing) 
+        };
+      case 'bottom':
+        return { 
+          x: margin + (pinsOnSide * spacing), 
+          y: node.height 
+        };
+      case 'left':
+        return { 
+          x: 0, 
+          y: margin + (pinsOnSide * spacing) 
+        };
+      default:
+        return { x: 0, y: 0 };
     }
   }
 
@@ -267,6 +430,18 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   onPinMouseDown(event: MouseEvent, nodeId: string, pinName: string): void {
     event.stopPropagation();
     
+    const node = this.currentNodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    const pin = node.pins?.find(p => p.name === pinName);
+    if (!pin) return;
+    
+    // Let the mode handle the event first
+    if (this.modeManager.handlePinClick(node, pin, event)) {
+      return; // Mode handled the event
+    }
+    
+    // Default pin behavior (connection creation)
     if (this.connectingFrom === null) {
       // Start a new connection
       this.connectingFrom = { nodeId, pinName };
