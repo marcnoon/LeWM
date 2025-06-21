@@ -1,1 +1,21 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Global styles for full viewport layout */
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+/* Ensure the Angular app root takes full space */
+app-root {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}

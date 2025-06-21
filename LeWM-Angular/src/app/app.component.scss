@@ -27,5 +27,7 @@
 
 .main-content {
   flex: 1;
-  display: flex; /* Ensure main content fills remaining space and allows children to flex */
+  /* Remove display: flex to allow the graph-editor to take full width */
+  width: 100%;
+  height: 100%;
 }

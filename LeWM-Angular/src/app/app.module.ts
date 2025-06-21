@@ -1,24 +1,20 @@
-import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { RouterModule } from '@angular/router';
 
 import { AppRoutingModule } from './app-routing-module';
-import { App } from './app';
+import { AppComponent } from './app.component';
 import { GraphEditorComponent } from './components/graph-editor/graph-editor.component';
 
 @NgModule({
   declarations: [
-    App,
+    AppComponent,
     GraphEditorComponent
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule,
-    RouterModule
+    AppRoutingModule
   ],
-  providers: [
-    provideBrowserGlobalErrorListeners()
-  ],
-  bootstrap: [App]
+  providers: [],
+  bootstrap: [AppComponent]
 })
 export class AppModule { }

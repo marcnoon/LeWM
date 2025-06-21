@@ -1,5 +1,5 @@
-import { Component, ElementRef, HostListener, ViewChild, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Observable, Subscription } from 'rxjs';
 import { GraphNode } from '../../models/graph-node.model';
 import { GraphStateService } from '../../services/graph-state.service';
 
@@ -23,11 +23,15 @@ interface SelectionBox {
   templateUrl: './graph-editor.component.html',
   styleUrl: './graph-editor.component.scss'
 })
-export class GraphEditorComponent implements OnInit {
+export class GraphEditorComponent implements OnInit, OnDestroy {
   @ViewChild('svgCanvas', { static: true }) svgCanvas!: ElementRef<SVGElement>;
 
-  // Property to expose nodes to the template
-  nodes: GraphNode[] = [];
+  // Expose the nodes observable directly to the template
+  nodes$!: Observable<GraphNode[]>;
+
+  // Keep a local copy of nodes for imperative operations
+  private currentNodes: GraphNode[] = [];
+  private nodesSubscription?: Subscription;
 
   availableNodes: AvailableNode[] = [
     { type: 'power', label: '9V Battery', width: 80, height: 60 },
@@ -51,10 +55,17 @@ export class GraphEditorComponent implements OnInit {
   constructor(private graphState: GraphStateService) {}
 
   ngOnInit(): void {
-    // Subscribe to nodes from the service
-    this.graphState.nodes$.subscribe(nodes => {
-      this.nodes = nodes;
+    // Assign the observable for use with the async pipe in the template
+    this.nodes$ = this.graphState.nodes$;
+
+    // Subscribe to keep a local copy for imperative operations
+    this.nodesSubscription = this.nodes$.subscribe(nodes => {
+      this.currentNodes = nodes;
     });
+  }
+
+  ngOnDestroy(): void {
+    this.nodesSubscription?.unsubscribe();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -111,7 +122,7 @@ export class GraphEditorComponent implements OnInit {
 
   onNodeMouseDown(event: MouseEvent, nodeId: string): void {
     event.stopPropagation();
-    const node = this.graphState.getNodes().find(n => n.id === nodeId);
+    const node = this.currentNodes.find(n => n.id === nodeId);
     if (!node) return;
 
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
@@ -137,7 +148,7 @@ export class GraphEditorComponent implements OnInit {
       
       // Store initial positions of all selected nodes
       this.initialPositions = {};
-      this.nodes.forEach(n => {
+      this.currentNodes.forEach(n => {
         if (this.selectedNodes.has(n.id)) {
           this.initialPositions[n.id] = { x: n.x, y: n.y };
         }
@@ -161,8 +172,8 @@ export class GraphEditorComponent implements OnInit {
       this.selectionBox.endY = mouseY;
 
       // Update selected nodes based on selection box
-      this.selectedNodes.clear();
-      this.nodes.forEach(node => {
+      this.selectedNodes = new Set<string>();
+      this.currentNodes.forEach(node => {
         if (this.isNodeInSelectionBox(node, this.selectionBox!)) {
           this.selectedNodes.add(node.id);
         }
@@ -182,16 +193,15 @@ export class GraphEditorComponent implements OnInit {
 
         // Create updates map for the service
         const updates = new Map<string, { x: number; y: number }>();
-        this.nodes.forEach(node => {
-          if (this.selectedNodes.has(node.id)) {
-            const initial = this.initialPositions[node.id];
-            updates.set(node.id, {
+        this.selectedNodes.forEach(nodeId => {
+          const initial = this.initialPositions[nodeId];
+          if (initial) {
+            updates.set(nodeId, {
               x: Math.max(0, initial.x + offsetX),
               y: Math.max(0, initial.y + offsetY)
             });
           }
         });
-        
         this.graphState.updateNodePositions(updates);
       }
     }
