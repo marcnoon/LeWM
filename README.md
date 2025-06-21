@@ -1,3 +1,5 @@
+![image](https://github.com/user-attachments/assets/0918013a-1921-49d9-b696-4cfa4645f83d)
+
 # LeWM - Level With Me
 
 A flexible, graph-based object and connection system built on SOLID principles and composition patterns.
