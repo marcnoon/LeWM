@@ -343,6 +343,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     // Subscribe to mode changes
     this.modeSubscription = this.modeManager.activeMode$.subscribe(mode => {
       this.currentMode = mode;
+      // Remove pin-edit overlays when exiting pin-edit mode
+      if (mode?.name !== 'pin-edit') {
+        this.clearOverlay();
+      }
       // Update cursor based on mode
       if (this.svgCanvas?.nativeElement) {
         this.svgCanvas.nativeElement.style.cursor = this.modeManager.getActiveCursor();
@@ -353,8 +357,18 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     this.modeManager.activateMode('normal');
   }
   
+  private clearOverlay(): void {
+    const canvas = this.svgCanvas.nativeElement;
+    const overlays = canvas.querySelectorAll('.pin-edit-overlay');
+    overlays.forEach(el => el.remove());
+  }
+
   switchMode(modeName: string): void {
     this.modeManager.activateMode(modeName);
+    // Remove pin-edit overlays when exiting pin-edit mode
+    if (modeName !== 'pin-edit') {
+      this.clearOverlay();
+    }
   }
   
   // Pin dialog methods
