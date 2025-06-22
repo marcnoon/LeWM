@@ -175,6 +175,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   deleteSelectedNodes(): void {
     this.graphState.deleteNodes(Array.from(this.selectedNodes));
     this.selectedNodes.clear();
+    
+    // Validate connection integrity after node deletion
+    this.validateConnectionIntegrity();
   }
 
   onSvgMouseDown(event: MouseEvent): void {
@@ -380,6 +383,16 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     // Remove pin-edit overlays when exiting pin-edit mode
     if (modeName !== 'pin-edit') {
       this.clearOverlay();
+    }
+    
+    // Validate connection integrity when switching modes to clean up any orphaned connections
+    this.validateConnectionIntegrity();
+  }
+  
+  private validateConnectionIntegrity(): void {
+    const result = this.graphState.validateConnectionIntegrity();
+    if (result.removedConnections > 0) {
+      console.log(`Mode switch cleanup: Removed ${result.removedConnections} orphaned connections`);
     }
   }
   

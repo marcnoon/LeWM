@@ -46,6 +46,7 @@ An advanced mode for customizing node pins and their distribution:
 - **Name Pins:** Enter a pin name in the dialog and press Enter or click OK.
 - **Auto-Distribute:** Pins are spaced evenly along the selected side.
 - **Remove Pins:** Left-click or right-click existing pins to delete them.
+- **Automatic Cleanup:** When pins are removed, any connections to those pins are automatically deleted to prevent orphaned connections.
 - **Exit Mode:** Press Escape or click "Normal" to return to standard mode.
 
 ## Connection Mode
