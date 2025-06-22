@@ -50,6 +50,52 @@ An advanced mode for customizing node pins and their distribution:
 - **Automatic Cleanup:** When pins are removed, any connections to those pins are automatically deleted to prevent orphaned connections.
 - **Exit Mode:** Press Escape or click "Normal" to return to standard mode.
 
+### Advanced Pin Layout Mode
+
+For complex components requiring precise pin arrangements, LeWM offers an **Advanced Pin Layout Mode**. This feature extends the standard Pin Edit Mode, providing granular control over pin positioning, ordering, and distribution to meet exact specifications and maximize readability. It combines powerful automated layout algorithms with intuitive manual adjustment tools.
+
+#### Activation
+
+1.  Enter **Pin Edit Mode** (press `P`).
+2.  Select a node to reveal its side indicators.
+3.  **Double-click** on a side indicator (the blue dashed line for top, right, bottom, or left) to activate Advanced Pin Layout for that specific edge.
+
+#### Key Features
+
+*   **Bulk Pin Entry & Ordering**:
+    *   Upon activation, a dialog prompts for pin names.
+    *   You can enter multiple pin names at once, separated by commas (e.g., `DATA0, DATA1, DATA2, CLK, RESET`).
+    *   The pins will be created and placed on the edge in the exact order you specify.
+
+*   **Intelligent Auto-Distribution**:
+    *   The initial placement is not merely uniform. The system uses **GCD (Greatest Common Divisor)** and **LCM (Least Common Multiple)** based algorithms to calculate an optimal distribution.
+    *   This layout considers the width of pin labels to prevent text overlap, ensuring maximum readability from the start.
+
+*   **Pixel-Perfect Manual Adjustments**:
+    *   **Constrained Dragging**: Click and drag any pin to reposition it. Its movement will be constrained to the node edge it belongs to.
+    *   **Nudge Controls**: Select a pin and use the keyboard arrow keys to "nudge" it one pixel at a time for fine-grained adjustments.
+    *   **Group Selection & Movement**: Ctrl+click to select multiple pins on the same edge and move them together as a single unit.
+
+*   **Flexible Distribution Tools**:
+    *   After selecting multiple pins, contextual tools appear allowing you to:
+        *   **Distribute Horizontally/Vertically**: Evenly space the selected pins across the available edge length.
+        *   **Align to Grid**: Snap pins to the underlying grid for perfect alignment with other components.
+
+#### Example Workflow: Customizing an IC Chip
+
+1.  Press `P` to switch to **Pin Edit Mode**.
+2.  Click on an "IC Chip" node.
+3.  **Double-click** the top edge of the chip.
+4.  In the dialog, type: `VCC,GND,IN_A,IN_B,OUT_A,OUT_B` and press Enter.
+5.  The six pins are automatically laid out on the top edge, with their labels positioned for clarity.
+6.  You decide `VCC` and `GND` should be further apart.
+    *   Click the `VCC` pin and drag it to the far left corner of the edge.
+    *   Click the `GND` pin and drag it to the far right corner.
+7.  Now, select the four `IN` and `OUT` pins using Ctrl+click.
+8.  Use the "Distribute Horizontally" tool to space them perfectly between `VCC` and `GND`.
+9.  Select the `IN_A` pin and use the `←` arrow key to move it 2 pixels to the left to match a schematic perfectly.
+10. Press **Escape** to exit Advanced Pin Layout and return to the standard Pin Edit Mode. The new pin layout is saved.
+
 ## Connection Mode
 
 A specialized mode for creating and managing relationships between pins. This mode provides comprehensive connection editing capabilities including single and bulk editing operations.

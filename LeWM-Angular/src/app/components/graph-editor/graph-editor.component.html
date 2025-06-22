@@ -28,8 +28,8 @@
         <p>Mode: {{ currentMode?.displayName || 'None' }}</p>
         <p>Selected: {{ selectedNodes.size }}</p>
         <small *ngIf="currentMode?.name === 'normal'">Click to select • Ctrl+Click for multi-select • Delete to remove • P for Pin Mode</small>
-        <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Double-click pins to rename • Esc to exit</small>
-        <small *ngIf="currentMode?.name === 'connection'">Click connections to select • Ctrl+Click for multi-select • Enter to edit • Delete to remove • Esc to exit</small>
+        <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Click pins to select/delete • Ctrl+Click pins for multi-select • Esc to exit</small>
+        <small *ngIf="currentMode?.name === 'connection'">Click pin-to-pin to create connections • Click connections to select • Ctrl+Click for multi-select • Enter to edit • Delete to remove • Esc to exit</small>
       </div>
       <!-- Pin Edit Mode Actions -->
       <div *ngIf="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.size || 0) > 0" class="controls">

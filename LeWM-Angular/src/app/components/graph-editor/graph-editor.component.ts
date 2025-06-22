@@ -133,6 +133,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
         event.preventDefault();
         return;
       }
+      // If the mode handled the event (e.g., Delete key), don't proceed with default behavior
+      return;
     }
 
     // Handle global shortcuts
@@ -140,12 +142,11 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
       this.isCtrlPressed = true;
     }
     if (event.key === 'Delete') {
-      // In Pin Edit mode delete selected pins first
-      if (this.currentMode?.name === 'pin-edit' && (this.modeManager.getActiveMode()?.selectedPins?.size || 0) > 0) {
-        this.deleteSelectedPins();
-      } else if (this.selectedNodes.size > 0) {
+      // Only handle node deletion in Normal mode
+      if (this.currentMode?.name === 'normal' && this.selectedNodes.size > 0) {
         this.deleteSelectedNodes();
       }
+      // Other modes (pin-edit, connection) handle their own delete logic
     }
   }
     
@@ -598,24 +599,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
       return; // Mode handled the event
     }
     
-    // Default pin behavior (connection creation)
-    if (this.connectingFrom === null) {
-      // Start a new connection
-      this.connectingFrom = { nodeId, pinName };
-      console.log(`Starting connection from ${nodeId}.${pinName}`);
-    } else {
-      // Complete the connection
-      const newEdge: GraphEdge = {
-        from: `${this.connectingFrom.nodeId}.${this.connectingFrom.pinName}`,
-        to: `${nodeId}.${pinName}`
-      };
-      
-      this.graphState.addEdge(newEdge);
-      console.log(`Created connection: ${newEdge.from} -> ${newEdge.to}`);
-      
-      // Reset connection state
-      this.connectingFrom = null;
-    }
+    // No default pin behavior - connections should only be created in Connection Mode
+    // This follows SOLID principles: each mode has a single, clear responsibility
+    console.log(`Pin ${nodeId}.${pinName} clicked, but no mode handled it. Switch to Connection Mode to create connections.`);
   }
 
   getConnectionStartX(edge: GraphEdge): number {
