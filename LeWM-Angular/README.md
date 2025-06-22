@@ -85,10 +85,10 @@ Connection values support multiple data types and extensive unit systems:
 
 #### Bulk Edit Capabilities
 
--   **Common Properties:** Edit shared properties across all selected connections
-    -   Type (if all connections have the same type)
-    -   Direction (if all connections have the same direction)  
-    -   Color and visual styling
+-   **Connection Properties:** Edit properties across all selected connections
+    -   Direction (forward, backward, bidirectional) - always available
+    -   Type (signal, power, data, etc.) - always available
+    -   Color and visual styling - always available
     -   Label prefix/suffix application
 
 -   **Value Management:**
@@ -126,17 +126,19 @@ The bulk edit system intelligently identifies:
   - Suffix: `"voltage"` → `"voltage_primary"`
   - Combined: `"voltage"` → `"signal_voltage_backup"`
 
-#### Automatic Key Numbering for New Values
+#### Comprehensive Duplicate Key Detection and Numbering
 
-When adding new key-value pairs to multiple connections, the system automatically ensures uniqueness:
+The system analyzes ALL keys across ALL connections to detect duplicates and applies intelligent numbering:
 
-- **Same Key Across Connections**: If you add the same key name to multiple connections, each gets a unique numbered version
-- **Example**: Adding key "bob" to 3 selected connections results in:
-  - Connection 1: `"bob1"`
-  - Connection 2: `"bob2"` 
-  - Connection 3: `"bob3"`
-- **Conflict Resolution**: If a connection already has "bob1", the system finds the next available number (e.g., "bob4")
-- **Single Key**: If adding only one instance of a key name, no numbering is added unless there's a conflict with existing keys
+- **Global Analysis**: Scans existing keys in all selected connections plus new keys being added
+- **Duplicate Detection**: If any key name appears more than once across the entire dataset, ALL instances get numbered
+- **Example Scenario**: 
+  - Connection 1 has existing key "voltage"
+  - Connection 2 has existing key "voltage"  
+  - Adding new key "voltage" to both connections
+  - **Result**: All four instances become "voltage1", "voltage2", "voltage3", "voltage4"
+- **Incremental Numbering**: Always starts from 1 and increments for each occurrence
+- **Cross-Connection Uniqueness**: Ensures no duplicate keys exist across all selected connections
 
 ### Development Roadmap
 

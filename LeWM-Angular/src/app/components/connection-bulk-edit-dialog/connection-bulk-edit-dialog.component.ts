@@ -204,8 +204,8 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
   }
 
   onApply(): void {
-    // Pre-process new values to handle key numbering across all connections
-    const processedNewValues = this.processNewValuesWithNumbering();
+    // First, collect all keys across all connections to detect duplicates
+    const allKeysMap = this.collectAllKeys();
     
     const updatedConnections: GraphEdge[] = this.connections.map((connection, connectionIndex) => {
       const updated = { ...connection };
@@ -272,20 +272,35 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
         });
       }
 
-      // Add new values with pre-processed numbering
-      if (processedNewValues.length > 0) {
-        if (!updated.values) {
-          updated.values = [];
-        }
-        
-        // Add the processed new values for this connection
-        processedNewValues.forEach(newValue => {
-          const uniqueKey = this.generateUniqueKey(newValue.key, updated.values || []);
-          updated.values!.push({
-            ...newValue,
-            key: uniqueKey
+      // Add new values with proper duplicate numbering
+      if (this.bulkChanges.newValues.length > 0) {
+        const validNewValues = this.bulkChanges.newValues.filter(v => v.key.trim() !== '');
+        if (validNewValues.length > 0) {
+          if (!updated.values) {
+            updated.values = [];
+          }
+          
+          // Add new values with numbering based on duplicate detection
+          validNewValues.forEach(newValue => {
+            const baseKey = newValue.key.trim();
+            let finalKey = baseKey;
+            
+            // Check if this key appears in multiple places (existing + new)
+            const keyInfo = allKeysMap.get(baseKey);
+            if (keyInfo && keyInfo.totalCount > 1) {
+              // This key has duplicates, so number them
+              finalKey = `${baseKey}${keyInfo.getNextNumber()}`;
+            }
+            
+            // Ensure the final key is unique within this connection
+            finalKey = this.generateUniqueKey(finalKey, updated.values || []);
+            
+            updated.values!.push({
+              ...newValue,
+              key: finalKey
+            });
           });
-        });
+        }
       }
 
       return updated;
@@ -334,44 +349,44 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
     return UNIT_DEFINITIONS[unitType] || [];
   }
 
-  private processNewValuesWithNumbering(): ConnectionValue[] {
+  private collectAllKeys(): Map<string, { totalCount: number; currentNumber: number; getNextNumber: () => number }> {
+    const keyMap = new Map<string, { totalCount: number; currentNumber: number; getNextNumber: () => number }>();
+    
+    // Count existing keys across all connections
+    this.connections.forEach(connection => {
+      if (connection.values) {
+        connection.values.forEach(value => {
+          const baseKey = value.key;
+          if (!keyMap.has(baseKey)) {
+            keyMap.set(baseKey, {
+              totalCount: 0,
+              currentNumber: 0,
+              getNextNumber: function() { return ++this.currentNumber; }
+            });
+          }
+          keyMap.get(baseKey)!.totalCount++;
+        });
+      }
+    });
+    
+    // Count new keys being added (multiply by number of connections)
     const validNewValues = this.bulkChanges.newValues.filter(v => v.key.trim() !== '');
-    if (validNewValues.length === 0) {
-      return [];
-    }
-
-    // Group new values by key name to detect duplicates
-    const keyGroups = new Map<string, ConnectionValue[]>();
-    validNewValues.forEach(value => {
-      const baseKey = value.key.trim();
-      if (!keyGroups.has(baseKey)) {
-        keyGroups.set(baseKey, []);
-      }
-      keyGroups.get(baseKey)!.push(value);
-    });
-
-    // Process each group and add numbering for duplicates
-    const processedValues: ConnectionValue[] = [];
-    keyGroups.forEach((values, baseKey) => {
-      if (values.length === 1) {
-        // Single value, no numbering needed
-        processedValues.push({
-          ...values[0],
-          key: baseKey
-        });
-      } else {
-        // Multiple values with same key, add numbering
-        values.forEach((value, index) => {
-          processedValues.push({
-            ...value,
-            key: `${baseKey}${index + 1}`
-          });
+    validNewValues.forEach(newValue => {
+      const baseKey = newValue.key.trim();
+      if (!keyMap.has(baseKey)) {
+        keyMap.set(baseKey, {
+          totalCount: 0,
+          currentNumber: 0,
+          getNextNumber: function() { return ++this.currentNumber; }
         });
       }
+      // Each new value will be added to each selected connection
+      keyMap.get(baseKey)!.totalCount += this.connections.length;
     });
-
-    return processedValues;
+    
+    return keyMap;
   }
+
 
   private generateUniqueKey(baseKey: string, existingValues: ConnectionValue[]): string {
     const existingKeys = new Set(existingValues.map(v => v.key));

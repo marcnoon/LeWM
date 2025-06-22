@@ -19,7 +19,7 @@
           </div>
           
           <!-- Direction -->
-          <div class="form-group" *ngIf="bulkEditData?.commonProperties?.direction !== undefined">
+          <div class="form-group">
             <label>Direction:</label>
             <select [(ngModel)]="bulkChanges.direction">
               <option *ngFor="let option of directionOptions" [value]="option.value">
@@ -30,7 +30,7 @@
           </div>
           
           <!-- Type -->
-          <div class="form-group" *ngIf="bulkEditData?.commonProperties?.type !== undefined">
+          <div class="form-group">
             <label>Type:</label>
             <select [(ngModel)]="bulkChanges.type">
               <option *ngFor="let option of typeOptions" [value]="option.value">
@@ -41,21 +41,21 @@
           </div>
           
           <!-- Color -->
-          <div class="form-group" *ngIf="bulkEditData?.commonProperties?.color !== undefined">
+          <div class="form-group">
             <label>Color:</label>
             <input type="color" [(ngModel)]="bulkChanges.color" placeholder="Connection color">
             <small>Currently: {{ bulkEditData?.commonProperties?.color || 'Mixed' }}</small>
           </div>
           
           <!-- Stroke Width -->
-          <div class="form-group" *ngIf="bulkEditData?.commonProperties?.strokeWidth !== undefined">
+          <div class="form-group">
             <label>Stroke Width:</label>
             <input type="number" [(ngModel)]="bulkChanges.strokeWidth" min="1" max="10" step="1">
             <small>Currently: {{ bulkEditData?.commonProperties?.strokeWidth || 'Mixed' }}</small>
           </div>
           
           <!-- Stroke Style -->
-          <div class="form-group" *ngIf="bulkEditData?.commonProperties?.strokeStyle !== undefined">
+          <div class="form-group">
             <label>Stroke Style:</label>
             <select [(ngModel)]="bulkChanges.strokeStyle">
               <option *ngFor="let option of strokeStyleOptions" [value]="option.value">
@@ -147,8 +147,8 @@
         <h4>Add New Values</h4>
         <p class="info-text">Add new key-value pairs to all selected connections:</p>
         <p class="info-text">
-          <strong>Automatic Key Numbering:</strong> If you add multiple values with the same key name, 
-          they will be automatically numbered (e.g., "bob" becomes "bob1", "bob2", etc.) to ensure uniqueness.
+          <strong>Automatic Key Numbering:</strong> If the same key name exists in multiple places (existing values + new values), 
+          all instances are automatically numbered starting from 1 (e.g., "bob" becomes "bob1", "bob2", "bob3" etc.) to ensure uniqueness.
         </p>
         
         <div *ngFor="let newValue of bulkChanges.newValues; let i = index" class="new-value-row">
