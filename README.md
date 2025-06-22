@@ -65,7 +65,7 @@ src/app/
 1. **Enter Pin Mode**: Press 'P' key or click "Pin Edit" button
 2. **Select Node**: Click any node to see side indicators
 3. **Add Pins**: Hover sides to highlight, click to open naming dialog and create pins
-4. **Remove Pins**: Left-click or right-click existing pins to delete
+4. **Delete Pins**: Click to select one or multiple pins (Ctrl+Click to multi-select). Then remove using the "Delete Selected Pins" button in the toolbar or via the pin context menu.
 5. **Exit**: Press Escape or click "Normal" button in toolbar
 
 - For full details, see `LeWM-Angular/README.md#pin-edit-mode`

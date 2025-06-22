@@ -1,4 +1,6 @@
-import { GraphNode } from '../models/graph-node.model';
+import { GraphNode } from "../models/graph-node.model";
+import { GraphEditorComponent } from "../components/graph-editor/graph-editor.component";
+import { Pin } from "../models/graph-node.model"; // Assuming Pin is defined within GraphNode
 
 export interface GraphMode {
   name: string;
