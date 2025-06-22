@@ -57,17 +57,26 @@ src/app/
 3. **Move Nodes**: Drag nodes individually or select multiple with Ctrl+click
 4. **Delete**: Select nodes and press Delete key (connections auto-delete)
 5. **Clear Connections**: Use "Clear Edges" button to remove all connections
+6. **Deselect**: Click on the blank canvas or press the Escape key to deselect all nodes
+
+- For full details, see `LeWM-Angular/README.md#standard-mode`
 
 #### Pin Edit Mode
 1. **Enter Pin Mode**: Press 'P' key or click "Pin Edit" button
-2. **Select Node**: Click any node to see side indicators (blue dashed borders)
-3. **Add Pins**: 
-   - Hover over sides to see orange highlighting
-   - Click anywhere around a side to open pin naming dialog
-   - Enter pin name and press Enter (or click OK)
-   - Pin appears automatically with optimal placement
-4. **Remove Pins**: Left-click or right-click existing pins to delete them
-5. **Exit**: Press Escape or click "Normal" button to return to standard mode
+2. **Select Node**: Click any node to see side indicators
+3. **Add Pins**: Hover sides to highlight, click to open naming dialog and create pins
+4. **Remove Pins**: Left-click or right-click existing pins to delete
+5. **Exit**: Press Escape or click "Normal" button in toolbar
+
+- For full details, see `LeWM-Angular/README.md#pin-edit-mode`
+
+#### Connection Mode
+1. **Enter Connection Mode**: Click "Connection Mode" (future UI) or use toolbar
+2. **Draw Connections**: Click one pin, then another to draw a connection line
+3. **Select & Edit**: Select a connection to view/edit properties (label, direction, value)
+4. **Delete**: Press Delete key when a connection is selected
+
+- For full details, see `LeWM-Angular/README.md#connection-mode`
 
 ## Core Features
 

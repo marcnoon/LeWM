@@ -91,6 +91,12 @@ export class GraphStateService {
       const [toNodeId] = edge.to.split('.');
       return !ids.includes(fromNodeId) && !ids.includes(toNodeId);
     });
+    
+    const removedConnections = currentEdges.length - filteredEdges.length;
+    if (removedConnections > 0) {
+      console.log(`Removed ${removedConnections} connections due to node deletion`);
+    }
+    
     this._edges.next(filteredEdges);
   }
 
@@ -122,6 +128,34 @@ export class GraphStateService {
   }
 
   /**
+   * Updates an existing edge in the graph.
+   * @param edgeId The ID of the edge to update.
+   * @param updatedEdge The updated edge data.
+   */
+  updateEdge(edgeId: string, updatedEdge: GraphEdge): void {
+    const currentEdges = this._edges.getValue();
+    const edgeIndex = currentEdges.findIndex(e => e.id === edgeId);
+    
+    if (edgeIndex === -1) {
+      console.warn(`Edge with id ${edgeId} not found`);
+      return;
+    }
+    
+    const updatedEdges = [...currentEdges];
+    updatedEdges[edgeIndex] = { ...updatedEdge };
+    this._edges.next(updatedEdges);
+  }
+
+  /**
+   * Notifies subscribers of edge state changes (for selection, hover, etc.)
+   */
+  notifyEdgeStateChange(): void {
+    // Force notification by re-emitting current edges
+    const currentEdges = this._edges.getValue();
+    this._edges.next([...currentEdges]);
+  }
+
+  /**
    * Gets the absolute position of a pin on a node.
    * @param nodeId The ID of the node.
    * @param pinName The name of the pin.
@@ -137,6 +171,104 @@ export class GraphStateService {
     return {
       x: node.x + pin.x,
       y: node.y + pin.y
+    };
+  }
+
+  /**
+   * Checks if a pin exists on a node.
+   * @param nodeId The ID of the node.
+   * @param pinName The name of the pin.
+   * @returns True if the pin exists, false otherwise.
+   */
+  pinExists(nodeId: string, pinName: string): boolean {
+    const node = this.getNodes().find(n => n.id === nodeId);
+    if (!node || !node.pins) return false;
+    
+    return node.pins.some(p => p.name === pinName);
+  }
+
+  /**
+   * Removes all orphaned connections (connections that reference non-existent pins).
+   * @returns The number of orphaned connections removed.
+   */
+  cleanupOrphanedConnections(): number {
+    const currentEdges = this._edges.getValue();
+    const validEdges = currentEdges.filter(edge => this.isConnectionValid(edge));
+    
+    const removedCount = currentEdges.length - validEdges.length;
+    
+    if (removedCount > 0) {
+      this._edges.next(validEdges);
+      console.log(`Cleaned up ${removedCount} orphaned connections`);
+    }
+    
+    return removedCount;
+  }
+
+  /**
+   * Checks if a connection is valid (both endpoints exist).
+   * @param edge The edge to validate.
+   * @returns True if the connection is valid, false otherwise.
+   */
+  private isConnectionValid(edge: GraphEdge): boolean {
+    try {
+      const [fromNodeId, fromPinName] = edge.from.split('.');
+      const [toNodeId, toPinName] = edge.to.split('.');
+      
+      // Check if both pins exist
+      return this.pinExists(fromNodeId, fromPinName) && this.pinExists(toNodeId, toPinName);
+    } catch (error) {
+      // Invalid connection format
+      return false;
+    }
+  }
+
+  /**
+   * Removes orphaned connections that reference a specific pin.
+   * @param nodeId The ID of the node.
+   * @param pinName The name of the pin that was removed.
+   * @returns The number of connections removed.
+   */
+  removeConnectionsForPin(nodeId: string, pinName: string): number {
+    const currentEdges = this._edges.getValue();
+    const pinReference = `${nodeId}.${pinName}`;
+    
+    const validEdges = currentEdges.filter(edge => 
+      edge.from !== pinReference && edge.to !== pinReference
+    );
+    
+    const removedCount = currentEdges.length - validEdges.length;
+    
+    if (removedCount > 0) {
+      this._edges.next(validEdges);
+      console.log(`Removed ${removedCount} connections for pin ${nodeId}.${pinName}`);
+    }
+    
+    return removedCount;
+  }
+
+  /**
+   * Validates the integrity of all connections and removes any orphaned ones.
+   * This method can be called periodically or after major operations to ensure data consistency.
+   * @returns A summary of the validation results.
+   */
+  validateConnectionIntegrity(): { totalConnections: number; validConnections: number; removedConnections: number } {
+    const currentEdges = this._edges.getValue();
+    const totalConnections = currentEdges.length;
+    
+    const validEdges = currentEdges.filter(edge => this.isConnectionValid(edge));
+    const validConnections = validEdges.length;
+    const removedConnections = totalConnections - validConnections;
+    
+    if (removedConnections > 0) {
+      this._edges.next(validEdges);
+      console.log(`Connection integrity validation: removed ${removedConnections} orphaned connections out of ${totalConnections} total`);
+    }
+    
+    return {
+      totalConnections,
+      validConnections,
+      removedConnections
     };
   }
 }

@@ -333,6 +333,13 @@ export class PinEditMode implements GraphMode {
     const updatedNode = { ...node };
     if (!updatedNode.pins) return;
     
+    // First, remove any connections that reference this pin
+    const removedConnections = this.graphState.removeConnectionsForPin(node.id, pinName);
+    if (removedConnections > 0) {
+      console.log(`Removed ${removedConnections} orphaned connections for pin ${node.id}.${pinName}`);
+    }
+    
+    // Then remove the pin from the node
     updatedNode.pins = updatedNode.pins.filter(pin => pin.name !== pinName);
     
     // Update the node in the service

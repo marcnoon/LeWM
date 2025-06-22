@@ -7,6 +7,7 @@ import { ModeManagerService } from '../../services/mode-manager.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { NormalMode } from '../../modes/normal.mode';
 import { PinEditMode } from '../../modes/pin-edit.mode';
+import { ConnectionMode } from '../../modes/connection.mode';
 
 interface AvailableNode {
   type: string;
@@ -70,6 +71,14 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   showPinDialog = false;
   selectedSideForPin = '';
   pendingPinNode: GraphNode | null = null;
+  
+  // Connection dialog state
+  showConnectionDialog = false;
+  selectedConnectionForEdit: GraphEdge | null = null;
+  
+  // Connection bulk edit dialog state
+  showConnectionBulkDialog = false;
+  selectedConnectionsForBulkEdit: GraphEdge[] = [];
 
   Math = Math;
 
@@ -166,6 +175,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   deleteSelectedNodes(): void {
     this.graphState.deleteNodes(Array.from(this.selectedNodes));
     this.selectedNodes.clear();
+    
+    // Validate connection integrity after node deletion
+    this.validateConnectionIntegrity();
   }
 
   onSvgMouseDown(event: MouseEvent): void {
@@ -331,12 +343,15 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     // Create and register modes
     const normalMode = new NormalMode(this.graphState);
     const pinEditMode = new PinEditMode(this.graphState);
+    const connectionMode = new ConnectionMode(this.graphState);
     
-    // Set component reference for pin edit mode
+    // Set component references for modes that need dialogs
     pinEditMode.setComponentRef(this);
+    connectionMode.setComponentRef(this);
     
     this.modeManager.registerMode(normalMode);
     this.modeManager.registerMode(pinEditMode);
+    this.modeManager.registerMode(connectionMode);
     
     this.availableModes = this.modeManager.getAvailableModes();
     
@@ -368,6 +383,16 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     // Remove pin-edit overlays when exiting pin-edit mode
     if (modeName !== 'pin-edit') {
       this.clearOverlay();
+    }
+    
+    // Validate connection integrity when switching modes to clean up any orphaned connections
+    this.validateConnectionIntegrity();
+  }
+  
+  private validateConnectionIntegrity(): void {
+    const result = this.graphState.validateConnectionIntegrity();
+    if (result.removedConnections > 0) {
+      console.log(`Mode switch cleanup: Removed ${result.removedConnections} orphaned connections`);
     }
   }
   
@@ -446,6 +471,78 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
         return { x: 0, y: 0 };
     }
   }
+  
+  // Connection dialog methods
+  showConnectionPropertiesDialog(connectionId: string): void {
+    const connection = this.currentEdges.find(e => e.id === connectionId);
+    if (connection) {
+      this.selectedConnectionForEdit = connection;
+      this.showConnectionDialog = true;
+    }
+  }
+  
+  onConnectionUpdated(updatedConnection: GraphEdge): void {
+    if (updatedConnection.id) {
+      // Update the connection in the service
+      this.graphState.updateEdge(updatedConnection.id, updatedConnection);
+    }
+    this.showConnectionDialog = false;
+    this.selectedConnectionForEdit = null;
+  }
+  
+  onConnectionDialogCancelled(): void {
+    this.showConnectionDialog = false;
+    this.selectedConnectionForEdit = null;
+  }
+  
+  // Connection bulk edit dialog methods
+  showConnectionBulkEditDialog(connectionIds: string[]): void {
+    const connections = connectionIds.map(id => 
+      this.currentEdges.find(e => e.id === id)
+    ).filter(conn => conn !== undefined) as GraphEdge[];
+    
+    if (connections.length > 0) {
+      this.selectedConnectionsForBulkEdit = connections;
+      this.showConnectionBulkDialog = true;
+    }
+  }
+  
+  onConnectionsBulkUpdated(updatedConnections: GraphEdge[]): void {
+    // Update all connections in the service
+    updatedConnections.forEach(connection => {
+      if (connection.id) {
+        this.graphState.updateEdge(connection.id, connection);
+      }
+    });
+    this.showConnectionBulkDialog = false;
+    this.selectedConnectionsForBulkEdit = [];
+  }
+  
+  onConnectionBulkDialogCancelled(): void {
+    this.showConnectionBulkDialog = false;
+    this.selectedConnectionsForBulkEdit = [];
+  }
+  
+  // Method for connection mode to update connection states
+  updateConnectionStates(): void {
+    const connectionMode = this.modeManager.getActiveMode();
+    if (connectionMode?.name === 'connection') {
+      const mode = connectionMode as ConnectionMode;
+      
+      // Update connection selection and hover states
+      const currentEdges = this.graphState.getEdges();
+      currentEdges.forEach(edge => {
+        if (edge.id) {
+          edge.isSelected = mode.isConnectionSelected(edge.id);
+          edge.isHighlighted = mode.isConnectionHovered(edge.id);
+        }
+      });
+      
+      // Force a re-render by updating the service
+      // This is a simplified approach - in a more complex app you might use a different strategy
+      this.graphState.notifyEdgeStateChange();
+    }
+  }
 
   private isNodeInSelectionBox(node: GraphNode, box: SelectionBox): boolean {
     const minX = Math.min(box.startX, box.endX);
@@ -517,5 +614,32 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const [nodeId, pinName] = edge.to.split('.');
     const position = this.graphState.getPinPosition(nodeId, pinName);
     return position ? position.y : 0;
+  }
+  
+  // Helper methods for enhanced connection rendering
+  getStrokeDashArray(edge: GraphEdge): string {
+    switch (edge.strokeStyle) {
+      case 'dashed':
+        return '5,5';
+      case 'dotted':
+        return '2,2';
+      case 'solid':
+      default:
+        return 'none';
+    }
+  }
+  
+  getMarkerEnd(edge: GraphEdge): string {
+    if (edge.direction === 'forward' || edge.direction === 'bidirectional') {
+      return 'url(#arrowhead)';
+    }
+    return '';
+  }
+  
+  getMarkerStart(edge: GraphEdge): string {
+    if (edge.direction === 'backward' || edge.direction === 'bidirectional') {
+      return 'url(#arrowhead-start)';
+    }
+    return '';
   }
 }
