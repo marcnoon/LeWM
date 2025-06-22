@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
 import { GraphEdge } from '../../models/graph-edge.model';
-import { ConnectionValue, ValueType, UnitType, AVAILABLE_UNITS } from '../../models/connection-value.model';
+import { ConnectionValue, ValueType, UnitType, AVAILABLE_UNITS, UNIT_DEFINITIONS } from '../../models/connection-value.model';
 
 export interface BulkEditData {
   connections: GraphEdge[];
@@ -51,6 +51,8 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
     strokeWidth: null as number | null,
     strokeStyle: '',
     keyPrefix: '',
+    keySuffix: '',
+    unitChanges: [] as { fromUnitType: UnitType; toUnitType: UnitType; keys: string[] }[],
     newValues: [] as ConnectionValue[]
   };
   
@@ -231,12 +233,40 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
         updated.strokeStyle = this.bulkChanges.strokeStyle as any;
       }
 
-      // Apply key prefix to existing values
-      if (this.bulkChanges.keyPrefix && updated.values) {
-        updated.values = updated.values.map(value => ({
-          ...value,
-          key: `${this.bulkChanges.keyPrefix}${value.key}`
-        }));
+      // Apply key prefix and suffix to existing values (maintaining uniqueness within each connection)
+      if ((this.bulkChanges.keyPrefix || this.bulkChanges.keySuffix) && updated.values) {
+        updated.values = updated.values.map(value => {
+          let newKey = value.key;
+          if (this.bulkChanges.keyPrefix) {
+            newKey = `${this.bulkChanges.keyPrefix}${newKey}`;
+          }
+          if (this.bulkChanges.keySuffix) {
+            newKey = `${newKey}${this.bulkChanges.keySuffix}`;
+          }
+          return {
+            ...value,
+            key: newKey
+          };
+        });
+      }
+
+      // Apply unit changes
+      if (this.bulkChanges.unitChanges.length > 0 && updated.values) {
+        updated.values = updated.values.map(value => {
+          const unitChange = this.bulkChanges.unitChanges.find(change => 
+            change.fromUnitType === value.unitType && change.keys.includes(value.key)
+          );
+          if (unitChange) {
+            return {
+              ...value,
+              unitType: unitChange.toUnitType,
+              // Note: In a real application, you'd want to convert the actual value
+              // For now, we're just changing the unit type
+              unitSymbol: this.getDefaultUnitSymbol(unitChange.toUnitType)
+            };
+          }
+          return value;
+        });
       }
 
       // Add new values
@@ -270,5 +300,29 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
 
   hasCompatibleUnits(): boolean {
     return this.bulkEditData ? this.bulkEditData.compatibleUnits.length > 0 : false;
+  }
+
+  addUnitChange(fromUnitType: UnitType, keys: string[]): void {
+    this.bulkChanges.unitChanges.push({
+      fromUnitType,
+      toUnitType: fromUnitType, // Default to same unit type
+      keys
+    });
+  }
+
+  removeUnitChange(index: number): void {
+    this.bulkChanges.unitChanges.splice(index, 1);
+  }
+
+  private getDefaultUnitSymbol(unitType: UnitType): string {
+    const unitDefs = this.availableUnits.find(u => u.type === unitType);
+    if (unitDefs && UNIT_DEFINITIONS[unitType] && UNIT_DEFINITIONS[unitType].length > 0) {
+      return UNIT_DEFINITIONS[unitType][0].symbol;
+    }
+    return '';
+  }
+
+  getUnitDefinitions(unitType: UnitType) {
+    return UNIT_DEFINITIONS[unitType] || [];
   }
 }

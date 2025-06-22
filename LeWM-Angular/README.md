@@ -92,9 +92,8 @@ Connection values support multiple data types and extensive unit systems:
     -   Label prefix/suffix application
 
 -   **Value Management:**
-    -   **Common Units:** Change units for values that share the same unit type
-    -   **Common Values:** Update values that have identical keys and types
-    -   **Key Prefixing:** Add prefixes to all keys across selected connections
+    -   **Unit Changes:** Bulk change units for values that share the same unit type across connections
+    -   **Key Management:** Add prefixes or suffixes to existing keys (maintaining key uniqueness within each connection)
     -   **Bulk Value Addition:** Add new key-value pairs to all selected connections
 
 #### Bulk Edit Workflow
@@ -103,16 +102,29 @@ Connection values support multiple data types and extensive unit systems:
 2. **Activate Bulk Edit:** Press **Enter** key to open the bulk edit dialog
 3. **Common Property Detection:** The dialog automatically detects which properties are shared
 4. **Selective Editing:** Only properties with commonality across selections can be modified
-5. **Key Management:** Apply prefixes to key names or add new key-value pairs to all connections
-6. **Apply Changes:** Confirm to update all selected connections simultaneously
+5. **Key Management:** Apply prefixes/suffixes to key names while maintaining uniqueness within each connection
+6. **Unit Management:** Change units for values that share compatible unit types
+7. **Apply Changes:** Confirm to update all selected connections simultaneously
 
 #### Smart Property Detection
 
 The bulk edit system intelligently identifies:
 - **Identical Values:** Properties that have exactly the same value across all selections
-- **Compatible Units:** Values that use the same unit type but may have different values
+- **Compatible Units:** Values that use the same unit type and can be bulk converted
 - **Shared Types:** Connections that use the same connection type or direction
-- **Prefix Opportunities:** Key names that can benefit from consistent prefixing
+- **Key Management Opportunities:** Existing keys that can benefit from consistent prefixing or suffixing
+
+#### Key Uniqueness and Management
+
+**Important Design Principle:** Keys in connection value dictionaries must remain unique within each connection. The bulk edit system respects this by:
+
+- **No Direct Key Replacement:** Keys cannot be directly changed to avoid breaking uniqueness
+- **Prefix/Suffix Only:** Only prefixes and suffixes can be applied to existing keys
+- **Per-Connection Uniqueness:** Each connection maintains its own key namespace
+- **Example Transformations:**
+  - Prefix: `"voltage"` → `"signal_voltage"`
+  - Suffix: `"voltage"` → `"voltage_primary"`
+  - Combined: `"voltage"` → `"signal_voltage_backup"`
 
 ### Development Roadmap
 

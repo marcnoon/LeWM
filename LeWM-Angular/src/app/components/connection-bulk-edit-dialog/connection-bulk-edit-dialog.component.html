@@ -86,28 +86,59 @@
         </p>
       </div>
 
-      <!-- Compatible Units Section -->
+      <!-- Unit Management Section -->
       <div *ngIf="hasCompatibleUnits()" class="section">
-        <h4>Compatible Units</h4>
+        <h4>Unit Management</h4>
         <div class="compatible-units">
           <div *ngFor="let unitGroup of bulkEditData!.compatibleUnits" class="unit-group">
-            <strong>{{ unitGroup.unitType }}</strong> units found in {{ unitGroup.count }} key(s):
-            <span class="key-list">{{ unitGroup.keys.join(', ') }}</span>
+            <div class="unit-group-header">
+              <strong>{{ unitGroup.unitType }}</strong> units found in {{ unitGroup.count }} key(s):
+              <span class="key-list">{{ unitGroup.keys.join(', ') }}</span>
+            </div>
+            <button type="button" 
+                    class="add-unit-change-btn" 
+                    (click)="addUnitChange(unitGroup.unitType, unitGroup.keys)">
+              Change Units for These Keys
+            </button>
           </div>
         </div>
-        <p class="info-text">
-          <em>Values with the same unit type can be bulk converted. 
-          Use individual connection editing for unit conversions.</em>
-        </p>
+        
+        <!-- Unit Change Configurations -->
+        <div *ngIf="bulkChanges.unitChanges.length > 0" class="unit-changes">
+          <h5>Unit Changes:</h5>
+          <div *ngFor="let unitChange of bulkChanges.unitChanges; let i = index" class="unit-change-row">
+            <span class="unit-change-info">
+              Keys: {{ unitChange.keys.join(', ') }}
+            </span>
+            <select [(ngModel)]="unitChange.toUnitType" class="unit-type-select">
+              <option *ngFor="let unit of availableUnits" [value]="unit.type">
+                {{ unit.name }}
+              </option>
+            </select>
+            <button type="button" (click)="removeUnitChange(i)" class="remove-btn">✕</button>
+          </div>
+        </div>
       </div>
 
       <!-- Key Management Section -->
       <div class="section">
         <h4>Key Management</h4>
-        <div class="form-group">
-          <label>Add Prefix to All Keys:</label>
-          <input type="text" [(ngModel)]="bulkChanges.keyPrefix" placeholder="e.g., 'wire_', 'signal_'">
-          <small>This will add a prefix to all existing value keys in selected connections</small>
+        <p class="info-text">
+          <strong>Important:</strong> Keys must remain unique within each connection. 
+          Only prefixes and suffixes can be applied to maintain key uniqueness.
+        </p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Add Prefix to All Keys:</label>
+            <input type="text" [(ngModel)]="bulkChanges.keyPrefix" placeholder="e.g., 'signal_', 'power_'">
+            <small>Adds a prefix to all existing keys: "voltage" → "signal_voltage"</small>
+          </div>
+          
+          <div class="form-group">
+            <label>Add Suffix to All Keys:</label>
+            <input type="text" [(ngModel)]="bulkChanges.keySuffix" placeholder="e.g., '_primary', '_backup'">
+            <small>Adds a suffix to all existing keys: "voltage" → "voltage_primary"</small>
+          </div>
         </div>
       </div>
 
