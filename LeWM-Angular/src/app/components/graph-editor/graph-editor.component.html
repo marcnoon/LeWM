@@ -29,6 +29,14 @@
         <p>Selected: {{ selectedNodes.size }}</p>
         <small *ngIf="currentMode?.name === 'normal'">Click to select • Ctrl+Click for multi-select • Delete to remove • P for Pin Mode</small>
         <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Double-click edges for Advanced Layout • Double-click pins to rename • Esc to exit</small>
+        <small *ngIf="currentMode?.name === 'connection'">Click pin-to-pin to create connections • Click connections to select • Ctrl+Click for multi-select • Enter to edit • Delete to remove • Esc to exit</small>
+      </div>
+      <!-- Pin Edit Mode Actions -->
+      <div *ngIf="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.size || 0) > 0" class="controls">
+        <h4>Pin Actions</h4>
+        <button (click)="deleteSelectedPins()" class="clear-btn">
+          Delete Selected Pins ({{ modeManager.getActiveMode()?.selectedPins?.size || 0 }})
+        </button>
       </div>
     </div>
   </div>
@@ -48,24 +56,68 @@
           <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" stroke-width="1"/>
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect id="grid-rect" width="100%" height="100%" fill="url(#grid)" />
       
       <!-- Connection Lines -->
       <g *ngFor="let edge of edges$ | async" class="connection-line">
+        <!-- Selection/hover background line -->
+        <line *ngIf="edge.isSelected || edge.isHighlighted"
+              [attr.x1]="getConnectionStartX(edge)" 
+              [attr.y1]="getConnectionStartY(edge)"
+              [attr.x2]="getConnectionEndX(edge)" 
+              [attr.y2]="getConnectionEndY(edge)"
+              [attr.stroke]="edge.isSelected ? '#4CAF50' : '#FF9800'"
+              stroke-width="8"
+              opacity="0.3"
+              pointer-events="none" />
+        
+        <!-- Main connection line -->
         <line [attr.x1]="getConnectionStartX(edge)" 
               [attr.y1]="getConnectionStartY(edge)"
               [attr.x2]="getConnectionEndX(edge)" 
               [attr.y2]="getConnectionEndY(edge)"
-              stroke="#2196F3" 
-              stroke-width="2"
-              marker-end="url(#arrowhead)" />
+              [attr.stroke]="edge.color || '#2196F3'"
+              [attr.stroke-width]="edge.strokeWidth || 2"
+              [attr.stroke-dasharray]="getStrokeDashArray(edge)"
+              [attr.marker-end]="getMarkerEnd(edge)"
+              [attr.marker-start]="getMarkerStart(edge)"
+              [attr.opacity]="edge.isSelected ? 1 : 0.8" />
+        
+        <!-- Connection label -->
+        <text *ngIf="edge.label"
+              [attr.x]="(getConnectionStartX(edge) + getConnectionEndX(edge)) / 2"
+              [attr.y]="(getConnectionStartY(edge) + getConnectionEndY(edge)) / 2 - 5"
+              text-anchor="middle"
+              font-size="10"
+              [attr.fill]="edge.color || '#333'"
+              font-weight="bold"
+              pointer-events="none">
+          {{ edge.label }}
+        </text>
+        
+        <!-- Value labels -->
+        <g *ngIf="edge.values && edge.values.length > 0" class="connection-values">
+          <text *ngFor="let value of edge.values; let i = index"
+                [attr.x]="(getConnectionStartX(edge) + getConnectionEndX(edge)) / 2"
+                [attr.y]="(getConnectionStartY(edge) + getConnectionEndY(edge)) / 2 + 10 + (i * 12)"
+                text-anchor="middle"
+                font-size="8"
+                fill="#666"
+                pointer-events="none">
+            {{ value.key }}: {{ value.value }}{{ value.unitSymbol || '' }}
+          </text>
+        </g>
       </g>
 
-      <!-- Arrow marker definition -->
+      <!-- Arrow marker definitions -->
       <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="7" 
                 refX="9" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#2196F3" />
+        </marker>
+        <marker id="arrowhead-start" markerWidth="10" markerHeight="7" 
+                refX="1" refY="3.5" orient="auto">
+          <polygon points="10 0, 0 3.5, 10 7" fill="#2196F3" />
         </marker>
       </defs>
 
@@ -100,6 +152,7 @@
                   stroke="#333"
                   stroke-width="1"
                   class="pin"
+                  [class.selected]="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.has(node.id + '.' + pin.name) || false)"
                   [attr.data-node-id]="node.id"
                   [attr.data-pin-name]="pin.name"
                   (mousedown)="onPinMouseDown($event, node.id, pin.name)" />
@@ -145,4 +198,22 @@
     (pinsCreated)="onBulkPinsCreated($event)"
     (cancelled)="onBulkPinDialogCancelled()">
   </app-bulk-pin-dialog>
+  
+  <!-- Connection Properties Dialog -->
+  <app-connection-properties-dialog
+    #connectionDialog
+    [isVisible]="showConnectionDialog"
+    [connection]="selectedConnectionForEdit"
+    (connectionUpdated)="onConnectionUpdated($event)"
+    (cancelled)="onConnectionDialogCancelled()">
+  </app-connection-properties-dialog>
+  
+  <!-- Connection Bulk Edit Dialog -->
+  <app-connection-bulk-edit-dialog
+    #connectionBulkDialog
+    [isVisible]="showConnectionBulkDialog"
+    [connections]="selectedConnectionsForBulkEdit"
+    (connectionsUpdated)="onConnectionsBulkUpdated($event)"
+    (cancelled)="onConnectionBulkDialogCancelled()">
+  </app-connection-bulk-edit-dialog>
 </div>

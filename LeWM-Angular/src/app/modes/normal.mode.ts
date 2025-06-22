@@ -6,15 +6,18 @@ export class NormalMode implements GraphMode {
   name = 'normal';
   displayName = 'Normal';
   isActive = false;
+  selectedPins: Set<string> = new Set(); // Normal mode doesn't select pins
   
   constructor(private graphState: GraphStateService) {}
   
   activate(): void {
     console.log('Normal mode activated');
+    this.selectedPins.clear();
   }
   
   deactivate(): void {
     console.log('Normal mode deactivated');
+    this.selectedPins.clear();
   }
   
   handleNodeClick(node: GraphNode, event: MouseEvent): boolean {
@@ -57,5 +60,9 @@ export class NormalMode implements GraphMode {
   
   getCursor(): string {
     return 'default';
+  }
+  
+  deleteSelectedPins(): void {
+    // No pin deletion in normal mode
   }
 }

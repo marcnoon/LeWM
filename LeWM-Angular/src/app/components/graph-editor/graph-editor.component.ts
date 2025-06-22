@@ -77,12 +77,20 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   showBulkPinDialog = false;
   selectedSideForBulkPin = '';
   pendingBulkPinNode: GraphNode | null = null;
+  
+  // Connection dialog state
+  showConnectionDialog = false;
+  selectedConnectionForEdit: GraphEdge | null = null;
+  
+  // Connection bulk edit dialog state
+  showConnectionBulkDialog = false;
+  selectedConnectionsForBulkEdit: GraphEdge[] = [];
 
   Math = Math;
 
   constructor(
     private graphState: GraphStateService,
-    private modeManager: ModeManagerService,
+    public modeManager: ModeManagerService,
     private pinLayoutService: PinLayoutService
   ) {}
 
@@ -112,6 +120,13 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
+    // Always clear selection on Escape key
+    if (event.key === 'Escape') {
+      this.selectedNodes.clear();
+      this.switchMode('normal');
+      event.preventDefault();
+      return;
+    }
     // First, let the mode handle the event
     if (this.modeManager.handleKeyDown(event)) {
       // Handle mode-specific shortcuts
@@ -125,14 +140,20 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
         event.preventDefault();
         return;
       }
+      // If the mode handled the event (e.g., Delete key), don't proceed with default behavior
+      return;
     }
-    
+
     // Handle global shortcuts
     if (event.key === 'Control' || event.key === 'Meta') {
       this.isCtrlPressed = true;
     }
-    if (event.key === 'Delete' && this.selectedNodes.size > 0) {
-      this.deleteSelectedNodes();
+    if (event.key === 'Delete') {
+      // Only handle node deletion in Normal mode
+      if (this.currentMode?.name === 'normal' && this.selectedNodes.size > 0) {
+        this.deleteSelectedNodes();
+      }
+      // Other modes (pin-edit, connection) handle their own delete logic
     }
   }
     
@@ -174,19 +195,27 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   deleteSelectedNodes(): void {
     this.graphState.deleteNodes(Array.from(this.selectedNodes));
     this.selectedNodes.clear();
+    
+    // Validate connection integrity after node deletion
+    this.validateConnectionIntegrity();
+  }
+
+  /** Delete currently selected pins in Pin Edit mode */
+  deleteSelectedPins(): void {
+    this.modeManager.deleteSelectedPins();
   }
 
   onSvgMouseDown(event: MouseEvent): void {
-    // Delegate all svg mousedown events to modeManager.handleCanvasClick
-    if (this.modeManager.handleCanvasClick(event)) {
-      return; // Mode handled the event
-    }
-    
-    // Default logic
-    if (event.target === this.svgCanvas.nativeElement || 
-        (event.target as Element).id === 'grid-rect') {
+    // Baseline behavior in normal mode: always clear or start selection box
+    if (this.currentMode?.name === 'normal') {
       this.handleCanvasMouseDown(event);
+      return;
     }
+    // Delegate to mode or default canvas handling
+    if (this.modeManager.handleCanvasClick(event)) {
+      return;
+    }
+    this.handleCanvasMouseDown(event);
   }
 
   onNodeMouseDown(event: MouseEvent, nodeId: string): void {
@@ -311,26 +340,31 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   }
 
   private handleCanvasMouseDown(event: MouseEvent): void {
-    // Let the mode handle canvas clicks first
-    if (this.modeManager.handleCanvasClick(event)) {
-      return; // Mode handled the event
+    // Normal mode baseline: clear selection or start selection box
+    if (this.currentMode?.name === 'normal') {
+      const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
+      const mouseX = event.clientX - svgRect.left;
+      const mouseY = event.clientY - svgRect.top;
+      if (this.isCtrlPressed) {
+        // Start selection box
+        this.selectionBox = { startX: mouseX, startY: mouseY, endX: mouseX, endY: mouseY };
+      } else {
+        this.selectedNodes.clear();
+      }
+      return;
     }
-    
+    // Non-normal modes: clear or delegate to mode if needed
+    if (!this.isCtrlPressed) {
+      this.selectedNodes.clear();
+    }
+    if (this.modeManager.handleCanvasClick(event)) {
+      return;
+    }
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
     const mouseX = event.clientX - svgRect.left;
     const mouseY = event.clientY - svgRect.top;
-
     if (this.isCtrlPressed) {
-      // Start selection box
-      this.selectionBox = {
-        startX: mouseX,
-        startY: mouseY,
-        endX: mouseX,
-        endY: mouseY
-      };
-    } else {
-      // Click on empty space without Ctrl - clear selection
-      this.selectedNodes.clear();
+      this.selectionBox = { startX: mouseX, startY: mouseY, endX: mouseX, endY: mouseY };
     }
   }
   
@@ -341,7 +375,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const pinEditMode = new PinEditMode(this.graphState);
     const connectionMode = new ConnectionMode(this.graphState);
     
-    // Set component reference for pin edit mode
+    // Set component references for modes that need dialogs
     pinEditMode.setComponentRef(this);
     connectionMode.setComponentRef(this);
     
@@ -376,9 +410,23 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
 
   switchMode(modeName: string): void {
     this.modeManager.activateMode(modeName);
+    // Clear selection when entering normal mode
+    if (modeName === 'normal') {
+      this.selectedNodes.clear();
+    }
     // Remove pin-edit overlays when exiting pin-edit mode
     if (modeName !== 'pin-edit') {
       this.clearOverlay();
+    }
+    
+    // Validate connection integrity when switching modes to clean up any orphaned connections
+    this.validateConnectionIntegrity();
+  }
+  
+  private validateConnectionIntegrity(): void {
+    const result = this.graphState.validateConnectionIntegrity();
+    if (result.removedConnections > 0) {
+      console.log(`Mode switch cleanup: Removed ${result.removedConnections} orphaned connections`);
     }
   }
   
@@ -561,6 +609,78 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
         return { x: 0, y: 0 };
     }
   }
+  
+  // Connection dialog methods
+  showConnectionPropertiesDialog(connectionId: string): void {
+    const connection = this.currentEdges.find(e => e.id === connectionId);
+    if (connection) {
+      this.selectedConnectionForEdit = connection;
+      this.showConnectionDialog = true;
+    }
+  }
+  
+  onConnectionUpdated(updatedConnection: GraphEdge): void {
+    if (updatedConnection.id) {
+      // Update the connection in the service
+      this.graphState.updateEdge(updatedConnection.id, updatedConnection);
+    }
+    this.showConnectionDialog = false;
+    this.selectedConnectionForEdit = null;
+  }
+  
+  onConnectionDialogCancelled(): void {
+    this.showConnectionDialog = false;
+    this.selectedConnectionForEdit = null;
+  }
+  
+  // Connection bulk edit dialog methods
+  showConnectionBulkEditDialog(connectionIds: string[]): void {
+    const connections = connectionIds.map(id => 
+      this.currentEdges.find(e => e.id === id)
+    ).filter(conn => conn !== undefined) as GraphEdge[];
+    
+    if (connections.length > 0) {
+      this.selectedConnectionsForBulkEdit = connections;
+      this.showConnectionBulkDialog = true;
+    }
+  }
+  
+  onConnectionsBulkUpdated(updatedConnections: GraphEdge[]): void {
+    // Update all connections in the service
+    updatedConnections.forEach(connection => {
+      if (connection.id) {
+        this.graphState.updateEdge(connection.id, connection);
+      }
+    });
+    this.showConnectionBulkDialog = false;
+    this.selectedConnectionsForBulkEdit = [];
+  }
+  
+  onConnectionBulkDialogCancelled(): void {
+    this.showConnectionBulkDialog = false;
+    this.selectedConnectionsForBulkEdit = [];
+  }
+  
+  // Method for connection mode to update connection states
+  updateConnectionStates(): void {
+    const connectionMode = this.modeManager.getActiveMode();
+    if (connectionMode?.name === 'connection') {
+      const mode = connectionMode as ConnectionMode;
+      
+      // Update connection selection and hover states
+      const currentEdges = this.graphState.getEdges();
+      currentEdges.forEach(edge => {
+        if (edge.id) {
+          edge.isSelected = mode.isConnectionSelected(edge.id);
+          edge.isHighlighted = mode.isConnectionHovered(edge.id);
+        }
+      });
+      
+      // Force a re-render by updating the service
+      // This is a simplified approach - in a more complex app you might use a different strategy
+      this.graphState.notifyEdgeStateChange();
+    }
+  }
 
   private isNodeInSelectionBox(node: GraphNode, box: SelectionBox): boolean {
     const minX = Math.min(box.startX, box.endX);
@@ -590,24 +710,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
       return; // Mode handled the event
     }
     
-    // Default pin behavior (connection creation)
-    if (this.connectingFrom === null) {
-      // Start a new connection
-      this.connectingFrom = { nodeId, pinName };
-      console.log(`Starting connection from ${nodeId}.${pinName}`);
-    } else {
-      // Complete the connection
-      const newEdge: GraphEdge = {
-        from: `${this.connectingFrom.nodeId}.${this.connectingFrom.pinName}`,
-        to: `${nodeId}.${pinName}`
-      };
-      
-      this.graphState.addEdge(newEdge);
-      console.log(`Created connection: ${newEdge.from} -> ${newEdge.to}`);
-      
-      // Reset connection state
-      this.connectingFrom = null;
-    }
+    // No default pin behavior - connections should only be created in Connection Mode
+    // This follows SOLID principles: each mode has a single, clear responsibility
+    console.log(`Pin ${nodeId}.${pinName} clicked, but no mode handled it. Switch to Connection Mode to create connections.`);
   }
 
   getConnectionStartX(edge: GraphEdge): number {
@@ -633,23 +738,31 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const position = this.graphState.getPinPosition(nodeId, pinName);
     return position ? position.y : 0;
   }
-
-  // Connection mode helper methods
-  updateConnectionStates(): void {
-    // This method is called by ConnectionMode to update connection selection states
-    // The UI will automatically reflect changes through the async pipe
-    console.log('Connection states updated');
+  
+  // Helper methods for enhanced connection rendering
+  getStrokeDashArray(edge: GraphEdge): string {
+    switch (edge.strokeStyle) {
+      case 'dashed':
+        return '5,5';
+      case 'dotted':
+        return '2,2';
+      case 'solid':
+      default:
+        return 'none';
+    }
   }
-
-  showConnectionPropertiesDialog(connectionId: string): void {
-    // Placeholder for connection properties dialog
-    console.log(`Opening properties dialog for connection: ${connectionId}`);
-    // TODO: Implement connection properties dialog
+  
+  getMarkerEnd(edge: GraphEdge): string {
+    if (edge.direction === 'forward' || edge.direction === 'bidirectional') {
+      return 'url(#arrowhead)';
+    }
+    return '';
   }
-
-  showConnectionBulkEditDialog(connectionIds: string[]): void {
-    // Placeholder for bulk connection edit dialog
-    console.log(`Opening bulk edit dialog for ${connectionIds.length} connections`);
-    // TODO: Implement bulk connection edit dialog
+  
+  getMarkerStart(edge: GraphEdge): string {
+    if (edge.direction === 'backward' || edge.direction === 'bidirectional') {
+      return 'url(#arrowhead-start)';
+    }
+    return '';
   }
 }

@@ -1,0 +1,180 @@
+<div *ngIf="isVisible" class="dialog-overlay">
+  <div class="dialog">
+    <h3>Bulk Edit Connections ({{ connections.length }} selected)</h3>
+    
+    <div class="dialog-content">
+      <!-- Common Properties Section -->
+      <div *ngIf="hasCommonProperties()" class="section">
+        <h4>Common Properties</h4>
+        <div class="form-grid">
+          <!-- Label Modifications -->
+          <div class="form-group">
+            <label>Label Prefix:</label>
+            <input type="text" [(ngModel)]="bulkChanges.labelPrefix" placeholder="Add prefix to all labels">
+          </div>
+          
+          <div class="form-group">
+            <label>Label Suffix:</label>
+            <input type="text" [(ngModel)]="bulkChanges.labelSuffix" placeholder="Add suffix to all labels">
+          </div>
+          
+          <!-- Direction -->
+          <div class="form-group">
+            <label>Direction:</label>
+            <select [(ngModel)]="bulkChanges.direction">
+              <option *ngFor="let option of directionOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <small>Currently: {{ bulkEditData?.commonProperties?.direction || 'Mixed' }}</small>
+          </div>
+          
+          <!-- Type -->
+          <div class="form-group">
+            <label>Type:</label>
+            <select [(ngModel)]="bulkChanges.type">
+              <option *ngFor="let option of typeOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <small>Currently: {{ bulkEditData?.commonProperties?.type || 'Mixed' }}</small>
+          </div>
+          
+          <!-- Color -->
+          <div class="form-group">
+            <label>Color:</label>
+            <input type="color" [(ngModel)]="bulkChanges.color" placeholder="Connection color">
+            <small>Currently: {{ bulkEditData?.commonProperties?.color || 'Mixed' }}</small>
+          </div>
+          
+          <!-- Stroke Width -->
+          <div class="form-group">
+            <label>Stroke Width:</label>
+            <input type="number" [(ngModel)]="bulkChanges.strokeWidth" min="1" max="10" step="1">
+            <small>Currently: {{ bulkEditData?.commonProperties?.strokeWidth || 'Mixed' }}</small>
+          </div>
+          
+          <!-- Stroke Style -->
+          <div class="form-group">
+            <label>Stroke Style:</label>
+            <select [(ngModel)]="bulkChanges.strokeStyle">
+              <option *ngFor="let option of strokeStyleOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <small>Currently: {{ bulkEditData?.commonProperties?.strokeStyle || 'Mixed' }}</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Common Values Section -->
+      <div *ngIf="hasCommonValues()" class="section">
+        <h4>Common Values</h4>
+        <div class="common-values">
+          <div *ngFor="let commonValue of bulkEditData!.commonValues" class="common-value">
+            <span class="value-info">
+              <strong>{{ commonValue.key }}</strong>: {{ commonValue.value }}
+              <span *ngIf="commonValue.unitSymbol">{{ commonValue.unitSymbol }}</span>
+              ({{ commonValue.count }}/{{ connections.length }} connections)
+            </span>
+            <small>Type: {{ commonValue.valueType }}, Unit: {{ commonValue.unitType || 'None' }}</small>
+          </div>
+        </div>
+        <p class="info-text">
+          <em>These values appear in multiple selected connections. To modify them, 
+          edit individual connections or use the key management section below.</em>
+        </p>
+      </div>
+
+      <!-- Unit Management Section -->
+      <div *ngIf="hasCompatibleUnits()" class="section">
+        <h4>Unit Management</h4>
+        <div class="compatible-units">
+          <div *ngFor="let unitGroup of bulkEditData!.compatibleUnits" class="unit-group">
+            <div class="unit-group-header">
+              <strong>{{ unitGroup.unitType }}</strong> units found in {{ unitGroup.count }} key(s):
+              <span class="key-list">{{ unitGroup.keys.join(', ') }}</span>
+            </div>
+            <button type="button" 
+                    class="add-unit-change-btn" 
+                    (click)="addUnitChange(unitGroup.unitType, unitGroup.keys)">
+              Change Units for These Keys
+            </button>
+          </div>
+        </div>
+        
+        <!-- Unit Change Configurations -->
+        <div *ngIf="bulkChanges.unitChanges.length > 0" class="unit-changes">
+          <h5>Unit Changes:</h5>
+          <div *ngFor="let unitChange of bulkChanges.unitChanges; let i = index" class="unit-change-row">
+            <span class="unit-change-info">
+              Keys: {{ unitChange.keys.join(', ') }}
+            </span>
+            <select [(ngModel)]="unitChange.toUnitType" class="unit-type-select">
+              <option *ngFor="let unit of availableUnits" [value]="unit.type">
+                {{ unit.name }}
+              </option>
+            </select>
+            <button type="button" (click)="removeUnitChange(i)" class="remove-btn">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Management Section -->
+      <div class="section">
+        <h4>Key Management</h4>
+        <p class="info-text">
+          <strong>Important:</strong> Keys must remain unique within each connection. 
+          Only prefixes and suffixes can be applied to maintain key uniqueness.
+        </p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Add Prefix to All Keys:</label>
+            <input type="text" [(ngModel)]="bulkChanges.keyPrefix" placeholder="e.g., 'signal_', 'power_'">
+            <small>Adds a prefix to all existing keys: "voltage" → "signal_voltage"</small>
+          </div>
+          
+          <div class="form-group">
+            <label>Add Suffix to All Keys:</label>
+            <input type="text" [(ngModel)]="bulkChanges.keySuffix" placeholder="e.g., '_primary', '_backup'">
+            <small>Adds a suffix to all existing keys: "voltage" → "voltage_primary"</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add New Values Section -->
+      <div class="section">
+        <h4>Add New Values</h4>
+        <p class="info-text">Add new key-value pairs to all selected connections:</p>
+        <p class="info-text">
+          <strong>Automatic Key Numbering:</strong> If the same key name exists in multiple places (existing values + new values), 
+          all instances are automatically numbered starting from 1 (e.g., "bob" becomes "bob1", "bob2", "bob3" etc.) to ensure uniqueness.
+        </p>
+        
+        <div *ngFor="let newValue of bulkChanges.newValues; let i = index" class="new-value-row">
+          <input type="text" [(ngModel)]="newValue.key" placeholder="Key name" class="key-input">
+          <input type="text" [(ngModel)]="newValue.value" placeholder="Value" class="value-input">
+          <select [(ngModel)]="newValue.valueType" class="type-select">
+            <option *ngFor="let type of valueTypeOptions" [value]="type.value">
+              {{ type.label }}
+            </option>
+          </select>
+          <select [(ngModel)]="newValue.unitType" class="unit-select">
+            <option value="">No Unit</option>
+            <option *ngFor="let unit of availableUnits" [value]="unit.type">
+              {{ unit.name }}
+            </option>
+          </select>
+          <button type="button" (click)="removeNewValue(i)" class="remove-btn">✕</button>
+        </div>
+        
+        <button type="button" (click)="addNewValue()" class="add-value-btn">+ Add Value</button>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" (click)="onCancel()" class="cancel-btn">Cancel</button>
+      <button type="button" (click)="onApply()" class="apply-btn">Apply Changes</button>
+    </div>
+  </div>
+</div>

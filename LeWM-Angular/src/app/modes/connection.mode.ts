@@ -95,7 +95,10 @@ export class ConnectionMode implements GraphMode {
         
         const newEdge: GraphEdge = {
           from: `${this.state.connectionStartPin.nodeId}.${this.state.connectionStartPin.pinName}`,
-          to: `${node.id}.${pin.name}`
+          to: `${node.id}.${pin.name}`,
+          direction: 'forward',
+          type: 'signal',
+          createdAt: new Date()
         };
         
         this.graphState.addEdge(newEdge);

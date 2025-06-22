@@ -1,8 +1,11 @@
-import { GraphNode } from '../models/graph-node.model';
+import { GraphNode } from "../models/graph-node.model";
+import { GraphEditorComponent } from "../components/graph-editor/graph-editor.component";
+import { Pin } from "../models/graph-node.model"; // Assuming Pin is defined within GraphNode
 
 export interface GraphMode {
   name: string;
   displayName: string;
+  selectedPins: Set<string>; // Track selected pin identifiers within mode
   isActive: boolean;
   
   // Lifecycle methods
@@ -15,6 +18,8 @@ export interface GraphMode {
   handleCanvasClick(event: MouseEvent): boolean;
   handleMouseMove(event: MouseEvent): boolean;
   handleKeyDown(event: KeyboardEvent): boolean;
+  /** Delete any selected pins within the current mode */
+  deleteSelectedPins(): void;
   
   // Visual rendering
   renderOverlay(canvas: SVGElement): void;

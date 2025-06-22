@@ -8,8 +8,8 @@ LeWM (Level With Me) is a foundational graph visualization and manipulation syst
 
 **Current Status**: 
 - **React Prototype**: Sophisticated graph editor with advanced routing algorithms, group selection, and real-time connection management
-- **Angular Implementation**: Core connection functionality now implemented with pins, edges, and interactive connection creation
-- **Next Phase**: Implementing mode-based architecture with pin editing capabilities and composition-based extensibility
+- **Angular Implementation**: Full SOLID-principle implementation with mode-based architecture and strict separation of responsibilities
+- **Mode System**: Complete with Normal, Pin Edit, and Connection modes - each with single, focused responsibilities
 
 ## Interactive Circuit Editor (React Prototype)
 
@@ -23,16 +23,79 @@ A sophisticated graph-based visual editor originally designed for circuit diagra
 
 ## Angular Implementation (Current)
 
-The Angular application now provides core graph editing capabilities with full connection support:
+The Angular application provides a complete graph editing system with **SOLID principles** implementation and mode-based architecture:
 
-### Current Angular Features
+### SOLID Principles Implementation
+- **Single Responsibility**: Each mode has one clear purpose (Normal = node editing, Pin Edit = pin management, Connection = connection management)
+- **Open/Closed**: New modes can be added without modifying existing code
+- **Liskov Substitution**: All modes implement the same GraphMode interface
+- **Interface Segregation**: Clean separation between mode responsibilities
+- **Dependency Inversion**: Components depend on abstractions (GraphMode interface), not concrete implementations
+
+### Mode-Based Architecture
+
+#### **Normal Mode** (Default)
+- **Purpose**: Standard node manipulation and general editing
+- **Responsibilities**: 
+  - Node selection and movement (single and multi-select)
+  - Node creation and deletion
+  - General canvas interactions
+- **Pin Behavior**: Pins are **read-only** - cannot create connections
+- **Usage**: 
+  - Click nodes to select, Ctrl+click for multi-select
+  - Drag to move selected nodes
+  - Delete key removes selected nodes
+  - Press 'P' to switch to Pin Edit Mode
+
+#### **Pin Edit Mode**
+- **Purpose**: Advanced pin management and customization  
+- **Responsibilities**:
+  - Pin creation on node edges
+  - Pin selection and deletion (including multi-select)
+  - Pin property editing (future: pin types, colors, metadata)
+- **Node Behavior**: Nodes can be selected to show side indicators, but **cannot be deleted**
+- **Connection Behavior**: **Cannot create connections** - maintains separation of concerns
+- **Usage**:
+  - Enter: Press 'P' key or click "Pin Edit" button
+  - Select Node: Click any node to see blue dashed side indicators
+  - Add Pins: Click on node edges (highlighted in orange on hover) to open naming dialog
+  - Select Pins: Click pins to select (green highlight), Ctrl+click for multi-select
+  - Delete Pins: Use Delete key or "Delete Selected Pins" button
+  - Exit: Press Escape or click "Normal" button
+
+#### **Connection Mode**
+- **Purpose**: Exclusive connection creation and management
+- **Responsibilities**:
+  - Connection creation between pins
+  - Connection selection and editing
+  - Connection deletion and property management
+- **Node/Pin Behavior**: **Cannot delete nodes or pins** - maintains separation of concerns
+- **Usage**:
+  - Enter: Click "Connection" button in mode selector
+  - Create Connections: Click pin-to-pin to draw connections
+  - Select Connections: Click connection lines, Ctrl+click for multi-select  
+  - Edit Properties: Press Enter with selected connection(s)
+  - Delete Connections: Delete key removes selected connections only
+  - Exit: Press Escape to return to Normal Mode
+
+### Key Features
+
+#### Graph Objects & Connections
 - **Node Management**: Add, move, select, and delete graph nodes with TypeScript type safety
 - **Pin System**: Visual connection points on nodes with customizable positions and names
-- **Connection Creation**: Click-to-connect interface - click one pin, then another to create connections
-- **Connection Rendering**: Visual lines with arrows showing relationships between pins
+- **Connection Creation**: **Only in Connection Mode** - click one pin, then another to create connections
 - **Connection Management**: Full CRUD operations for edges with automatic cleanup
-- **RxJS Integration**: Reactive state management using observables and services
-- **Multi-Selection**: Ctrl+click for multiple node selection and group operations
+- **Multi-Selection**: Ctrl+click for multiple node/pin/connection selection and group operations
+- **Automatic Cleanup**: Orphaned connections automatically removed when pins/nodes are deleted
+
+#### Mode Separation (SOLID Principles)
+- **Strict Responsibilities**: Each mode handles only its domain objects
+  - Normal Mode: Nodes only
+  - Pin Edit Mode: Pins only  
+  - Connection Mode: Connections only
+- **No Cross-Domain Actions**: Cannot accidentally delete nodes in Connection Mode or create connections in Pin Edit Mode
+- **Clear User Feedback**: UI clearly indicates which actions are available in each mode
+- **Type Safety**: Full TypeScript interfaces ensure compile-time verification of mode contracts
 
 ### Angular Architecture
 ```
@@ -40,32 +103,53 @@ src/app/
 ├── components/
 │   └── graph-editor/           # Main graph editing component
 ├── services/
-│   └── graph-state.service.ts  # Centralized state management
+│   ├── graph-state.service.ts  # Centralized state management
+│   └── mode-manager.service.ts # Mode orchestration and delegation
+├── interfaces/
+│   └── graph-mode.interface.ts # Mode contract definition
+├── modes/
+│   ├── normal.mode.ts          # Node editing mode
+│   ├── pin-edit.mode.ts        # Pin management mode  
+│   └── connection.mode.ts      # Connection management mode
 ├── models/
 │   ├── graph-node.model.ts     # Node interface with pins
 │   └── graph-edge.model.ts     # Edge interface
 └── ...
 ```
 
-### Usage (Angular)
+### Usage Examples
 
-#### Normal Mode (Default)
-1. **Add Nodes**: Click component buttons to add different node types
-2. **Create Connections**: Click on a pin (red circle), then click on another pin to connect
-3. **Move Nodes**: Drag nodes individually or select multiple with Ctrl+click
-4. **Delete**: Select nodes and press Delete key (connections auto-delete)
-5. **Clear Connections**: Use "Clear Edges" button to remove all connections
+#### Creating a Complete Circuit
+1. **Add Components** (Normal Mode):
+   ```
+   - Click "+ 9V Battery" to add power source
+   - Click "+ IC Chip" to add amplifier
+   - Move components by dragging
+   ```
 
-#### Pin Edit Mode
-1. **Enter Pin Mode**: Press 'P' key or click "Pin Edit" button
-2. **Select Node**: Click any node to see side indicators (blue dashed borders)
-3. **Add Pins**: 
-   - Hover over sides to see orange highlighting
-   - Click anywhere around a side to open pin naming dialog
-   - Enter pin name and press Enter (or click OK)
-   - Pin appears automatically with optimal placement
-4. **Remove Pins**: Left-click or right-click existing pins to delete them
-5. **Exit**: Press Escape or click "Normal" button to return to standard mode
+2. **Add Custom Pins** (Pin Edit Mode):
+   ```
+   - Press 'P' to enter Pin Edit Mode
+   - Click on IC chip to select it
+   - Click on top edge → name pin "VCC"
+   - Click on bottom edge → name pin "GND" 
+   - Click on left edge → name pin "INPUT"
+   ```
+
+3. **Create Connections** (Connection Mode):
+   ```
+   - Click "Connection" mode button
+   - Click Battery "+9V" pin → click IC "VCC" pin
+   - Click Battery "GND" pin → click IC "GND" pin
+   - Connections appear as blue arrows
+   ```
+
+4. **Edit and Refine** (All Modes):
+   ```
+   - Connection Mode: Select connections to edit properties
+   - Pin Edit Mode: Delete unwanted pins with multi-select
+   - Normal Mode: Rearrange components, connections follow automatically
+   ```
 
 ## Core Features
 

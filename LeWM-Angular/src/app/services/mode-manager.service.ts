@@ -102,6 +102,18 @@ export class ModeManagerService {
   }
   
   /**
+   * Delegates delete pins action to the active mode
+   */
+  deleteSelectedPins(): void {
+    const mode = this._activeMode.value;
+    if (!mode) {
+      console.warn('No active mode to handle deleteSelectedPins.');
+      return;
+    }
+    mode.deleteSelectedPins();
+  }
+
+  /**
    * Gets the cursor style for the active mode
    */
   getActiveCursor(): string {
