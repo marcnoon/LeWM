@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { GraphMode } from '../interfaces/graph-mode.interface';
 import { GraphNode } from '../models/graph-node.model';
+import { PinStateService } from './pin-state.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,7 @@ export class ModeManagerService {
   
   readonly activeMode$ = this._activeMode.asObservable();
   
-  constructor() {}
+  constructor(private pinState: PinStateService) {}
   
   /**
    * Registers a mode with the manager
@@ -129,5 +130,12 @@ export class ModeManagerService {
     if (mode) {
       mode.renderOverlay(canvas);
     }
+  }
+
+  /**
+   * Opens the pin layout editor for selected pins
+   */
+  openPinLayoutEditor(): void {
+    this.pinState.openLayoutEditor();
   }
 }

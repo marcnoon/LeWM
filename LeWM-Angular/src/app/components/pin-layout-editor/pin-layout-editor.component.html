@@ -1,0 +1,225 @@
+<div class="layout-editor-overlay" *ngIf="visible" (click)="closeEditor()">
+  <div class="layout-editor" (click)="$event.stopPropagation()">
+    <div class="editor-header">
+      <h2>Pin Layout Editor ({{ selectedPins.length }} pins)</h2>
+      <div class="header-controls">
+        <label>
+          <input type="checkbox" [(ngModel)]="previewMode" (change)="togglePreviewMode()" />
+          Live Preview
+        </label>
+        <label>
+          <input type="checkbox" [checked]="gridSnapEnabled" (change)="toggleGridSnap()" />
+          Grid Snap
+        </label>
+        <button class="close-btn" (click)="closeEditor()">×</button>
+      </div>
+    </div>
+
+    <div class="editor-tabs">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'position'"
+        (click)="setActiveTab('position')">
+        Position
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'text'"
+        (click)="setActiveTab('text')">
+        Text Style
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'batch'"
+        (click)="setActiveTab('batch')">
+        Batch Operations
+      </button>
+    </div>
+
+    <div class="editor-content" *ngIf="editingPins.length > 0; else noPinsTemplate">
+      <div class="node-group" *ngFor="let group of getGroupedPinsArray(); trackBy: trackByNodeId">
+        <h3>Node: {{ group[0] }}</h3>
+        
+        <!-- Position Controls -->
+        <div class="position-controls" *ngIf="activeTab === 'position'">
+          <div class="pin-control-group" *ngFor="let pin of group[1]; trackBy: trackByPinId">
+            <h4>{{ pin.label || pin.id }}</h4>
+            <div class="control-row">
+              <label>
+                Side:
+                <select [value]="pin.position.side" 
+                        (change)="updatePinPosition(pin.id, 'side', $any($event.target).value)">
+                  <option value="top">Top</option>
+                  <option value="right">Right</option>
+                  <option value="bottom">Bottom</option>
+                  <option value="left">Left</option>
+                </select>
+              </label>
+              <label>
+                Offset:
+                <input type="number" 
+                       min="0" max="1" step="0.01"
+                       [value]="pin.position.offset"
+                       (input)="updatePinPosition(pin.id, 'offset', +$any($event.target).value)" />
+              </label>
+            </div>
+            <div class="control-row">
+              <label>
+                X Position:
+                <input type="number" 
+                       [value]="pin.position.x"
+                       (input)="updatePinPosition(pin.id, 'x', +$any($event.target).value)" />
+              </label>
+              <label>
+                Y Position:
+                <input type="number" 
+                       [value]="pin.position.y"
+                       (input)="updatePinPosition(pin.id, 'y', +$any($event.target).value)" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Text Style Controls -->
+        <div class="text-controls" *ngIf="activeTab === 'text'">
+          <div class="pin-control-group" *ngFor="let pin of group[1]; trackBy: trackByPinId">
+            <h4>{{ pin.label || pin.id }}</h4>
+            <div class="control-row">
+              <label>
+                Font Family:
+                <select [value]="pin.textStyle.fontFamily" 
+                        (change)="updatePinTextStyle(pin.id, 'fontFamily', $any($event.target).value)">
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="'Times New Roman', serif">Times New Roman</option>
+                  <option value="'Courier New', monospace">Courier New</option>
+                  <option value="Helvetica, sans-serif">Helvetica</option>
+                  <option value="Georgia, serif">Georgia</option>
+                </select>
+              </label>
+              <label>
+                Font Size:
+                <input type="number" min="6" max="48"
+                       [value]="pin.textStyle.fontSize"
+                       (input)="updatePinTextStyle(pin.id, 'fontSize', +$any($event.target).value)" />
+              </label>
+            </div>
+            <div class="control-row">
+              <label>
+                Color:
+                <input type="color" 
+                       [value]="pin.textStyle.color"
+                       (input)="updatePinTextStyle(pin.id, 'color', $any($event.target).value)" />
+              </label>
+              <label>
+                Rotation:
+                <input type="range" min="0" max="360"
+                       [value]="pin.textStyle.orientation"
+                       (input)="updatePinTextStyle(pin.id, 'orientation', +$any($event.target).value)" />
+                <span>{{ pin.textStyle.orientation }}°</span>
+              </label>
+            </div>
+            <div class="control-row">
+              <label>
+                Text Offset X:
+                <input type="number" step="0.5"
+                       [value]="pin.textStyle.offset.x"
+                       (input)="updatePinTextOffset(pin.id, 'x', +$any($event.target).value)" />
+              </label>
+              <label>
+                Text Offset Y:
+                <input type="number" step="0.5"
+                       [value]="pin.textStyle.offset.y"
+                       (input)="updatePinTextOffset(pin.id, 'y', +$any($event.target).value)" />
+              </label>
+            </div>
+            <div class="control-row">
+              <label>
+                Alignment:
+                <select [value]="pin.textStyle.alignment" 
+                        (change)="updatePinTextStyle(pin.id, 'alignment', $any($event.target).value)">
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </label>
+              <label>
+                V-Align:
+                <select [value]="pin.textStyle.verticalAlignment" 
+                        (change)="updatePinTextStyle(pin.id, 'verticalAlignment', $any($event.target).value)">
+                  <option value="top">Top</option>
+                  <option value="middle">Middle</option>
+                  <option value="bottom">Bottom</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Operations -->
+        <div class="batch-controls" *ngIf="activeTab === 'batch'">
+          <h4>Batch Operations for Node {{ group[0] }}</h4>
+          <div class="batch-group">
+            <h5>Side Alignment</h5>
+            <div class="control-row">
+              <button (click)="alignPinsOnSide(group[0], 'top')">Move to Top</button>
+              <button (click)="alignPinsOnSide(group[0], 'right')">Move to Right</button>
+              <button (click)="alignPinsOnSide(group[0], 'bottom')">Move to Bottom</button>
+              <button (click)="alignPinsOnSide(group[0], 'left')">Move to Left</button>
+            </div>
+          </div>
+          <div class="batch-group">
+            <h5>Precision Alignment</h5>
+            <div class="control-row">
+              <button (click)="alignLeft(group[0])">Align Left</button>
+              <button (click)="centerHorizontally(group[0])">Center H</button>
+              <button (click)="alignRight(group[0])">Align Right</button>
+            </div>
+            <div class="control-row">
+              <button (click)="alignTop(group[0])">Align Top</button>
+              <button (click)="centerVertically(group[0])">Center V</button>
+              <button (click)="alignBottom(group[0])">Align Bottom</button>
+            </div>
+          </div>
+          <div class="batch-group">
+            <h5>Distribution</h5>
+            <div class="control-row">
+              <button (click)="distributeEvenly(group[0])">Distribute by Side</button>
+              <button (click)="distributeHorizontally(group[0])">Distribute H</button>
+              <button (click)="distributeVertically(group[0])">Distribute V</button>
+            </div>
+          </div>
+          <div class="batch-group">
+            <h5>Text Operations</h5>
+            <div class="control-row">
+              <label>
+                Apply Font Size to All:
+                <input type="number" min="6" max="48" value="12"
+                       (change)="applyFontToAll(group[0], 'fontSize', +$any($event.target).value)" />
+              </label>
+              <label>
+                Apply Color to All:
+                <input type="color" value="#000000"
+                       (change)="applyFontToAll(group[0], 'color', $any($event.target).value)" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noPinsTemplate>
+      <div class="editor-content">
+        <div class="no-pins-message">
+          <p>No pins available for editing.</p>
+          <p>Selected pins: {{ selectedPins.length }}</p>
+        </div>
+      </div>
+    </ng-template>
+
+    <div class="editor-footer">
+      <button class="secondary-btn" (click)="resetChanges()">Reset</button>
+      <button class="secondary-btn" (click)="closeEditor()">Cancel</button>
+      <button class="primary-btn" (click)="applyChanges()">Apply Changes (Ctrl+Enter)</button>
+    </div>
+  </div>
+</div>

@@ -8,6 +8,9 @@ import { GraphEditorComponent } from './components/graph-editor/graph-editor.com
 import { PinNameDialogComponent } from './components/pin-name-dialog/pin-name-dialog.component';
 import { ConnectionPropertiesDialogComponent } from './components/connection-properties-dialog/connection-properties-dialog.component';
 import { ConnectionBulkEditDialogComponent } from './components/connection-bulk-edit-dialog/connection-bulk-edit-dialog.component';
+import { PinModeToolbarComponent } from './components/pin-mode-toolbar/pin-mode-toolbar.component';
+import { PinLayoutEditorComponent } from './components/pin-layout-editor/pin-layout-editor.component';
+import { PinStateService } from './services/pin-state.service';
 
 @NgModule({
   declarations: [
@@ -15,14 +18,18 @@ import { ConnectionBulkEditDialogComponent } from './components/connection-bulk-
     GraphEditorComponent,
     PinNameDialogComponent,
     ConnectionPropertiesDialogComponent,
-    ConnectionBulkEditDialogComponent
+    ConnectionBulkEditDialogComponent,
+    PinModeToolbarComponent,
+    PinLayoutEditorComponent
   ],
   imports: [
     BrowserModule,
     FormsModule,
     AppRoutingModule
   ],
-  providers: [],
+  providers: [
+    PinStateService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
