@@ -16,6 +16,7 @@ export class PinModeToolbarComponent implements OnInit, OnDestroy, OnChanges {
   gridSnap = true;
   showGuides = true;
   subMode: PinSubMode = 'layout';
+  gridSize = 10;
 
   private subscriptions: Subscription[] = [];
 
@@ -75,5 +76,89 @@ export class PinModeToolbarComponent implements OnInit, OnDestroy, OnChanges {
     } else {
       console.log('Cannot open layout editor: no pins selected');
     }
+  }
+
+  updateTextStyle(property: string, event: any): void {
+    const value = event.target.value;
+    if (this.selectedPins.length > 0) {
+      this.selectedPins.forEach(pin => {
+        this.pinState.updatePinTextStyle(pin.id, { [property]: value });
+      });
+    }
+  }
+
+  updatePinProperty(property: string, event: any): void {
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    if (this.selectedPins.length > 0) {
+      this.selectedPins.forEach(pin => {
+        this.pinState.updatePin(pin.id, { [property]: value });
+      });
+    }
+  }
+
+  alignPins(alignment: string): void {
+    if (this.selectedPins.length < 2) return;
+    
+    // Get the reference pin (first selected)
+    const referencePinPosition = this.selectedPins[0].position;
+    
+    this.selectedPins.slice(1).forEach(pin => {
+      const newPosition = { ...pin.position };
+      
+      switch (alignment) {
+        case 'left':
+        case 'right':
+        case 'center-h':
+          // For horizontal alignment, we might adjust the side or offset
+          // This is a simplified implementation
+          newPosition.side = referencePinPosition.side;
+          break;
+        case 'top':
+        case 'bottom':
+        case 'center-v':
+          // For vertical alignment
+          newPosition.offset = referencePinPosition.offset;
+          break;
+      }
+      
+      this.pinState.updatePinPosition(pin.id, newPosition);
+    });
+  }
+
+  distributePins(direction: 'horizontal' | 'vertical'): void {
+    if (this.selectedPins.length < 3) return;
+    
+    // Sort pins by their current position
+    const sortedPins = [...this.selectedPins].sort((a, b) => {
+      if (direction === 'horizontal') {
+        return a.position.offset - b.position.offset;
+      } else {
+        return a.position.offset - b.position.offset;
+      }
+    });
+    
+    // Calculate equal spacing
+    const spacing = 1 / (sortedPins.length + 1);
+    
+    sortedPins.forEach((pin, index) => {
+      const newPosition = { ...pin.position };
+      newPosition.offset = spacing * (index + 1);
+      this.pinState.updatePinPosition(pin.id, newPosition);
+    });
+  }
+
+  updateGridSize(event: any): void {
+    this.gridSize = parseInt(event.target.value);
+  }
+
+  snapToGrid(): void {
+    if (this.selectedPins.length === 0) return;
+    
+    this.selectedPins.forEach(pin => {
+      const newPosition = { ...pin.position };
+      // Snap offset to grid
+      newPosition.offset = Math.round(newPosition.offset * this.gridSize) / this.gridSize;
+      this.pinState.updatePinPosition(pin.id, newPosition);
+    });
   }
 }

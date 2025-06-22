@@ -2,6 +2,7 @@ import { GraphMode, PinEditState } from '../interfaces/graph-mode.interface';
 import { GraphNode } from '../models/graph-node.model';
 import { GraphStateService } from '../services/graph-state.service';
 import { PinStateService } from '../services/pin-state.service';
+import { DEFAULT_PIN_TEXT_STYLE, DEFAULT_PIN_STYLE } from '../interfaces/pin.interface';
 
 export class PinEditMode implements GraphMode {
   name = 'pin-edit';
@@ -45,6 +46,9 @@ export class PinEditMode implements GraphMode {
     this.selectedPins.clear();
     this.pinState.clearSelection();
     this.pinState.setPinModeActive(true);
+
+    // Import all existing pins from GraphStateService
+    this.syncAllPinsToStateService();
   }
 
   deactivate(): void {
@@ -87,7 +91,7 @@ export class PinEditMode implements GraphMode {
     // Selection logic: Ctrl+click for multi-select, otherwise single select
     const pinId = `${node.id}.${pin.name}`;
     const isMultiSelect = event.ctrlKey || event.metaKey;
-    
+
     // Update local selection for immediate visual feedback
     if (isMultiSelect) {
       if (this.selectedPins.has(pinId)) {
@@ -99,10 +103,10 @@ export class PinEditMode implements GraphMode {
       this.selectedPins.clear();
       this.selectedPins.add(pinId);
     }
-    
+
     // Update pin state service selection
     this.pinState.selectPin(pinId, isMultiSelect);
-    
+
     console.log(`Selected pins: ${Array.from(this.selectedPins).join(', ')}`);
     return true;
   }
@@ -400,7 +404,7 @@ export class PinEditMode implements GraphMode {
   /** Delete all selected pins via state service */
   deleteSelectedPins(): void {
     if (this.selectedPins.size === 0) return;
-    
+
     // Group selected pins by node ID
     const pinsByNode = new Map<string, string[]>();
     Array.from(this.selectedPins).forEach(pinId => {
@@ -410,16 +414,97 @@ export class PinEditMode implements GraphMode {
       }
       pinsByNode.get(nodeId)!.push(pinName);
     });
-    
+
     // Delete pins from each node
     pinsByNode.forEach((pinNames, nodeId) => {
       this.graphState.removePins(nodeId, pinNames);
       console.log(`Deleted pins ${pinNames.join(', ')} from node ${nodeId}`);
     });
-    
+
     this.selectedPins.clear();
     this.pinState.clearSelection();
     // re-render overlays
     if (this.componentRef) this.componentRef.renderActiveOverlay(this.componentRef.svgCanvas.nativeElement);
+  }
+
+  private syncPinToPinStateService(pin: any): void {
+    // Convert the graph pin to PinStateService format
+    const pinForService = {
+      id: `${pin.nodeId}.${pin.name}`, // Use nodeId.pinName format
+      nodeId: pin.nodeId,
+      label: pin.name || pin.label || '',
+      position: {
+        x: pin.x || 0,
+        y: pin.y || 0,
+        side: pin.side || 'left',
+        offset: pin.offset || 0
+      },
+      textStyle: pin.textStyle || { ...DEFAULT_PIN_TEXT_STYLE },
+      pinStyle: pin.pinStyle || { ...DEFAULT_PIN_STYLE },
+      isInput: pin.isInput || false,
+      isOutput: pin.isOutput || false,
+      pinType: pin.pinType || 'input',
+      pinNumber: pin.pinNumber || '',
+      signalName: pin.signalName || '',
+      pinSize: pin.pinSize || 4,
+      pinColor: pin.pinColor || '#000000',
+      showPinNumber: pin.showPinNumber || false
+    };
+
+    console.log('Syncing individual pin:', pinForService.id);
+    this.pinState.importPin(pinForService);
+  }
+
+  private syncAllPinsToStateService(): void {
+    // Get all pins from GraphStateService and sync them
+    const allPins = this.getAllPins();
+
+    if (allPins.length > 0) {
+      const pinsForService = allPins.map(pin => ({
+        id: `${pin.nodeId}.${pin.name}`, // Use nodeId.pinName format to match selection
+        nodeId: pin.nodeId,
+        label: pin.name || pin.label || '',
+        position: {
+          x: pin.x || 0,
+          y: pin.y || 0,
+          side: pin.side || 'left',
+          offset: pin.offset || 0
+        },
+        textStyle: pin.textStyle || { ...DEFAULT_PIN_TEXT_STYLE },
+        pinStyle: pin.pinStyle || { ...DEFAULT_PIN_STYLE },
+        isInput: pin.isInput || false,
+        isOutput: pin.isOutput || false,
+        pinType: pin.pinType || 'input',
+        pinNumber: pin.pinNumber || '',
+        signalName: pin.signalName || '',
+        pinSize: pin.pinSize || 4,
+        pinColor: pin.pinColor || '#000000',
+        showPinNumber: pin.showPinNumber || false
+      }));
+
+      console.log('Syncing', pinsForService.length, 'pins to PinStateService with IDs:', pinsForService.map(p => p.id));
+      this.pinState.importPins(pinsForService);
+    }
+  }
+
+  private getAllPins(): any[] {
+    // Get all pins from GraphStateService
+    const nodes = this.graphState.getNodes();
+    const allPins: any[] = [];
+
+    nodes.forEach(node => {
+      if (node.pins) {
+        node.pins.forEach((pin: any) => {
+          allPins.push({
+            ...pin,
+            nodeId: node.id,
+            name: pin.name || pin.label // Ensure we have the pin name
+          });
+        });
+      }
+    });
+
+    console.log('Found pins from nodes:', allPins.map(p => `${p.nodeId}.${p.name}`));
+    return allPins;
   }
 }

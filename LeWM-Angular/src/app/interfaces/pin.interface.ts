@@ -14,6 +14,9 @@ export interface PinTextStyle {
   alignment: 'left' | 'center' | 'right';
   verticalAlignment: 'top' | 'middle' | 'bottom';
   offset: { x: number; y: number }; // offset from pin position
+  backgroundColor: string;
+  showBackground: boolean;
+  textAlign: 'left' | 'center' | 'right';
 }
 
 export interface PinStyle {
@@ -35,6 +38,12 @@ export interface Pin {
   isOutput: boolean;
   dataType?: string;
   isSelected?: boolean;
+  pinType: 'input' | 'output' | 'bidirectional' | 'power' | 'ground';
+  pinNumber: string;
+  signalName: string;
+  pinSize: number;
+  pinColor: string;
+  showPinNumber: boolean;
 }
 
 export type PinSubMode = 'layout' | 'text' | 'properties';
@@ -56,7 +65,10 @@ export const DEFAULT_PIN_TEXT_STYLE: PinTextStyle = {
   orientation: 0,
   alignment: 'center',
   verticalAlignment: 'middle',
-  offset: { x: 0, y: 0 }
+  offset: { x: 0, y: 0 },
+  backgroundColor: '#ffffff',
+  showBackground: false,
+  textAlign: 'left'
 };
 
 export const DEFAULT_PIN_STYLE: PinStyle = {

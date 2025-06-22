@@ -42,7 +42,13 @@ export class PinStateService {
       textStyle: { ...DEFAULT_PIN_TEXT_STYLE },
       pinStyle: { ...DEFAULT_PIN_STYLE },
       isInput: true,
-      isOutput: true
+      isOutput: true,
+      pinType: 'input',
+      pinNumber: '',
+      signalName: '',
+      pinSize: 4,
+      pinColor: '#000000',
+      showPinNumber: false
     };
 
     const currentPins = this.pinsSubject.value;
@@ -97,6 +103,19 @@ export class PinStateService {
   }
 
   selectPin(pinId: string, multiSelect: boolean = false): void {
+    console.log('selectPin called with:', pinId, 'multiSelect:', multiSelect);
+    console.log('Current pins in store:', Array.from(this.pinsSubject.value.keys()));
+    
+    // Check if the pin exists in our store
+    const pinExists = this.pinsSubject.value.has(pinId);
+    console.log('Pin exists in store:', pinExists);
+    
+    if (!pinExists) {
+      console.warn('Pin not found in PinStateService store. Pin ID:', pinId);
+      // Don't select a pin that doesn't exist in our store
+      return;
+    }
+
     const currentState = this.modeStateSubject.value;
     
     if (multiSelect) {
@@ -117,6 +136,33 @@ export class PinStateService {
         isMultiSelect: false
       });
     }
+  }
+
+  importPin(pin: Pin): void {
+    console.log('Importing pin to PinStateService:', pin.id);
+    const currentPins = this.pinsSubject.value;
+    const newPins = new Map(currentPins);
+    newPins.set(pin.id, pin);
+    this.pinsSubject.next(newPins);
+  }
+
+  importPins(pins: Pin[]): void {
+    console.log('Importing multiple pins to PinStateService:', pins.length);
+    const currentPins = this.pinsSubject.value;
+    const newPins = new Map(currentPins);
+    
+    pins.forEach(pin => {
+      newPins.set(pin.id, pin);
+    });
+    
+    this.pinsSubject.next(newPins);
+  }
+
+  debugPins(): void {
+    console.log('PinStateService debug info:');
+    console.log('Total pins:', this.pinsSubject.value.size);
+    console.log('Pin IDs:', Array.from(this.pinsSubject.value.keys()));
+    console.log('Selected pin IDs:', this.modeStateSubject.value.selectedPins);
   }
 
   clearSelection(): void {
@@ -156,8 +202,16 @@ export class PinStateService {
   }
 
   openLayoutEditor(): void {
-    console.log('Opening pin layout editor');
-    this.layoutEditorVisibleSubject.next(true);
+    const selectedPinIds = this.modeStateSubject.value.selectedPins;
+    console.log('Opening layout editor with selected pin IDs:', selectedPinIds);
+    
+    if (selectedPinIds.length > 0) {
+      const selectedPins = this.getSelectedPins();
+      console.log('Retrieved selected pins for editor:', selectedPins.length, selectedPins.map(p => ({ id: p.id, label: p.label })));
+      this.layoutEditorVisibleSubject.next(true);
+    } else {
+      console.warn('No pins selected when trying to open layout editor');
+    }
   }
 
   closeLayoutEditor(): void {
@@ -218,5 +272,23 @@ export class PinStateService {
     
     console.log('No action taken for key:', event.key);
     return false;
+  }
+
+  getSelectedPins(): Pin[] {
+    const selectedPinIds = this.modeStateSubject.value.selectedPins;
+    const currentPins = this.pinsSubject.value;
+    
+    console.log('Getting selected pins:', {
+      selectedPinIds,
+      totalPins: currentPins.size,
+      availablePinIds: Array.from(currentPins.keys())
+    });
+    
+    const result = selectedPinIds
+      .map(id => currentPins.get(id))
+      .filter(Boolean) as Pin[];
+    
+    console.log('Returning selected pins:', result.length, result.map(p => ({ id: p.id, label: p.label })));
+    return result;
   }
 }

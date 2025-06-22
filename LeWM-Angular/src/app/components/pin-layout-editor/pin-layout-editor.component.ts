@@ -19,23 +19,30 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
 
   private subscriptions: Subscription[] = [];
 
-  constructor(private pinState: PinStateService) {}
+  constructor(private pinStateService: PinStateService) {}
 
   ngOnInit(): void {
     // Subscribe to layout editor visibility
     this.subscriptions.push(
-      this.pinState.layoutEditorVisible$.subscribe(visible => {
+      this.pinStateService.layoutEditorVisible$.subscribe(visible => {
+        console.log('Layout editor visibility changed:', visible);
         this.visible = visible;
         if (visible) {
+          // When editor opens, get the current selected pins immediately
+          const currentSelectedPins = this.pinStateService.getSelectedPins();
+          console.log('Getting selected pins on editor open:', currentSelectedPins.length);
+          this.selectedPins = [...currentSelectedPins];
           this.initializeEditor();
         }
       })
     );
 
-    // Subscribe to selected pins
+    // Also subscribe to selected pins changes to keep in sync
     this.subscriptions.push(
-      this.pinState.selectedPins$.subscribe(pins => {
-        this.selectedPins = pins;
+      this.pinStateService.selectedPins$.subscribe(pins => {
+        console.log('Selected pins changed in editor:', pins.length);
+        this.selectedPins = [...pins];
+        // Only reinitialize if editor is visible to avoid unnecessary work
         if (this.visible && pins.length > 0) {
           this.initializeEditor();
         }
@@ -62,9 +69,12 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
 
   initializeEditor(): void {
     console.log('Initializing pin layout editor with', this.selectedPins.length, 'pins');
+    console.log('Selected pins:', this.selectedPins.map(p => ({ id: p.id, label: p.label })));
     
     if (this.selectedPins.length === 0) {
       console.warn('No pins provided to editor');
+      this.editingPins = [];
+      this.groupedPins = new Map();
       return;
     }
 
@@ -182,7 +192,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     console.log('Applying changes to', this.editingPins.length, 'pins');
     
     this.editingPins.forEach(pin => {
-      this.pinState.updatePin(pin.id, {
+      this.pinStateService.updatePin(pin.id, {
         position: pin.position,
         textStyle: pin.textStyle,
         pinStyle: pin.pinStyle
@@ -198,7 +208,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
 
   closeEditor(): void {
     console.log('Closing pin layout editor');
-    this.pinState.closeLayoutEditor();
+    this.pinStateService.closeLayoutEditor();
   }
 
   setActiveTab(tab: 'position' | 'text' | 'batch'): void {
