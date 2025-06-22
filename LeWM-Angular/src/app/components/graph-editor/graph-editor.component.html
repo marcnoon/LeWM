@@ -49,7 +49,7 @@
           <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" stroke-width="1"/>
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect id="grid-rect" width="100%" height="100%" fill="url(#grid)" />
       
       <!-- Connection Lines -->
       <g *ngFor="let edge of edges$ | async" class="connection-line">

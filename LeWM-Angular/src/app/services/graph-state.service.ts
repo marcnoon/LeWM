@@ -111,10 +111,15 @@ export class GraphStateService {
    */
   addEdge(edge: GraphEdge): void {
     const currentEdges = this._edges.getValue();
-    const newEdge = {
-      ...edge,
-      id: edge.id || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
+    // Determine unique ID for new edge
+    let newId = edge.id || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const exists = (id: string) => currentEdges.some(e => e.id === id);
+    if (exists(newId)) {
+      do {
+        newId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      } while (exists(newId));
+    }
+    const newEdge = { ...edge, id: newId };
     this._edges.next([...currentEdges, newEdge]);
   }
 
@@ -135,14 +140,25 @@ export class GraphStateService {
   updateEdge(edgeId: string, updatedEdge: GraphEdge): void {
     const currentEdges = this._edges.getValue();
     const edgeIndex = currentEdges.findIndex(e => e.id === edgeId);
-    
     if (edgeIndex === -1) {
       console.warn(`Edge with id ${edgeId} not found`);
       return;
     }
-    
+    // Ensure unique ID if changed
+    let newId: string = updatedEdge.id ?? edgeId;
+    if (newId !== edgeId) {
+      const existsOther = (id: string) => currentEdges.some((e, idx) => idx !== edgeIndex && e.id === id);
+      if (existsOther(newId)) {
+        do {
+          newId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        } while (existsOther(newId));
+      }
+    } else {
+      newId = edgeId;
+    }
+    const newEdge = { ...updatedEdge, id: newId };
     const updatedEdges = [...currentEdges];
-    updatedEdges[edgeIndex] = { ...updatedEdge };
+    updatedEdges[edgeIndex] = newEdge;
     this._edges.next(updatedEdges);
   }
 
