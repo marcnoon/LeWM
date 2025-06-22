@@ -84,6 +84,7 @@ export class PinEditMode implements GraphMode {
       this.selectedPins.clear();
       this.selectedPins.add(pinId);
     }
+    console.log(`Selected pins: ${Array.from(this.selectedPins).join(', ')}`);
     return true;
   }
 
@@ -373,9 +374,24 @@ export class PinEditMode implements GraphMode {
 
   /** Delete all selected pins via state service */
   deleteSelectedPins(): void {
-    if (!this.state.selectedNode || this.selectedPins.size === 0) return;
-    const pinNames = Array.from(this.selectedPins).map(id => id.split('.')[1]);
-    this.graphState.removePins(this.state.selectedNode.id, pinNames);
+    if (this.selectedPins.size === 0) return;
+    
+    // Group selected pins by node ID
+    const pinsByNode = new Map<string, string[]>();
+    Array.from(this.selectedPins).forEach(pinId => {
+      const [nodeId, pinName] = pinId.split('.');
+      if (!pinsByNode.has(nodeId)) {
+        pinsByNode.set(nodeId, []);
+      }
+      pinsByNode.get(nodeId)!.push(pinName);
+    });
+    
+    // Delete pins from each node
+    pinsByNode.forEach((pinNames, nodeId) => {
+      this.graphState.removePins(nodeId, pinNames);
+      console.log(`Deleted pins ${pinNames.join(', ')} from node ${nodeId}`);
+    });
+    
     this.selectedPins.clear();
     // re-render overlays
     if (this.componentRef) this.componentRef.renderActiveOverlay(this.componentRef.svgCanvas.nativeElement);
