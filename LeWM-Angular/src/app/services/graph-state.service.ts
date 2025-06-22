@@ -371,6 +371,7 @@ export class GraphStateService {
    */
   resetToDefaults(): void {
     localStorage.removeItem('lewm-graph-nodes');
+    localStorage.removeItem('lewm-enhanced-pin-properties'); // Clear enhanced properties too
     this._nodes.next(this.defaultNodes);
     this._edges.next(this.defaultEdges);
     console.log('🔄 Reset to default data');
