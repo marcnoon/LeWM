@@ -598,24 +598,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
       return; // Mode handled the event
     }
     
-    // Default pin behavior (connection creation)
-    if (this.connectingFrom === null) {
-      // Start a new connection
-      this.connectingFrom = { nodeId, pinName };
-      console.log(`Starting connection from ${nodeId}.${pinName}`);
-    } else {
-      // Complete the connection
-      const newEdge: GraphEdge = {
-        from: `${this.connectingFrom.nodeId}.${this.connectingFrom.pinName}`,
-        to: `${nodeId}.${pinName}`
-      };
-      
-      this.graphState.addEdge(newEdge);
-      console.log(`Created connection: ${newEdge.from} -> ${newEdge.to}`);
-      
-      // Reset connection state
-      this.connectingFrom = null;
-    }
+    // No default pin behavior - connections should only be created in Connection Mode
+    // This follows SOLID principles: each mode has a single, clear responsibility
+    console.log(`Pin ${nodeId}.${pinName} clicked, but no mode handled it. Switch to Connection Mode to create connections.`);
   }
 
   getConnectionStartX(edge: GraphEdge): number {
