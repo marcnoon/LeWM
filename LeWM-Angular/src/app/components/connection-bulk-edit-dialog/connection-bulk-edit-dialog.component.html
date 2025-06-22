@@ -146,6 +146,10 @@
       <div class="section">
         <h4>Add New Values</h4>
         <p class="info-text">Add new key-value pairs to all selected connections:</p>
+        <p class="info-text">
+          <strong>Automatic Key Numbering:</strong> If you add multiple values with the same key name, 
+          they will be automatically numbered (e.g., "bob" becomes "bob1", "bob2", etc.) to ensure uniqueness.
+        </p>
         
         <div *ngFor="let newValue of bulkChanges.newValues; let i = index" class="new-value-row">
           <input type="text" [(ngModel)]="newValue.key" placeholder="Key name" class="key-input">

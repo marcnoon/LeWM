@@ -204,7 +204,10 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
   }
 
   onApply(): void {
-    const updatedConnections: GraphEdge[] = this.connections.map(connection => {
+    // Pre-process new values to handle key numbering across all connections
+    const processedNewValues = this.processNewValuesWithNumbering();
+    
+    const updatedConnections: GraphEdge[] = this.connections.map((connection, connectionIndex) => {
       const updated = { ...connection };
 
       // Apply property changes
@@ -269,15 +272,20 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
         });
       }
 
-      // Add new values
-      if (this.bulkChanges.newValues.length > 0) {
-        const validNewValues = this.bulkChanges.newValues.filter(v => v.key.trim() !== '');
-        if (validNewValues.length > 0) {
-          if (!updated.values) {
-            updated.values = [];
-          }
-          updated.values.push(...validNewValues.map(v => ({ ...v })));
+      // Add new values with pre-processed numbering
+      if (processedNewValues.length > 0) {
+        if (!updated.values) {
+          updated.values = [];
         }
+        
+        // Add the processed new values for this connection
+        processedNewValues.forEach(newValue => {
+          const uniqueKey = this.generateUniqueKey(newValue.key, updated.values || []);
+          updated.values!.push({
+            ...newValue,
+            key: uniqueKey
+          });
+        });
       }
 
       return updated;
@@ -324,5 +332,63 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
 
   getUnitDefinitions(unitType: UnitType) {
     return UNIT_DEFINITIONS[unitType] || [];
+  }
+
+  private processNewValuesWithNumbering(): ConnectionValue[] {
+    const validNewValues = this.bulkChanges.newValues.filter(v => v.key.trim() !== '');
+    if (validNewValues.length === 0) {
+      return [];
+    }
+
+    // Group new values by key name to detect duplicates
+    const keyGroups = new Map<string, ConnectionValue[]>();
+    validNewValues.forEach(value => {
+      const baseKey = value.key.trim();
+      if (!keyGroups.has(baseKey)) {
+        keyGroups.set(baseKey, []);
+      }
+      keyGroups.get(baseKey)!.push(value);
+    });
+
+    // Process each group and add numbering for duplicates
+    const processedValues: ConnectionValue[] = [];
+    keyGroups.forEach((values, baseKey) => {
+      if (values.length === 1) {
+        // Single value, no numbering needed
+        processedValues.push({
+          ...values[0],
+          key: baseKey
+        });
+      } else {
+        // Multiple values with same key, add numbering
+        values.forEach((value, index) => {
+          processedValues.push({
+            ...value,
+            key: `${baseKey}${index + 1}`
+          });
+        });
+      }
+    });
+
+    return processedValues;
+  }
+
+  private generateUniqueKey(baseKey: string, existingValues: ConnectionValue[]): string {
+    const existingKeys = new Set(existingValues.map(v => v.key));
+    
+    // If the base key doesn't exist, use it as-is
+    if (!existingKeys.has(baseKey)) {
+      return baseKey;
+    }
+    
+    // Find the next available numbered key
+    let counter = 1;
+    let candidateKey = `${baseKey}${counter}`;
+    while (existingKeys.has(candidateKey)) {
+      counter++;
+      candidateKey = `${baseKey}${counter}`;
+    }
+    
+    return candidateKey;
   }
 }

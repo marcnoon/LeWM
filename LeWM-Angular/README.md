@@ -126,6 +126,18 @@ The bulk edit system intelligently identifies:
   - Suffix: `"voltage"` → `"voltage_primary"`
   - Combined: `"voltage"` → `"signal_voltage_backup"`
 
+#### Automatic Key Numbering for New Values
+
+When adding new key-value pairs to multiple connections, the system automatically ensures uniqueness:
+
+- **Same Key Across Connections**: If you add the same key name to multiple connections, each gets a unique numbered version
+- **Example**: Adding key "bob" to 3 selected connections results in:
+  - Connection 1: `"bob1"`
+  - Connection 2: `"bob2"` 
+  - Connection 3: `"bob3"`
+- **Conflict Resolution**: If a connection already has "bob1", the system finds the next available number (e.g., "bob4")
+- **Single Key**: If adding only one instance of a key name, no numbering is added unless there's a conflict with existing keys
+
 ### Development Roadmap
 
 The `conmode` branch tracks the implementation of this feature.
