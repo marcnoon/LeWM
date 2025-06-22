@@ -3,6 +3,7 @@ import { GraphNode } from '../models/graph-node.model';
 import { GraphStateService } from '../services/graph-state.service';
 import { PinStateService } from '../services/pin-state.service';
 import { DEFAULT_PIN_TEXT_STYLE, DEFAULT_PIN_STYLE } from '../interfaces/pin.interface';
+import { map } from 'rxjs/operators';
 
 export class PinEditMode implements GraphMode {
   name = 'pin-edit';
@@ -47,8 +48,9 @@ export class PinEditMode implements GraphMode {
     this.pinState.clearSelection();
     this.pinState.setPinModeActive(true);
 
-    // Import all existing pins from GraphStateService
-    this.syncAllPinsToStateService();
+    // Only sync pins to state service when they are actually selected for editing
+    // This prevents mass repositioning of all pins
+    console.log('Pin edit mode activated - pins will be synced when selected for editing');
   }
 
   deactivate(): void {
@@ -91,6 +93,14 @@ export class PinEditMode implements GraphMode {
     // Selection logic: Ctrl+click for multi-select, otherwise single select
     const pinId = `${node.id}.${pin.name}`;
     const isMultiSelect = event.ctrlKey || event.metaKey;
+
+    // Only sync the pin if it doesn't already exist in PinStateService
+    // This prevents overwriting modifications
+    this.syncPinToPinStateServiceIfNeeded({
+      ...pin,
+      nodeId: node.id,
+      name: pin.name
+    });
 
     // Update local selection for immediate visual feedback
     if (isMultiSelect) {
@@ -427,6 +437,25 @@ export class PinEditMode implements GraphMode {
     if (this.componentRef) this.componentRef.renderActiveOverlay(this.componentRef.svgCanvas.nativeElement);
   }
 
+  private syncPinToPinStateServiceIfNeeded(pin: any): void {
+    const pinId = `${pin.nodeId}.${pin.name}`;
+    
+    // Check if pin already exists in PinStateService
+    const existingPins = this.pinState.pins$.pipe(map(pinsMap => Array.from(pinsMap.values())));
+    existingPins.subscribe(pins => {
+      const existingPin = pins.find(p => p.id === pinId);
+      
+      if (existingPin) {
+        console.log(`🔄 Pin ${pinId} already exists in PinStateService - preserving existing data`);
+        // Pin already exists, don't overwrite it
+        return;
+      }
+      
+      console.log(`🆕 Pin ${pinId} not found in PinStateService - importing from legacy system`);
+      this.syncPinToPinStateService(pin);
+    }).unsubscribe();
+  }
+
   private syncPinToPinStateService(pin: any): void {
     // Convert the graph pin to PinStateService format
     const pinForService = {
@@ -465,8 +494,10 @@ export class PinEditMode implements GraphMode {
         nodeId: pin.nodeId,
         label: pin.name || pin.label || '',
         position: {
+          // Preserve original x,y coordinates from the legacy system
           x: pin.x || 0,
           y: pin.y || 0,
+          // Only use side/offset if they were explicitly set, otherwise keep legacy coordinates
           side: pin.side || 'left',
           offset: pin.offset || 0
         },
@@ -482,7 +513,8 @@ export class PinEditMode implements GraphMode {
         showPinNumber: pin.showPinNumber || false
       }));
 
-      console.log('Syncing', pinsForService.length, 'pins to PinStateService with IDs:', pinsForService.map(p => p.id));
+      console.log('Syncing', pinsForService.length, 'pins to PinStateService with original positions preserved');
+      console.log('Pin positions:', pinsForService.map(p => ({ id: p.id, x: p.position.x, y: p.position.y })));
       this.pinState.importPins(pinsForService);
     }
   }

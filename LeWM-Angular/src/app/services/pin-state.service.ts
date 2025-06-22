@@ -67,6 +67,7 @@ export class PinStateService {
       const newPins = new Map(currentPins);
       newPins.set(pinId, { ...pin, ...updates });
       this.pinsSubject.next(newPins);
+      console.log(`Updated pin ${pinId} with:`, updates);
     }
   }
 
@@ -129,13 +130,41 @@ export class PinStateService {
         selectedPins,
         isMultiSelect: true
       });
+      
+      // Update pin selection state
+      this.updatePinSelectionState(selectedPins);
     } else {
       this.modeStateSubject.next({
         ...currentState,
         selectedPins: [pinId],
         isMultiSelect: false
       });
+      
+      // Update pin selection state
+      this.updatePinSelectionState([pinId]);
     }
+  }
+  
+  private updatePinSelectionState(selectedPinIds: string[]): void {
+    const currentPins = this.pinsSubject.value;
+    const newPins = new Map(currentPins);
+    
+    // Clear all selections first
+    newPins.forEach((pin, id) => {
+      if (pin.isSelected) {
+        newPins.set(id, { ...pin, isSelected: false });
+      }
+    });
+    
+    // Set selected pins
+    selectedPinIds.forEach(pinId => {
+      const pin = newPins.get(pinId);
+      if (pin) {
+        newPins.set(pinId, { ...pin, isSelected: true });
+      }
+    });
+    
+    this.pinsSubject.next(newPins);
   }
 
   importPin(pin: Pin): void {
@@ -172,6 +201,9 @@ export class PinStateService {
       selectedPins: [],
       isMultiSelect: false
     });
+    
+    // Clear pin selection state
+    this.updatePinSelectionState([]);
   }
 
   setSubMode(subMode: PinSubMode): void {
@@ -179,6 +211,22 @@ export class PinStateService {
     this.modeStateSubject.next({
       ...currentState,
       subMode
+    });
+  }
+  
+  toggleGridSnap(): void {
+    const currentState = this.modeStateSubject.value;
+    this.modeStateSubject.next({
+      ...currentState,
+      gridSnap: !currentState.gridSnap
+    });
+  }
+  
+  setGridSnap(enabled: boolean): void {
+    const currentState = this.modeStateSubject.value;
+    this.modeStateSubject.next({
+      ...currentState,
+      gridSnap: enabled
     });
   }
 

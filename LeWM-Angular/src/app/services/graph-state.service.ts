@@ -7,9 +7,8 @@ import { GraphEdge } from '../models/graph-edge.model';
   providedIn: 'root'
 })
 export class GraphStateService {
-  // Use _nodes and _edges for internal state management
-  private readonly _nodes = new BehaviorSubject<GraphNode[]>([
-    // Initial data from your React prototype, now typed as GraphNode
+  // Default initial data
+  private readonly defaultNodes: GraphNode[] = [
     { id: 'power', type: 'power', x: 100, y: 150, width: 80, height: 60, label: '9V Battery', pins: [{x: 80, y: 20, name: '+9V'}, {x: 80, y: 40, name: 'GND'}] },
     { id: 'reg', type: 'ic', x: 250, y: 150, width: 60, height: 40, label: 'LM7805', pins: [{x: 0, y: 20, name: 'IN'}, {x: 30, y: 40, name: 'GND'}, {x: 60, y: 20, name: 'OUT'}] },
     { id: 'mic1', type: 'component', x: 100, y: 250, width: 40, height: 40, label: 'MIC1', pins: [{x: 40, y: 20, name: 'OUT'}, {x: 20, y: 40, name: 'GND'}] },
@@ -19,14 +18,19 @@ export class GraphStateService {
       {x: 20, y: 60, name: 'GND'}, {x: 40, y: 60, name: 'VCC'}, {x: 60, y: 60, name: 'BYP'},
       {x: 80, y: 45, name: 'OUT'}, {x: 80, y: 15, name: 'VS'}
     ]},
-  ]);
-  private readonly _edges = new BehaviorSubject<GraphEdge[]>([
+  ];
+  
+  private readonly defaultEdges: GraphEdge[] = [
     { id: 'conn_1', from: 'power.+9V', to: 'reg.IN' },
     { id: 'conn_2', from: 'power.GND', to: 'reg.GND' },
     { id: 'conn_3', from: 'reg.OUT', to: 'amp1.VCC' },
     { id: 'conn_4', from: 'mic1.OUT', to: 'r1.A' },
     { id: 'conn_5', from: 'r1.B', to: 'amp1.+IN' },
-  ]);
+  ];
+
+  // Use _nodes and _edges for internal state management
+  private readonly _nodes = new BehaviorSubject<GraphNode[]>(this.loadFromLocalStorage() || this.defaultNodes);
+  private readonly _edges = new BehaviorSubject<GraphEdge[]>(this.defaultEdges);
 
   // Expose the nodes and edges as observables for components to subscribe to
   readonly nodes$ = this._nodes.asObservable();
@@ -75,9 +79,18 @@ export class GraphStateService {
       return;
     }
     
+    console.log(`📝 Updating node ${nodeId} in GraphStateService`);
+    console.log(`📌 Node pins before update:`, currentNodes[nodeIndex].pins);
+    console.log(`📌 Node pins after update:`, updatedNode.pins);
+    
     const updatedNodes = [...currentNodes];
     updatedNodes[nodeIndex] = { ...updatedNode };
     this._nodes.next(updatedNodes);
+    
+    // Store to localStorage for persistence
+    this.saveToLocalStorage();
+    
+    console.log(`💾 Node ${nodeId} updated and saved to localStorage`);
   }
 
   deleteNodes(ids: string[]): void {
@@ -304,5 +317,45 @@ export class GraphStateService {
       validConnections,
       removedConnections
     };
+  }
+  
+  /**
+   * Save nodes to localStorage for persistence
+   */
+  private saveToLocalStorage(): void {
+    try {
+      const nodes = this._nodes.getValue();
+      localStorage.setItem('lewm-graph-nodes', JSON.stringify(nodes));
+      console.log('💾 Saved nodes to localStorage');
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error);
+    }
+  }
+  
+  /**
+   * Load nodes from localStorage
+   */
+  private loadFromLocalStorage(): GraphNode[] | null {
+    try {
+      const saved = localStorage.getItem('lewm-graph-nodes');
+      if (saved) {
+        const nodes = JSON.parse(saved);
+        console.log('📥 Loaded nodes from localStorage');
+        return nodes;
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error);
+    }
+    return null;
+  }
+  
+  /**
+   * Clear saved data and reset to defaults
+   */
+  resetToDefaults(): void {
+    localStorage.removeItem('lewm-graph-nodes');
+    this._nodes.next(this.defaultNodes);
+    this._edges.next(this.defaultEdges);
+    console.log('🔄 Reset to default data');
   }
 }

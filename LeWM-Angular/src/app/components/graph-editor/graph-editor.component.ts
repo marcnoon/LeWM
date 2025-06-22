@@ -1,11 +1,13 @@
 import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy } from '@angular/core';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subscription, combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { GraphNode } from '../../models/graph-node.model';
 import { GraphEdge } from '../../models/graph-edge.model';
 import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
+import { Pin } from '../../interfaces/pin.interface';
 import { NormalMode } from '../../modes/normal.mode';
 import { PinEditMode } from '../../modes/pin-edit.mode';
 import { ConnectionMode } from '../../modes/connection.mode';
@@ -36,6 +38,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   // Expose the nodes and edges observables directly to the template
   nodes$!: Observable<GraphNode[]>;
   edges$!: Observable<GraphEdge[]>;
+  pins$!: Observable<Pin[]>;
+  
+  // Observable for pins grouped by nodeId for template rendering
+  pinsByNode$!: Observable<Map<string, Pin[]>>;
 
   // Keep a local copy of nodes and edges for imperative operations
   private currentNodes: GraphNode[] = [];
@@ -93,6 +99,23 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     // Assign the observables for use with the async pipe in the template
     this.nodes$ = this.graphState.nodes$;
     this.edges$ = this.graphState.edges$;
+    this.pins$ = this.pinState.pins$.pipe(
+      map(pinsMap => Array.from(pinsMap.values()))
+    );
+    
+    // Create an observable that groups pins by nodeId for easy template access
+    this.pinsByNode$ = this.pins$.pipe(
+      map(pins => {
+        const pinsByNode = new Map<string, Pin[]>();
+        pins.forEach(pin => {
+          if (!pinsByNode.has(pin.nodeId)) {
+            pinsByNode.set(pin.nodeId, []);
+          }
+          pinsByNode.get(pin.nodeId)!.push(pin);
+        });
+        return pinsByNode;
+      })
+    );
 
     // Subscribe to keep local copies for imperative operations
     this.nodesSubscription = this.nodes$.subscribe(nodes => {
@@ -598,7 +621,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
              node.y > maxY);
   }
 
-  // Connection methods for template
+  // Connection methods for template (legacy pin system)
   onPinMouseDown(event: MouseEvent, nodeId: string, pinName: string): void {
     event.stopPropagation();
     
@@ -614,8 +637,21 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     }
     
     // No default pin behavior - connections should only be created in Connection Mode
-    // This follows SOLID principles: each mode has a single, clear responsibility
     console.log(`Pin ${nodeId}.${pinName} clicked, but no mode handled it. Switch to Connection Mode to create connections.`);
+  }
+  
+  // Enhanced pin system handler
+  onPinMouseDownEnhanced(event: MouseEvent, nodeId: string, pinId: string): void {
+    event.stopPropagation();
+    
+    const node = this.currentNodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    // In pin-edit mode, handle pin selection
+    if (this.currentMode?.name === 'pin-edit') {
+      this.pinState.selectPin(pinId, event.ctrlKey || event.metaKey);
+      return;
+    }
   }
 
   getConnectionStartX(edge: GraphEdge): number {
@@ -667,5 +703,108 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
       return 'url(#arrowhead-start)';
     }
     return '';
+  }
+  
+  // Pin position calculation methods
+  calculatePinPosition(pin: Pin, node: GraphNode): { x: number; y: number } {
+    // Use absolute x,y coordinates if they exist (from legacy system)
+    // Otherwise calculate from side/offset
+    if (pin.position.x !== 0 || pin.position.y !== 0) {
+      return {
+        x: node.x + pin.position.x,
+        y: node.y + pin.position.y
+      };
+    }
+    
+    const { side, offset } = pin.position;
+    let x = 0, y = 0;
+    
+    switch (side) {
+      case 'top':
+        x = node.x + (node.width * offset);
+        y = node.y;
+        break;
+      case 'right':
+        x = node.x + node.width;
+        y = node.y + (node.height * offset);
+        break;
+      case 'bottom':
+        x = node.x + (node.width * offset);
+        y = node.y + node.height;
+        break;
+      case 'left':
+        x = node.x;
+        y = node.y + (node.height * offset);
+        break;
+    }
+    
+    return { x, y };
+  }
+  
+  // Get the original pin position from the legacy pin system
+  getOriginalPinPosition(pin: Pin, node: GraphNode): { x: number; y: number } {
+    // Find the original pin in the node.pins array
+    const originalPin = node.pins?.find(p => p.name === pin.label);
+    if (originalPin) {
+      return { x: originalPin.x, y: originalPin.y };
+    }
+    // Fallback to using the pin's stored x,y coordinates
+    return { x: pin.position.x, y: pin.position.y };
+  }
+  
+  calculatePinTextPosition(pin: Pin, node: GraphNode): { x: number; y: number } {
+    const pinPos = this.calculatePinPosition(pin, node);
+    return {
+      x: pinPos.x + pin.textStyle.offset.x,
+      y: pinPos.y + pin.textStyle.offset.y
+    };
+  }
+  
+  // Get pins for a specific node (helper for template)
+  getPinsForNode(nodeId: string, pinsByNode: Map<string, Pin[]> | null): Pin[] {
+    if (!pinsByNode) return [];
+    return pinsByNode.get(nodeId) || [];
+  }
+  
+  // Check if a pin is selected (for styling)
+  isPinSelected(pin: Pin): boolean {
+    const currentState = this.pinState.modeState$.pipe(map(state => state));
+    // This is a simplified check - in practice, you might want to use a more reactive approach
+    return false; // Will be handled by the pin selection logic
+  }
+  
+  // TrackBy function for pin rendering performance
+  trackByPinId(index: number, pin: Pin): string {
+    return pin.id;
+  }
+  
+  // Check if a pin has been modified from its original position
+  isPinModified(pin: Pin): boolean {
+    // For now, only show enhanced rendering if pin has actually been edited
+    // We'll use a flag or check if the pin has non-default styling
+    return pin.textStyle.fontSize !== 12 || 
+           pin.textStyle.color !== '#000000' ||
+           pin.textStyle.orientation !== 0 ||
+           pin.pinStyle.size !== 8 ||
+           pin.pinStyle.color !== '#4CAF50' ||
+           (pin.position.side !== 'left' && pin.position.offset !== 0);
+  }
+  
+  // Check if a legacy pin is currently selected in enhanced mode (to avoid duplicates)
+  isPinSelectedInEnhancedMode(nodeId: string, pinName: string): boolean {
+    if (this.currentMode?.name !== 'pin-edit') return false;
+    
+    const pinId = `${nodeId}.${pinName}`;
+    let isSelected = false;
+    
+    this.pinsByNode$.subscribe(pinsByNode => {
+      if (pinsByNode) {
+        const pins = this.getPinsForNode(nodeId, pinsByNode);
+        const pin = pins.find(p => p.id === pinId);
+        isSelected = pin?.isSelected || false;
+      }
+    }).unsubscribe();
+    
+    return isSelected;
   }
 }

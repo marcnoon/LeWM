@@ -4,8 +4,12 @@
       <h2>Pin Layout Editor ({{ selectedPins.length }} pins)</h2>
       <div class="header-controls">
         <label>
-          <input type="checkbox" [(ngModel)]="previewMode" />
+          <input type="checkbox" [(ngModel)]="previewMode" (change)="togglePreviewMode()" />
           Live Preview
+        </label>
+        <label>
+          <input type="checkbox" [checked]="gridSnapEnabled" (change)="toggleGridSnap()" />
+          Grid Snap
         </label>
         <button class="close-btn" (click)="closeEditor()">×</button>
       </div>
@@ -33,12 +37,12 @@
     </div>
 
     <div class="editor-content" *ngIf="editingPins.length > 0; else noPinsTemplate">
-      <div class="node-group" *ngFor="let group of getGroupedPinsArray()">
+      <div class="node-group" *ngFor="let group of getGroupedPinsArray(); trackBy: trackByNodeId">
         <h3>Node: {{ group[0] }}</h3>
         
         <!-- Position Controls -->
         <div class="position-controls" *ngIf="activeTab === 'position'">
-          <div class="pin-control-group" *ngFor="let pin of group[1]">
+          <div class="pin-control-group" *ngFor="let pin of group[1]; trackBy: trackByPinId">
             <h4>{{ pin.label || pin.id }}</h4>
             <div class="control-row">
               <label>
@@ -78,7 +82,7 @@
 
         <!-- Text Style Controls -->
         <div class="text-controls" *ngIf="activeTab === 'text'">
-          <div class="pin-control-group" *ngFor="let pin of group[1]">
+          <div class="pin-control-group" *ngFor="let pin of group[1]; trackBy: trackByPinId">
             <h4>{{ pin.label || pin.id }}</h4>
             <div class="control-row">
               <label>
@@ -155,15 +159,33 @@
         <div class="batch-controls" *ngIf="activeTab === 'batch'">
           <h4>Batch Operations for Node {{ group[0] }}</h4>
           <div class="batch-group">
-            <h5>Position Operations</h5>
+            <h5>Side Alignment</h5>
             <div class="control-row">
-              <button (click)="alignPinsOnSide(group[0], 'top')">Align to Top</button>
-              <button (click)="alignPinsOnSide(group[0], 'right')">Align to Right</button>
-              <button (click)="alignPinsOnSide(group[0], 'bottom')">Align to Bottom</button>
-              <button (click)="alignPinsOnSide(group[0], 'left')">Align to Left</button>
+              <button (click)="alignPinsOnSide(group[0], 'top')">Move to Top</button>
+              <button (click)="alignPinsOnSide(group[0], 'right')">Move to Right</button>
+              <button (click)="alignPinsOnSide(group[0], 'bottom')">Move to Bottom</button>
+              <button (click)="alignPinsOnSide(group[0], 'left')">Move to Left</button>
+            </div>
+          </div>
+          <div class="batch-group">
+            <h5>Precision Alignment</h5>
+            <div class="control-row">
+              <button (click)="alignLeft(group[0])">Align Left</button>
+              <button (click)="centerHorizontally(group[0])">Center H</button>
+              <button (click)="alignRight(group[0])">Align Right</button>
             </div>
             <div class="control-row">
-              <button (click)="distributeEvenly(group[0])">Distribute Evenly</button>
+              <button (click)="alignTop(group[0])">Align Top</button>
+              <button (click)="centerVertically(group[0])">Center V</button>
+              <button (click)="alignBottom(group[0])">Align Bottom</button>
+            </div>
+          </div>
+          <div class="batch-group">
+            <h5>Distribution</h5>
+            <div class="control-row">
+              <button (click)="distributeEvenly(group[0])">Distribute by Side</button>
+              <button (click)="distributeHorizontally(group[0])">Distribute H</button>
+              <button (click)="distributeVertically(group[0])">Distribute V</button>
             </div>
           </div>
           <div class="batch-group">
