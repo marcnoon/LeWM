@@ -63,6 +63,38 @@ The Angular application provides a complete graph editing system with **SOLID pr
   - Delete Pins: Use Delete key or "Delete Selected Pins" button
   - Exit: Press Escape or click "Normal" button
 
+### Pin Mode
+
+The pin mode allows for creating and managing connection points on nodes. It now supports advanced layout capabilities for precise positioning and styling.
+
+#### Basic Pin Mode
+- Click to add pins to node edges
+- Pins are distributed automatically using mathematical algorithms
+- Supports connection creation between pins
+
+#### Advanced Pin Layout Mode
+The advanced pin mode provides precise control over pin positioning and appearance:
+
+##### Sub-modes within Pin Mode:
+1. **Pin Layout Mode** (`Ctrl+P, L`): Precise positioning of pins
+2. **Pin Text Mode** (`Ctrl+P, T`): Text styling and positioning
+3. **Pin Properties Mode** (`Ctrl+P, R`): Color, size, and advanced properties
+
+##### Features:
+- **Precise Positioning**: Manual positioning with grid snap and guides
+- **Text Styling**: Font family, size, weight, color, and orientation
+- **Text Orientation**: Rotate text for optimal readability from any side
+- **Color Customization**: Custom colors for pins and text
+- **Multi-Node Support**: Works with circuit designs, flowcharts, org charts, etc.
+
+##### Controls:
+- `Shift+Click`: Select multiple pins for batch editing
+- `Alt+Drag`: Fine positioning without grid snap
+- `R`: Rotate pin text orientation
+- `F`: Change font properties
+- `C`: Change colors
+- `Escape`: Return to main pin mode
+
 #### **Connection Mode**
 - **Purpose**: Exclusive connection creation and management
 - **Responsibilities**:
