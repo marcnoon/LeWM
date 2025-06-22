@@ -207,4 +207,12 @@
     (connectionsUpdated)="onConnectionsBulkUpdated($event)"
     (cancelled)="onConnectionBulkDialogCancelled()">
   </app-connection-bulk-edit-dialog>
+
+  <!-- Pin Mode Toolbar (visible when in Pin Edit Mode) -->
+  <app-pin-mode-toolbar
+    [visible]="currentMode?.name === 'pin-edit'">
+  </app-pin-mode-toolbar>
+
+  <!-- Pin Layout Editor (modal component) -->
+  <app-pin-layout-editor></app-pin-layout-editor>
 </div>

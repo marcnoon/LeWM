@@ -4,6 +4,7 @@ import { GraphNode } from '../../models/graph-node.model';
 import { GraphEdge } from '../../models/graph-edge.model';
 import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
+import { PinStateService } from '../../services/pin-state.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { NormalMode } from '../../modes/normal.mode';
 import { PinEditMode } from '../../modes/pin-edit.mode';
@@ -84,7 +85,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
 
   constructor(
     private graphState: GraphStateService,
-    public modeManager: ModeManagerService
+    public modeManager: ModeManagerService,
+    private pinState: PinStateService
   ) {}
 
   ngOnInit(): void {
@@ -120,6 +122,18 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
       event.preventDefault();
       return;
     }
+
+    // Handle Enter key in pin edit mode
+    if (event.key === 'Enter' && this.currentMode?.name === 'pin-edit') {
+      const pinEditMode = this.modeManager.getActiveMode() as any;
+      if (pinEditMode?.selectedPins?.size > 0) {
+        // Open pin layout editor through the pin state service
+        this.modeManager.openPinLayoutEditor();
+        event.preventDefault();
+        return;
+      }
+    }
+    
     // First, let the mode handle the event
     if (this.modeManager.handleKeyDown(event)) {
       // Handle mode-specific shortcuts
@@ -365,7 +379,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   private initializeModes(): void {
     // Create and register modes
     const normalMode = new NormalMode(this.graphState);
-    const pinEditMode = new PinEditMode(this.graphState);
+    const pinEditMode = new PinEditMode(this.graphState, this.pinState);
     const connectionMode = new ConnectionMode(this.graphState);
     
     // Set component references for modes that need dialogs

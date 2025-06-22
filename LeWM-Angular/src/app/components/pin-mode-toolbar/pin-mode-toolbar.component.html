@@ -1,0 +1,70 @@
+<div class="pin-toolbar" *ngIf="visible">
+  <div class="toolbar-section">
+    <h3>Pin Mode</h3>
+    <div class="mode-buttons">
+      <button 
+        class="mode-btn" 
+        [class.active]="subMode === 'layout'"
+        (click)="setSubMode('layout')">
+        Layout (L)
+      </button>
+      <button 
+        class="mode-btn" 
+        [class.active]="subMode === 'text'"
+        (click)="setSubMode('text')">
+        Text (T)
+      </button>
+      <button 
+        class="mode-btn" 
+        [class.active]="subMode === 'properties'"
+        (click)="setSubMode('properties')">
+        Properties (R)
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar-section">
+    <h4>Options</h4>
+    <label>
+      <input 
+        type="checkbox" 
+        [checked]="gridSnap"
+        (change)="toggleGridSnap()" />
+      Grid Snap
+    </label>
+    <label>
+      <input 
+        type="checkbox" 
+        [checked]="showGuides"
+        (change)="toggleGuides()" />
+      Show Guides
+    </label>
+  </div>
+
+  <div class="toolbar-section" *ngIf="selectedPins.length > 0">
+    <h4>Selected: {{ selectedPins.length }} pin(s)</h4>
+    <div class="selection-info">
+      <small>Press Enter to open Layout Editor</small>
+    </div>
+    <button class="layout-editor-btn" (click)="openLayoutEditor()">
+      Layout Editor (Enter)
+    </button>
+    
+    <div class="text-controls" *ngIf="subMode === 'text' && selectedPins.length > 0">
+      <label>
+        Font Size:
+        <input type="number" min="8" max="24" [value]="selectedPins[0].textStyle.fontSize || 12" />
+      </label>
+      <label>
+        Color:
+        <input type="color" [value]="selectedPins[0].textStyle.color || '#000000'" />
+      </label>
+      <label>
+        Rotation:
+        <input type="range" min="0" max="360" [value]="selectedPins[0].textStyle.orientation || 0" />
+      </label>
+    </div>
+  </div>
+</div>
+
+<app-pin-layout-editor></app-pin-layout-editor>

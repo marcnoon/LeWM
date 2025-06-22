@@ -1,6 +1,7 @@
 import { GraphMode, PinEditState } from '../interfaces/graph-mode.interface';
 import { GraphNode } from '../models/graph-node.model';
 import { GraphStateService } from '../services/graph-state.service';
+import { PinStateService } from '../services/pin-state.service';
 
 export class PinEditMode implements GraphMode {
   name = 'pin-edit';
@@ -21,7 +22,10 @@ export class PinEditMode implements GraphMode {
   // Reference to component for dialog
   private componentRef: any = null;
 
-  constructor(private graphState: GraphStateService) {}
+  constructor(
+    private graphState: GraphStateService,
+    private pinState: PinStateService
+  ) {}
 
   setComponentRef(component: any): void {
     this.componentRef = component;
@@ -39,6 +43,8 @@ export class PinEditMode implements GraphMode {
       editingPinName: null
     };
     this.selectedPins.clear();
+    this.pinState.clearSelection();
+    this.pinState.setPinModeActive(true);
   }
 
   deactivate(): void {
@@ -53,6 +59,8 @@ export class PinEditMode implements GraphMode {
       editingPinName: null
     };
     this.selectedPins.clear();
+    this.pinState.clearSelection();
+    this.pinState.setPinModeActive(false);
   }
 
   handleNodeClick(node: GraphNode, event: MouseEvent): boolean {
@@ -60,6 +68,7 @@ export class PinEditMode implements GraphMode {
     this.state.selectedNode = node;
     this.state.selectedSide = null; // Clear side selection
     this.selectedPins.clear(); // clear pin selection when selecting node
+    this.pinState.clearSelection();
 
     console.log(`Selected node for pin editing: ${node.id}`);
     return true; // Event handled
@@ -77,13 +86,23 @@ export class PinEditMode implements GraphMode {
 
     // Selection logic: Ctrl+click for multi-select, otherwise single select
     const pinId = `${node.id}.${pin.name}`;
-    if (event.ctrlKey || event.metaKey) {
-      if (this.selectedPins.has(pinId)) this.selectedPins.delete(pinId);
-      else this.selectedPins.add(pinId);
+    const isMultiSelect = event.ctrlKey || event.metaKey;
+    
+    // Update local selection for immediate visual feedback
+    if (isMultiSelect) {
+      if (this.selectedPins.has(pinId)) {
+        this.selectedPins.delete(pinId);
+      } else {
+        this.selectedPins.add(pinId);
+      }
     } else {
       this.selectedPins.clear();
       this.selectedPins.add(pinId);
     }
+    
+    // Update pin state service selection
+    this.pinState.selectPin(pinId, isMultiSelect);
+    
     console.log(`Selected pins: ${Array.from(this.selectedPins).join(', ')}`);
     return true;
   }
@@ -124,6 +143,14 @@ export class PinEditMode implements GraphMode {
     if (event.key === 'Escape') {
       // Exit pin edit mode
       return true; // Will be handled by component to switch modes
+    }
+
+    if (event.key === 'Enter') {
+      // Open pin layout editor if pins are selected
+      if (this.selectedPins.size > 0) {
+        this.pinState.openLayoutEditor();
+        return true;
+      }
     }
 
     if (event.key === 'Delete') {
@@ -333,8 +360,6 @@ export class PinEditMode implements GraphMode {
     }
   }
 
-  // Pin creation is now handled by the component dialog
-
   private removePin(node: GraphNode, pinName: string): void {
     const updatedNode = { ...node };
     if (!updatedNode.pins) return;
@@ -393,6 +418,7 @@ export class PinEditMode implements GraphMode {
     });
     
     this.selectedPins.clear();
+    this.pinState.clearSelection();
     // re-render overlays
     if (this.componentRef) this.componentRef.renderActiveOverlay(this.componentRef.svgCanvas.nativeElement);
   }
