@@ -35,6 +35,7 @@ The default interaction mode for basic graph editing and connection creation:
 - **Connect Pins:** Click one pin, then another to draw a connection line.
 - **Delete:** Press Delete key to remove selected nodes or connections.
 - **Clear All:** Use "Clear Edges" button to remove all connections.
+- **Deselect:** Click blank canvas or press Escape key to deselect all nodes.
 
 ## Pin Edit Mode
 
@@ -61,6 +62,7 @@ A specialized mode for creating and managing relationships between pins. This mo
 -   **Multi-Select:** Ctrl+click or use selection box to select multiple connections
 -   **Delete Connections:** Press Delete key to remove selected connections
 -   **Edit Properties:** Double-click a connection to open the properties dialog
+-   **Unique Key Enforcement:** Connection value keys are unique per connection; duplicates are automatically numbered to maintain uniqueness.
 
 ### Connection Properties
 

@@ -113,6 +113,13 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
+    // Always clear selection on Escape key
+    if (event.key === 'Escape') {
+      this.selectedNodes.clear();
+      this.switchMode('normal');
+      event.preventDefault();
+      return;
+    }
     // First, let the mode handle the event
     if (this.modeManager.handleKeyDown(event)) {
       // Handle mode-specific shortcuts
@@ -181,16 +188,16 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   }
 
   onSvgMouseDown(event: MouseEvent): void {
-    // Delegate all svg mousedown events to modeManager.handleCanvasClick
-    if (this.modeManager.handleCanvasClick(event)) {
-      return; // Mode handled the event
-    }
-    
-    // Default logic
-    if (event.target === this.svgCanvas.nativeElement || 
-        (event.target as Element).id === 'grid-rect') {
+    // Baseline behavior in normal mode: always clear or start selection box
+    if (this.currentMode?.name === 'normal') {
       this.handleCanvasMouseDown(event);
+      return;
     }
+    // Delegate to mode or default canvas handling
+    if (this.modeManager.handleCanvasClick(event)) {
+      return;
+    }
+    this.handleCanvasMouseDown(event);
   }
 
   onNodeMouseDown(event: MouseEvent, nodeId: string): void {
@@ -315,26 +322,31 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   }
 
   private handleCanvasMouseDown(event: MouseEvent): void {
-    // Let the mode handle canvas clicks first
-    if (this.modeManager.handleCanvasClick(event)) {
-      return; // Mode handled the event
+    // Normal mode baseline: clear selection or start selection box
+    if (this.currentMode?.name === 'normal') {
+      const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
+      const mouseX = event.clientX - svgRect.left;
+      const mouseY = event.clientY - svgRect.top;
+      if (this.isCtrlPressed) {
+        // Start selection box
+        this.selectionBox = { startX: mouseX, startY: mouseY, endX: mouseX, endY: mouseY };
+      } else {
+        this.selectedNodes.clear();
+      }
+      return;
     }
-    
+    // Non-normal modes: clear or delegate to mode if needed
+    if (!this.isCtrlPressed) {
+      this.selectedNodes.clear();
+    }
+    if (this.modeManager.handleCanvasClick(event)) {
+      return;
+    }
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
     const mouseX = event.clientX - svgRect.left;
     const mouseY = event.clientY - svgRect.top;
-
     if (this.isCtrlPressed) {
-      // Start selection box
-      this.selectionBox = {
-        startX: mouseX,
-        startY: mouseY,
-        endX: mouseX,
-        endY: mouseY
-      };
-    } else {
-      // Click on empty space without Ctrl - clear selection
-      this.selectedNodes.clear();
+      this.selectionBox = { startX: mouseX, startY: mouseY, endX: mouseX, endY: mouseY };
     }
   }
   
@@ -380,6 +392,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
 
   switchMode(modeName: string): void {
     this.modeManager.activateMode(modeName);
+    // Clear selection when entering normal mode
+    if (modeName === 'normal') {
+      this.selectedNodes.clear();
+    }
     // Remove pin-edit overlays when exiting pin-edit mode
     if (modeName !== 'pin-edit') {
       this.clearOverlay();
