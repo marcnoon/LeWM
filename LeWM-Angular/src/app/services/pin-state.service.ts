@@ -339,4 +339,47 @@ export class PinStateService {
     console.log('Returning selected pins:', result.length, result.map(p => ({ id: p.id, label: p.label })));
     return result;
   }
+
+  /**
+   * Validates that pin data is consistent between PinStateService and legacy system
+   * @param graphStateService Reference to GraphStateService for validation
+   */
+  validatePinConsistency(graphStateService: any): { inconsistencies: string[]; isValid: boolean } {
+    const inconsistencies: string[] = [];
+    const currentPins = this.pinsSubject.value;
+    const nodes = graphStateService.getNodes();
+    
+    console.log('🔍 Validating pin consistency between systems...');
+    
+    // Check each pin in PinStateService against legacy system
+    Array.from(currentPins.values()).forEach(pin => {
+      const [nodeId, pinName] = pin.id.split('.');
+      const node = nodes.find((n: any) => n.id === nodeId);
+      
+      if (node && node.pins) {
+        const legacyPin = node.pins.find((p: any) => p.name === pinName);
+        if (legacyPin) {
+          // Check position consistency
+          if (legacyPin.x !== pin.position.x || legacyPin.y !== pin.position.y) {
+            const msg = `Position mismatch for ${pin.id}: PinState(${pin.position.x},${pin.position.y}) vs Legacy(${legacyPin.x},${legacyPin.y})`;
+            inconsistencies.push(msg);
+            console.warn(`⚠️ ${msg}`);
+          }
+        } else {
+          const msg = `Pin ${pin.id} exists in PinStateService but not in legacy system`;
+          inconsistencies.push(msg);
+          console.warn(`⚠️ ${msg}`);
+        }
+      } else {
+        const msg = `Node ${nodeId} not found in legacy system for pin ${pin.id}`;
+        inconsistencies.push(msg);
+        console.warn(`⚠️ ${msg}`);
+      }
+    });
+    
+    const isValid = inconsistencies.length === 0;
+    console.log(`🔍 Pin consistency validation: ${isValid ? '✅ VALID' : `❌ ${inconsistencies.length} issues found`}`);
+    
+    return { inconsistencies, isValid };
+  }
 }

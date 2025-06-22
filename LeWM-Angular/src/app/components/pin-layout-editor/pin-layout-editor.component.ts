@@ -307,11 +307,11 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  applyChanges(): void {
+  async applyChanges(): Promise<void> {
     console.log('Applying changes to', this.editingPins.length, 'pins');
     
     // Update both the PinStateService and sync back to legacy system
-    this.editingPins.forEach(pin => {
+    const syncPromises = this.editingPins.map(async (pin) => {
       // Update the enhanced pin system
       this.pinStateService.updatePin(pin.id, {
         position: pin.position,
@@ -319,9 +319,13 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
         pinStyle: pin.pinStyle
       });
       
-      // Sync changes back to the legacy node.pins system
-      this.syncPinToLegacySystem(pin);
+      // Sync changes back to the legacy node.pins system synchronously
+      return this.syncPinToLegacySystemSync(pin);
     });
+    
+    // Wait for all syncs to complete before closing
+    await Promise.all(syncPromises);
+    console.log('✅ All pin changes applied and persisted');
     
     this.closeEditor();
   }
@@ -372,6 +376,49 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
       }
     } else {
       console.error(`❌ Node ${nodeId} not found or has no pins`);
+    }
+  }
+
+  private async syncPinToLegacySystemSync(pin: Pin): Promise<void> {
+    // Extract nodeId and pinName from the pin ID format "nodeId.pinName"
+    const [nodeId, pinName] = pin.id.split('.');
+    
+    console.log(`🔄 Syncing pin ${pin.id} to legacy system synchronously...`);
+    console.log(`📍 Pin position data:`, pin.position);
+    
+    // Get the node from GraphStateService
+    const nodes = this.graphStateService.getNodes();
+    const node = nodes.find(n => n.id === nodeId);
+    
+    console.log(`🔍 Found node:`, node ? 'YES' : 'NO');
+    console.log(`📌 Node has pins:`, node?.pins ? `YES (${node.pins.length})` : 'NO');
+    
+    if (node && node.pins) {
+      // Find the legacy pin and update its position
+      const legacyPin = node.pins.find(p => p.name === pinName);
+      console.log(`🎯 Found legacy pin:`, legacyPin ? 'YES' : 'NO');
+      
+      if (legacyPin) {
+        console.log(`📍 BEFORE: Legacy pin ${pinName} at x=${legacyPin.x}, y=${legacyPin.y}`);
+        
+        // Update the legacy pin position with the new coordinates
+        legacyPin.x = pin.position.x;
+        legacyPin.y = pin.position.y;
+        
+        console.log(`📍 AFTER: Legacy pin ${pinName} at x=${legacyPin.x}, y=${legacyPin.y}`);
+        console.log(`💾 Updating node in GraphStateService synchronously...`);
+        
+        // Use the synchronous update method and wait for completion
+        await this.graphStateService.updateNodeSync(nodeId, { ...node });
+        
+        console.log(`✅ Node update and persistence completed for ${nodeId}`);
+      } else {
+        console.error(`❌ Legacy pin ${pinName} not found in node ${nodeId}`);
+        throw new Error(`Legacy pin ${pinName} not found in node ${nodeId}`);
+      }
+    } else {
+      console.error(`❌ Node ${nodeId} not found or has no pins`);
+      throw new Error(`Node ${nodeId} not found or has no pins`);
     }
   }
 

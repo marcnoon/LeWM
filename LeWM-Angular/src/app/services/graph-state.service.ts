@@ -93,6 +93,23 @@ export class GraphStateService {
     console.log(`💾 Node ${nodeId} updated and saved to localStorage`);
   }
 
+  /**
+   * Updates an entire node synchronously and returns a promise when persistence is complete.
+   * @param nodeId The ID of the node to update.
+   * @param updatedNode The updated node data.
+   * @returns Promise that resolves when the update is persisted.
+   */
+  updateNodeSync(nodeId: string, updatedNode: GraphNode): Promise<void> {
+    return new Promise((resolve) => {
+      this.updateNode(nodeId, updatedNode);
+      // Use setTimeout to ensure localStorage write completes
+      setTimeout(() => {
+        console.log(`✅ Node ${nodeId} update and persistence completed`);
+        resolve();
+      }, 10);
+    });
+  }
+
   deleteNodes(ids: string[]): void {
     const currentNodes = this._nodes.getValue();
     this._nodes.next(currentNodes.filter(node => !ids.includes(node.id)));

@@ -25,17 +25,23 @@ export class ModeManagerService {
   /**
    * Activates a specific mode
    */
-  activateMode(modeName: string): boolean {
+  async activateMode(modeName: string): Promise<boolean> {
     const mode = this._availableModes.get(modeName);
     if (!mode) {
       console.warn(`Mode '${modeName}' not found`);
       return false;
     }
     
-    // Deactivate current mode
+    // Deactivate current mode (with await for async deactivation if supported)
     const currentMode = this._activeMode.value;
     if (currentMode) {
-      currentMode.deactivate();
+      if (typeof currentMode.deactivate === 'function') {
+        const deactivateResult = currentMode.deactivate();
+        // Handle both sync and async deactivate methods
+        if (deactivateResult instanceof Promise) {
+          await deactivateResult;
+        }
+      }
       currentMode.isActive = false;
     }
     
