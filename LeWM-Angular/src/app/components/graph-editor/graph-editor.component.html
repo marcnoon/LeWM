@@ -31,6 +31,13 @@
         <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Double-click pins to rename • Esc to exit</small>
         <small *ngIf="currentMode?.name === 'connection'">Click connections to select • Ctrl+Click for multi-select • Enter to edit • Delete to remove • Esc to exit</small>
       </div>
+      <!-- Pin Edit Mode Actions -->
+      <div *ngIf="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.size || 0) > 0" class="controls">
+        <h4>Pin Actions</h4>
+        <button (click)="deleteSelectedPins()" class="clear-btn">
+          Delete Selected Pins ({{ modeManager.getActiveMode()?.selectedPins?.size || 0 }})
+        </button>
+      </div>
     </div>
   </div>
   
@@ -145,6 +152,7 @@
                   stroke="#333"
                   stroke-width="1"
                   class="pin"
+                  [class.selected]="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.has(node.id + '.' + pin.name) || false)"
                   [attr.data-node-id]="node.id"
                   [attr.data-pin-name]="pin.name"
                   (mousedown)="onPinMouseDown($event, node.id, pin.name)" />

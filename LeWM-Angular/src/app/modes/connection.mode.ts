@@ -15,6 +15,7 @@ export class ConnectionMode implements GraphMode {
   name = 'connection';
   displayName = 'Connection';
   isActive = false;
+  selectedPins: Set<string> = new Set(); // Connection mode doesn't select pins
   
   state: ConnectionModeState = {
     selectedConnections: new Set(),
@@ -43,6 +44,7 @@ export class ConnectionMode implements GraphMode {
       connectionStartPin: null,
       connectionPreview: null
     };
+    this.selectedPins.clear();
   }
   
   deactivate(): void {
@@ -56,6 +58,7 @@ export class ConnectionMode implements GraphMode {
       connectionStartPin: null,
       connectionPreview: null
     };
+    this.selectedPins.clear();
   }
   
   handleNodeClick(node: GraphNode, event: MouseEvent): boolean {
@@ -395,5 +398,9 @@ export class ConnectionMode implements GraphMode {
   
   isConnectionHovered(connectionId: string): boolean {
     return this.state.hoveredConnection === connectionId;
+  }
+  
+  deleteSelectedPins(): void {
+    // No pin deletion in connection mode
   }
 }

@@ -5,6 +5,7 @@ import { Pin } from "../models/graph-node.model"; // Assuming Pin is defined wit
 export interface GraphMode {
   name: string;
   displayName: string;
+  selectedPins: Set<string>; // Track selected pin identifiers within mode
   isActive: boolean;
   
   // Lifecycle methods
@@ -17,6 +18,8 @@ export interface GraphMode {
   handleCanvasClick(event: MouseEvent): boolean;
   handleMouseMove(event: MouseEvent): boolean;
   handleKeyDown(event: KeyboardEvent): boolean;
+  /** Delete any selected pins within the current mode */
+  deleteSelectedPins(): void;
   
   // Visual rendering
   renderOverlay(canvas: SVGElement): void;

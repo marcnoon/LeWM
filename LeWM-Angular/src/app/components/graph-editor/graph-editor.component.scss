@@ -138,3 +138,21 @@
   stroke: #007bff;
   stroke-width: 3;
 }
+
+/* Pin selection styling */
+.pin {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pin:hover {
+  r: 4;
+  stroke-width: 2;
+}
+
+.pin.selected {
+  fill: #4CAF50 !important;
+  stroke: #2E7D32 !important;
+  stroke-width: 3 !important;
+  r: 5;
+}

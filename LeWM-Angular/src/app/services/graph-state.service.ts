@@ -204,6 +204,48 @@ export class GraphStateService {
   }
 
   /**
+   * Removes specified pins from a node and cleans up associated connections.
+   * @param nodeId The ID of the node from which to remove pins.
+   * @param pinNames List of pin names to remove.
+   */
+  removePins(nodeId: string, pinNames: string[]): void {
+    const nodes = this._nodes.getValue();
+    const idx = nodes.findIndex(n => n.id === nodeId);
+    if (idx === -1) return;
+    const node = {...nodes[idx]};
+    if (!node.pins) return;
+    node.pins = node.pins.filter(pin => !pinNames.includes(pin.name));
+    const updated = [...nodes]; updated[idx] = node;
+    this._nodes.next(updated);
+    // clean up connections for each removed pin
+    pinNames.forEach(name => this.removeConnectionsForPin(nodeId, name));
+  }
+
+  /**
+   * Removes orphaned connections that reference a specific pin.
+   * @param nodeId The ID of the node.
+   * @param pinName The name of the pin that was removed.
+   * @returns The number of connections removed.
+   */
+  removeConnectionsForPin(nodeId: string, pinName: string): number {
+    const currentEdges = this._edges.getValue();
+    const pinReference = `${nodeId}.${pinName}`;
+    
+    const validEdges = currentEdges.filter(edge => 
+      edge.from !== pinReference && edge.to !== pinReference
+    );
+    
+    const removedCount = currentEdges.length - validEdges.length;
+    
+    if (removedCount > 0) {
+      this._edges.next(validEdges);
+      console.log(`Removed ${removedCount} connections for pin ${nodeId}.${pinName}`);
+    }
+    
+    return removedCount;
+  }
+
+  /**
    * Removes all orphaned connections (connections that reference non-existent pins).
    * @returns The number of orphaned connections removed.
    */
@@ -237,30 +279,6 @@ export class GraphStateService {
       // Invalid connection format
       return false;
     }
-  }
-
-  /**
-   * Removes orphaned connections that reference a specific pin.
-   * @param nodeId The ID of the node.
-   * @param pinName The name of the pin that was removed.
-   * @returns The number of connections removed.
-   */
-  removeConnectionsForPin(nodeId: string, pinName: string): number {
-    const currentEdges = this._edges.getValue();
-    const pinReference = `${nodeId}.${pinName}`;
-    
-    const validEdges = currentEdges.filter(edge => 
-      edge.from !== pinReference && edge.to !== pinReference
-    );
-    
-    const removedCount = currentEdges.length - validEdges.length;
-    
-    if (removedCount > 0) {
-      this._edges.next(validEdges);
-      console.log(`Removed ${removedCount} connections for pin ${nodeId}.${pinName}`);
-    }
-    
-    return removedCount;
   }
 
   /**

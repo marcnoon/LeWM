@@ -84,7 +84,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
 
   constructor(
     private graphState: GraphStateService,
-    private modeManager: ModeManagerService
+    public modeManager: ModeManagerService
   ) {}
 
   ngOnInit(): void {
@@ -134,13 +134,18 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
         return;
       }
     }
-    
+
     // Handle global shortcuts
     if (event.key === 'Control' || event.key === 'Meta') {
       this.isCtrlPressed = true;
     }
-    if (event.key === 'Delete' && this.selectedNodes.size > 0) {
-      this.deleteSelectedNodes();
+    if (event.key === 'Delete') {
+      // In Pin Edit mode delete selected pins first
+      if (this.currentMode?.name === 'pin-edit' && (this.modeManager.getActiveMode()?.selectedPins?.size || 0) > 0) {
+        this.deleteSelectedPins();
+      } else if (this.selectedNodes.size > 0) {
+        this.deleteSelectedNodes();
+      }
     }
   }
     
@@ -185,6 +190,11 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     
     // Validate connection integrity after node deletion
     this.validateConnectionIntegrity();
+  }
+
+  /** Delete currently selected pins in Pin Edit mode */
+  deleteSelectedPins(): void {
+    this.modeManager.deleteSelectedPins();
   }
 
   onSvgMouseDown(event: MouseEvent): void {
