@@ -91,6 +91,13 @@ export class PinEditMode implements GraphMode {
     if (this.state.selectedNode) {
       const side = this.getClickedSide(this.state.selectedNode, event);
       if (side && this.componentRef) {
+        // Check for double-click to enter advanced mode
+        if (event.detail === 2) {
+          console.log(`Double-clicked side ${side}, entering advanced mode.`);
+          this.componentRef.openBulkPinDialog(this.state.selectedNode, side);
+          return true;
+        }
+
         this.state.selectedSide = side as 'top' | 'right' | 'bottom' | 'left';
         // Show dialog for pin naming
         this.componentRef.showPinCreationDialog(this.state.selectedNode, side);

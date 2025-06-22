@@ -4,9 +4,11 @@ import { GraphNode } from '../../models/graph-node.model';
 import { GraphEdge } from '../../models/graph-edge.model';
 import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
+import { PinLayoutService } from '../../services/pin-layout.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { NormalMode } from '../../modes/normal.mode';
 import { PinEditMode } from '../../modes/pin-edit.mode';
+import { ConnectionMode } from '../../modes/connection.mode';
 
 interface AvailableNode {
   type: string;
@@ -70,12 +72,18 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   showPinDialog = false;
   selectedSideForPin = '';
   pendingPinNode: GraphNode | null = null;
+  
+  // Bulk pin dialog state
+  showBulkPinDialog = false;
+  selectedSideForBulkPin = '';
+  pendingBulkPinNode: GraphNode | null = null;
 
   Math = Math;
 
   constructor(
     private graphState: GraphStateService,
-    private modeManager: ModeManagerService
+    private modeManager: ModeManagerService,
+    private pinLayoutService: PinLayoutService
   ) {}
 
   ngOnInit(): void {
@@ -331,12 +339,15 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     // Create and register modes
     const normalMode = new NormalMode(this.graphState);
     const pinEditMode = new PinEditMode(this.graphState);
+    const connectionMode = new ConnectionMode(this.graphState);
     
     // Set component reference for pin edit mode
     pinEditMode.setComponentRef(this);
+    connectionMode.setComponentRef(this);
     
     this.modeManager.registerMode(normalMode);
     this.modeManager.registerMode(pinEditMode);
+    this.modeManager.registerMode(connectionMode);
     
     this.availableModes = this.modeManager.getAvailableModes();
     
@@ -391,6 +402,110 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     this.showPinDialog = false;
     this.pendingPinNode = null;
     this.selectedSideForPin = '';
+  }
+
+  // Bulk pin dialog methods
+  openBulkPinDialog(node: GraphNode, side: string): void {
+    this.pendingBulkPinNode = node;
+    this.selectedSideForBulkPin = side;
+    this.showBulkPinDialog = true;
+  }
+
+  onBulkPinsCreated(data: { pinNames: string[]; options: { autoDistribute: boolean; snapToGrid: boolean } }): void {
+    if (this.pendingBulkPinNode && this.selectedSideForBulkPin) {
+      this.createBulkPinsOnSide(
+        this.pendingBulkPinNode, 
+        this.selectedSideForBulkPin as 'top' | 'right' | 'bottom' | 'left', 
+        data.pinNames, 
+        data.options
+      );
+    }
+    this.showBulkPinDialog = false;
+    this.pendingBulkPinNode = null;
+    this.selectedSideForBulkPin = '';
+  }
+
+  onBulkPinDialogCancelled(): void {
+    this.showBulkPinDialog = false;
+    this.pendingBulkPinNode = null;
+    this.selectedSideForBulkPin = '';
+  }
+
+  private createBulkPinsOnSide(
+    node: GraphNode, 
+    side: 'top' | 'right' | 'bottom' | 'left', 
+    pinNames: string[], 
+    options: { autoDistribute: boolean; snapToGrid: boolean }
+  ): void {
+    const updatedNode = { ...node };
+    if (!updatedNode.pins) updatedNode.pins = [];
+
+    if (options.autoDistribute) {
+      // Use the advanced layout service for optimal distribution
+      const layout = this.pinLayoutService.distributePinsOnSide(node, side, pinNames, {
+        minSpacing: options.snapToGrid ? 10 : 8,
+        edgeMargin: 10,
+        textPadding: 6,
+        estimatedCharWidth: 6
+      });
+
+      // Remove existing pins on this side first
+      updatedNode.pins = updatedNode.pins.filter(pin => {
+        switch (side) {
+          case 'top': return pin.y !== 0;
+          case 'right': return pin.x !== node.width;
+          case 'bottom': return pin.y !== node.height;
+          case 'left': return pin.x !== 0;
+          default: return true;
+        }
+      });
+
+      // Add the new optimally positioned pins
+      updatedNode.pins.push(...layout.positions);
+
+      console.log(`Created ${layout.positions.length} pins on ${side} side with optimal distribution`);
+      if (layout.hasOverlap) {
+        console.warn('Warning: Pin labels may overlap due to space constraints');
+      }
+    } else {
+      // Simple even distribution fallback
+      const sideLength = (side === 'top' || side === 'bottom') ? node.width : node.height;
+      const spacing = sideLength / (pinNames.length + 1);
+
+      pinNames.forEach((pinName, index) => {
+        const position = this.calculateSimplePinPosition(node, side, index, spacing);
+        updatedNode.pins!.push({
+          x: Math.round(position.x),
+          y: Math.round(position.y),
+          name: pinName
+        });
+      });
+
+      console.log(`Created ${pinNames.length} pins on ${side} side with simple distribution`);
+    }
+
+    // Update the node in the service
+    this.graphState.updateNode(node.id, updatedNode);
+  }
+
+  private calculateSimplePinPosition(
+    node: GraphNode, 
+    side: 'top' | 'right' | 'bottom' | 'left', 
+    index: number, 
+    spacing: number
+  ): { x: number; y: number } {
+    const offset = spacing * (index + 1);
+    
+    switch (side) {
+      case 'top':
+        return { x: offset, y: 0 };
+      case 'right':
+        return { x: node.width, y: offset };
+      case 'bottom':
+        return { x: offset, y: node.height };
+      case 'left':
+        return { x: 0, y: offset };
+    }
   }
   
   private createPinOnSide(node: GraphNode, side: string, pinName: string): void {
@@ -517,5 +632,24 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const [nodeId, pinName] = edge.to.split('.');
     const position = this.graphState.getPinPosition(nodeId, pinName);
     return position ? position.y : 0;
+  }
+
+  // Connection mode helper methods
+  updateConnectionStates(): void {
+    // This method is called by ConnectionMode to update connection selection states
+    // The UI will automatically reflect changes through the async pipe
+    console.log('Connection states updated');
+  }
+
+  showConnectionPropertiesDialog(connectionId: string): void {
+    // Placeholder for connection properties dialog
+    console.log(`Opening properties dialog for connection: ${connectionId}`);
+    // TODO: Implement connection properties dialog
+  }
+
+  showConnectionBulkEditDialog(connectionIds: string[]): void {
+    // Placeholder for bulk connection edit dialog
+    console.log(`Opening bulk edit dialog for ${connectionIds.length} connections`);
+    // TODO: Implement bulk connection edit dialog
   }
 }

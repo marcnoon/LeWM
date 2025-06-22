@@ -1,6 +1,7 @@
 export interface GraphEdge {
-  // Unique identifier for the edge (optional, but good for tracking)
-  id?: string; 
-  from: string; // e.g., 'nodeId.pinName' or 'nodeId'
-  to: string;   // e.g., 'nodeId.pinName' or 'nodeId'
+  id?: string; // Optional unique identifier for the edge
+  from: string; // Source node.pin (e.g., 'nodeId.pinName')
+  to: string; // Target node.pin (e.g., 'nodeId.pinName')
+  isSelected?: boolean; // Selection state for UI
+  isHighlighted?: boolean; // Hover/highlight state for UI
 }

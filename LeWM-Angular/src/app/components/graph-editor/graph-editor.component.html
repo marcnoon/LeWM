@@ -28,7 +28,7 @@
         <p>Mode: {{ currentMode?.displayName || 'None' }}</p>
         <p>Selected: {{ selectedNodes.size }}</p>
         <small *ngIf="currentMode?.name === 'normal'">Click to select • Ctrl+Click for multi-select • Delete to remove • P for Pin Mode</small>
-        <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Double-click pins to rename • Esc to exit</small>
+        <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Double-click edges for Advanced Layout • Double-click pins to rename • Esc to exit</small>
       </div>
     </div>
   </div>
@@ -136,4 +136,13 @@
     (pinCreated)="onPinCreated($event)"
     (cancelled)="onPinDialogCancelled()">
   </app-pin-name-dialog>
+  
+  <!-- Bulk Pin Dialog -->
+  <app-bulk-pin-dialog
+    #bulkPinDialog
+    [isVisible]="showBulkPinDialog"
+    [side]="selectedSideForBulkPin"
+    (pinsCreated)="onBulkPinsCreated($event)"
+    (cancelled)="onBulkPinDialogCancelled()">
+  </app-bulk-pin-dialog>
 </div>
