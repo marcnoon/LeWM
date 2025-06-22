@@ -125,10 +125,14 @@ export class PinEditMode implements GraphMode {
       return true; // Will be handled by component to switch modes
     }
 
-    if (event.key === 'Delete' && this.state.selectedNode) {
-      // Delete selected node's pins or selected pins
-      console.log('Delete in pin edit mode');
-      return false; // Let normal delete behavior handle it
+    if (event.key === 'Delete') {
+      // If we have selected pins, delete them
+      if (this.selectedPins.size > 0) {
+        this.deleteSelectedPins();
+        return true; // We handled the delete
+      }
+      // Otherwise let component handle it (e.g., for node deletion)
+      return false;
     }
 
     return false;
