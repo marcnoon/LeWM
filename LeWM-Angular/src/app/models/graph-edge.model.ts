@@ -4,13 +4,6 @@ export type ConnectionDirection = 'forward' | 'backward' | 'bidirectional';
 export type ConnectionType = 'signal' | 'power' | 'data' | 'control' | 'custom';
 
 export interface GraphEdge {
-<<<<<<< HEAD
-  id?: string; // Optional unique identifier for the edge
-  from: string; // Source node.pin (e.g., 'nodeId.pinName')
-  to: string; // Target node.pin (e.g., 'nodeId.pinName')
-  isSelected?: boolean; // Selection state for UI
-  isHighlighted?: boolean; // Hover/highlight state for UI
-=======
   // Basic connection info
   id?: string; 
   from: string; // e.g., 'nodeId.pinName' or 'nodeId'
@@ -38,5 +31,4 @@ export interface GraphEdge {
   tags?: string[]; // For categorization and filtering
   createdAt?: Date;
   updatedAt?: Date;
->>>>>>> main
 }
