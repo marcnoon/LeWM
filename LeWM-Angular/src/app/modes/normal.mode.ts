@@ -50,6 +50,11 @@ export class NormalMode implements GraphMode {
       return true;
     }
     
+    if (event.key === 'Enter') {
+      // If nodes are selected, allow component to handle node name editing
+      return true;
+    }
+    
     // Return false to let component handle other keys (delete, ctrl, etc.)
     return false;
   }
