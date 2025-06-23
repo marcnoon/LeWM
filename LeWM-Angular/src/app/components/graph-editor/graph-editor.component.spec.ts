@@ -94,12 +94,33 @@ describe('GraphEditorComponent', () => {
       expect(component.switchToFileMode).not.toHaveBeenCalled();
     });
 
+    it('should prevent mode switching when pin layout editor is open', () => {
+      // Simulate pin layout editor being open
+      component.showPinLayoutEditor = true;
+
+      // Create keyboard events for mode switching keys
+      const eventF = new KeyboardEvent('keydown', { key: 'f' });
+      const eventN = new KeyboardEvent('keydown', { key: 'n' });
+      const eventP = new KeyboardEvent('keydown', { key: 'p' });
+
+      // Trigger the keyboard events
+      component.handleKeyDown(eventF);
+      component.handleKeyDown(eventN);
+      component.handleKeyDown(eventP);
+
+      // Verify that mode switching methods were not called
+      expect(component.switchToFileMode).not.toHaveBeenCalled();
+      expect(component.switchToNormalMode).not.toHaveBeenCalled();
+      expect(component.switchToPinEditMode).not.toHaveBeenCalled();
+    });
+
     it('should allow mode switching when no dialogs are open', () => {
       // Ensure all dialogs are closed
       component.showNodeDialog = false;
       component.showPinDialog = false;
       component.showConnectionDialog = false;
       component.showConnectionBulkDialog = false;
+      component.showPinLayoutEditor = false;
 
       // Mock the current mode to ensure mode switching logic is triggered
       component.currentMode = component['normalMode'];
