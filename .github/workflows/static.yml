@@ -32,7 +32,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: './LeWM-Angular/package-lock.json'
           
@@ -41,7 +41,7 @@ jobs:
         working-directory: ./LeWM-Angular
         
       - name: Build Angular app
-        run: ng build --configuration=production --base-href "https://marcnoon.github.io/LeWM/"
+        run: npx ng build --configuration=production --base-href "https://marcnoon.github.io/LeWM/"
         working-directory: ./LeWM-Angular
         
       - name: Setup Pages
