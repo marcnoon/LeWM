@@ -44,12 +44,8 @@ jobs:
         run: npx ng build --configuration=production --base-href "/LeWM/"
         working-directory: ./LeWM-Angular
         
-      - name: List build output (debug)
-        run: find ./dist -type f -name "*.html" | head -10
-        working-directory: ./LeWM-Angular
-        
       - name: Copy index.html to 404.html for SPA routing
-        run: cp ./dist/LeWM-Angular/index.html ./dist/LeWM-Angular/404.html
+        run: cp ./dist/LeWM-Angular/browser/index.html ./dist/LeWM-Angular/browser/404.html
         working-directory: ./LeWM-Angular
         
       - name: Setup Pages
@@ -58,8 +54,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload the built Angular app
-          path: './LeWM-Angular/dist/LeWM-Angular'
+          # Upload the built Angular app from the browser folder
+          path: './LeWM-Angular/dist/LeWM-Angular/browser'
 
   # Deploy job
   deploy:
