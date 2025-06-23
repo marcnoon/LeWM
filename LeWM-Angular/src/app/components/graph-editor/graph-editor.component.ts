@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { Observable, Subscription, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { GraphNode } from '../../models/graph-node.model';
@@ -6,11 +6,13 @@ import { GraphEdge } from '../../models/graph-edge.model';
 import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
+import { FileService } from '../../services/file.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { Pin } from '../../interfaces/pin.interface';
 import { NormalMode } from '../../modes/normal.mode';
 import { PinEditMode } from '../../modes/pin-edit.mode';
 import { ConnectionMode } from '../../modes/connection.mode';
+import { FileMode } from '../../modes/file.mode';
 
 interface AvailableNode {
   type: string;
@@ -32,7 +34,7 @@ interface SelectionBox {
   templateUrl: './graph-editor.component.html',
   styleUrl: './graph-editor.component.scss'
 })
-export class GraphEditorComponent implements OnInit, OnDestroy {
+export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('svgCanvas', { static: true }) svgCanvas!: ElementRef<SVGElement>;
 
   // Expose the nodes and edges observables directly to the template
@@ -70,7 +72,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   connectingFrom: { nodeId: string; pinName: string } | null = null;
   
   // Mode system
-  currentMode: GraphMode | null = null;
+  private normalMode: NormalMode;
+  private pinEditMode: PinEditMode;
+  private fileMode: FileMode;
+  public currentMode: GraphMode;
   availableModes: GraphMode[] = [];
   private modeSubscription?: Subscription;
   
@@ -92,8 +97,15 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
   constructor(
     private graphState: GraphStateService,
     public modeManager: ModeManagerService,
-    private pinState: PinStateService
-  ) {}
+    private pinState: PinStateService,
+    private fileService: FileService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.normalMode = new NormalMode(this.graphState);
+    this.pinEditMode = new PinEditMode(this.graphState, this.pinState);
+    this.fileMode = new FileMode(this.graphState, this.pinState, this.fileService);
+    this.currentMode = this.normalMode;
+  }
 
   ngOnInit(): void {
     // Assign the observables for use with the async pipe in the template
@@ -128,6 +140,21 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     
     // Initialize mode system
     this.initializeModes();
+
+    // Subscribe to mode changes
+    this.modeSubscription = this.modeManager.activeMode$.subscribe(mode => {
+      if (mode) {
+        this.currentMode = mode;
+      }
+      // Remove pin-edit overlays when exiting pin-edit mode
+      if (mode?.name !== 'pin-edit') {
+        this.clearOverlay();
+      }
+      // Update cursor based on mode
+      if (this.svgCanvas?.nativeElement) {
+        this.svgCanvas.nativeElement.style.cursor = this.modeManager.getActiveCursor();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -136,14 +163,42 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     this.modeSubscription?.unsubscribe();
   }
 
+  ngAfterViewInit(): void {
+    // Render initial overlay if needed
+    if (this.currentMode && this.svgCanvas?.nativeElement) {
+      this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
+    }
+  }
+
   @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent) {
-    // Always clear selection on Escape key
-    if (event.key === 'Escape') {
-      this.selectedNodes.clear();
-      this.switchMode('normal');
-      event.preventDefault();
-      return;
+  handleKeyDown(event: KeyboardEvent): void {
+    console.log('GraphEditor: Key pressed:', event.key, 'Current mode:', this.currentMode.name);
+
+    // Mode switching keys
+    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+      switch (event.key.toLowerCase()) {
+        case 'n':
+          if (this.currentMode !== this.normalMode) {
+            this.switchToNormalMode();
+            event.preventDefault();
+            return;
+          }
+          break;
+        case 'p':
+          if (this.currentMode !== this.pinEditMode) {
+            this.switchToPinEditMode();
+            event.preventDefault();
+            return;
+          }
+          break;
+        case 'f':
+          if (this.currentMode !== this.fileMode) {
+            this.switchToFileMode();
+            event.preventDefault();
+            return;
+          }
+          break;
+      }
     }
 
     // Handle Enter key in pin edit mode
@@ -404,29 +459,19 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const normalMode = new NormalMode(this.graphState);
     const pinEditMode = new PinEditMode(this.graphState, this.pinState);
     const connectionMode = new ConnectionMode(this.graphState);
+    const fileMode = new FileMode(this.graphState, this.pinState, this.fileService);
     
     // Set component references for modes that need dialogs
     pinEditMode.setComponentRef(this);
     connectionMode.setComponentRef(this);
+    fileMode.setComponentRef(this);
     
     this.modeManager.registerMode(normalMode);
     this.modeManager.registerMode(pinEditMode);
     this.modeManager.registerMode(connectionMode);
+    this.modeManager.registerMode(fileMode);
     
     this.availableModes = this.modeManager.getAvailableModes();
-    
-    // Subscribe to mode changes
-    this.modeSubscription = this.modeManager.activeMode$.subscribe(mode => {
-      this.currentMode = mode;
-      // Remove pin-edit overlays when exiting pin-edit mode
-      if (mode?.name !== 'pin-edit') {
-        this.clearOverlay();
-      }
-      // Update cursor based on mode
-      if (this.svgCanvas?.nativeElement) {
-        this.svgCanvas.nativeElement.style.cursor = this.modeManager.getActiveCursor();
-      }
-    });
     
     // Activate normal mode by default
     this.modeManager.activateMode('normal');
@@ -451,6 +496,36 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     
     // Validate connection integrity when switching modes to clean up any orphaned connections
     this.validateConnectionIntegrity();
+  }
+  
+  switchToNormalMode(): void {
+    console.log('Switching to Normal mode');
+    if (this.currentMode.isActive) {
+      this.currentMode.deactivate();
+    }
+    this.currentMode = this.normalMode;
+    this.normalMode.activate();
+    this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
+  }
+
+  switchToPinEditMode(): void {
+    console.log('Switching to Pin Edit mode');
+    if (this.currentMode.isActive) {
+      this.currentMode.deactivate();
+    }
+    this.currentMode = this.pinEditMode;
+    this.pinEditMode.activate();
+    this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
+  }
+
+  switchToFileMode(): void {
+    console.log('Switching to File mode');
+    if (this.currentMode.isActive) {
+      this.currentMode.deactivate();
+    }
+    this.currentMode = this.fileMode;
+    this.fileMode.activate();
+    this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
   }
   
   private validateConnectionIntegrity(): void {
@@ -797,14 +872,41 @@ export class GraphEditorComponent implements OnInit, OnDestroy {
     const pinId = `${nodeId}.${pinName}`;
     let isSelected = false;
     
-    this.pinsByNode$.subscribe(pinsByNode => {
+    const subscription = this.pinsByNode$.subscribe(pinsByNode => {
       if (pinsByNode) {
         const pins = this.getPinsForNode(nodeId, pinsByNode);
         const pin = pins.find(p => p.id === pinId);
         isSelected = pin?.isSelected || false;
       }
-    }).unsubscribe();
+    });
     
+    subscription.unsubscribe();
     return isSelected;
+  }
+
+  // File operations
+  saveGraph(): void {
+    this.fileMode.save();
+  }
+
+  saveGraphAs(): void {
+    this.fileMode.saveAs();
+  }
+
+  openGraph(): void {
+    this.fileMode.open();
+  }
+
+  newGraph(): void {
+    this.fileMode.newGraph();
+  }
+
+  get currentFileName(): string | null {
+    return this.fileService.getCurrentFileName();
+  }
+
+  // Add currentModeName getter
+  get currentModeName(): string {
+    return this.currentMode?.name || '';
   }
 }
