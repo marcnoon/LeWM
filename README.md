@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/d329df45-2b49-49ab-af11-f532986ed9af)
+![image](https://github.com/user-attachments/assets/4336db93-e31e-451d-89c2-a2dfbf17c170)
 
 # LeWM - Level With Me
 
