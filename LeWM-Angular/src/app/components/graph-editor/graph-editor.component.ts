@@ -545,17 +545,27 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   onPinCreated(pinName: string): void {
     if (this.pendingPinNode && this.selectedSideForPin) {
-      // Check if pin name already exists on this node
-      if (this.isPinNameDuplicate(this.pendingPinNode, pinName)) {
-        // Show error and keep dialog open
-        console.warn(`Pin name "${pinName}" already exists on node ${this.pendingPinNode.id}`);
+      // Trim whitespace and check for empty names
+      const trimmedName = pinName.trim();
+      if (!trimmedName) {
+        console.warn('Pin name cannot be empty');
         if (this.pinDialog) {
-          this.pinDialog.showError(`Pin name "${pinName}" already exists on this node. Please choose a different name.`);
+          this.pinDialog.showError('Pin name cannot be empty. Please enter a valid name.');
         }
         return;
       }
       
-      this.createPinOnSide(this.pendingPinNode, this.selectedSideForPin, pinName);
+      // Check if pin name already exists on this node
+      if (this.isPinNameDuplicate(this.pendingPinNode, trimmedName)) {
+        // Show error and keep dialog open
+        console.warn(`Pin name "${trimmedName}" already exists on node ${this.pendingPinNode.id}`);
+        if (this.pinDialog) {
+          this.pinDialog.showError(`Pin name "${trimmedName}" already exists on this node. Please choose a different name.`);
+        }
+        return;
+      }
+      
+      this.createPinOnSide(this.pendingPinNode, this.selectedSideForPin, trimmedName);
       // Only close dialog and clear state if pin creation was successful
       this.showPinDialog = false;
       this.pendingPinNode = null;
