@@ -33,6 +33,126 @@ describe('GraphEditorComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('Mode switching during dialog interaction', () => {
+    beforeEach(() => {
+      // Set up spies for mode switching methods
+      spyOn(component, 'switchToNormalMode');
+      spyOn(component, 'switchToPinEditMode');
+      spyOn(component, 'switchToFileMode');
+    });
+
+    it('should prevent mode switching when node dialog is open', () => {
+      // Simulate node dialog being open
+      component.showNodeDialog = true;
+
+      // Create keyboard events for mode switching keys
+      const eventF = new KeyboardEvent('keydown', { key: 'f' });
+      const eventP = new KeyboardEvent('keydown', { key: 'p' });
+      const eventN = new KeyboardEvent('keydown', { key: 'n' });
+
+      // Trigger the keyboard events
+      component.handleKeyDown(eventF);
+      component.handleKeyDown(eventP);
+      component.handleKeyDown(eventN);
+
+      // Verify that mode switching methods were not called
+      expect(component.switchToFileMode).not.toHaveBeenCalled();
+      expect(component.switchToPinEditMode).not.toHaveBeenCalled();
+      expect(component.switchToNormalMode).not.toHaveBeenCalled();
+    });
+
+    it('should prevent mode switching when pin dialog is open', () => {
+      // Simulate pin dialog being open
+      component.showPinDialog = true;
+
+      // Create keyboard events for mode switching keys
+      const eventF = new KeyboardEvent('keydown', { key: 'f' });
+      const eventP = new KeyboardEvent('keydown', { key: 'p' });
+
+      // Trigger the keyboard events
+      component.handleKeyDown(eventF);
+      component.handleKeyDown(eventP);
+
+      // Verify that mode switching methods were not called
+      expect(component.switchToFileMode).not.toHaveBeenCalled();
+      expect(component.switchToPinEditMode).not.toHaveBeenCalled();
+    });
+
+    it('should prevent mode switching when connection dialog is open', () => {
+      // Simulate connection dialog being open
+      component.showConnectionDialog = true;
+
+      // Create keyboard events for mode switching keys
+      const eventF = new KeyboardEvent('keydown', { key: 'f' });
+      const eventC = new KeyboardEvent('keydown', { key: 'c' });
+
+      // Trigger the keyboard events
+      component.handleKeyDown(eventF);
+      component.handleKeyDown(eventC);
+
+      // Verify that mode switching methods were not called
+      expect(component.switchToFileMode).not.toHaveBeenCalled();
+    });
+
+    it('should allow mode switching when no dialogs are open', () => {
+      // Ensure all dialogs are closed
+      component.showNodeDialog = false;
+      component.showPinDialog = false;
+      component.showConnectionDialog = false;
+      component.showConnectionBulkDialog = false;
+
+      // Mock the current mode to ensure mode switching logic is triggered
+      component.currentMode = component['normalMode'];
+
+      // Create keyboard events for mode switching keys
+      const eventF = new KeyboardEvent('keydown', { key: 'f' });
+      const eventP = new KeyboardEvent('keydown', { key: 'p' });
+
+      // Trigger the keyboard events
+      component.handleKeyDown(eventF);
+      component.handleKeyDown(eventP);
+
+      // Verify that mode switching methods were called
+      expect(component.switchToFileMode).toHaveBeenCalled();
+      expect(component.switchToPinEditMode).toHaveBeenCalled();
+    });
+
+    it('should prevent Enter key actions when dialogs are open', () => {
+      // Mock the necessary dependencies
+      spyOn(component, 'openNodeNameDialog');
+      spyOn(component, 'deleteSelectedNodes');
+
+      // Set up for normal mode Enter key handling
+      component.currentMode = { name: 'normal' } as any;
+      component.selectedNodes.add('test-node');
+
+      // Test with node dialog open
+      component.showNodeDialog = true;
+      const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' });
+      component.handleKeyDown(enterEvent);
+
+      // Verify that node dialog opening was prevented
+      expect(component.openNodeNameDialog).not.toHaveBeenCalled();
+    });
+
+    it('should prevent Delete key actions when dialogs are open', () => {
+      // Mock the necessary dependencies
+      spyOn(component, 'deleteSelectedNodes');
+
+      // Set up for normal mode delete handling
+      component.currentMode = { name: 'normal' } as any;
+      component.selectedNodes.add('test-node');
+
+      // Test with node dialog open
+      component.showNodeDialog = true;
+      const deleteEvent = new KeyboardEvent('keydown', { key: 'Delete' });
+      component.handleKeyDown(deleteEvent);
+
+      // Verify that deletion was prevented
+      expect(component.deleteSelectedNodes).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Pin duplicate name validation', () => {
     let testNode: GraphNode;
 

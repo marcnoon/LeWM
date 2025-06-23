@@ -179,6 +179,12 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   handleKeyDown(event: KeyboardEvent): void {
     console.log('GraphEditor: Key pressed:', event.key, 'Current mode:', this.currentMode.name);
 
+    // Skip mode switching if any dialog is open
+    if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+      console.log('Dialog is open, skipping mode switching for key:', event.key);
+      return;
+    }
+
     // Mode switching keys
     if (!event.ctrlKey && !event.metaKey && !event.altKey) {
       switch (event.key.toLowerCase()) {
@@ -208,6 +214,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Handle Enter key in pin edit mode
     if (event.key === 'Enter' && this.currentMode?.name === 'pin-edit') {
+      // Skip if any dialog is open
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+        return;
+      }
       const pinEditMode = this.modeManager.getActiveMode() as any;
       if (pinEditMode?.selectedPins?.size > 0) {
         // Open pin layout editor through the pin state service
@@ -219,6 +229,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Handle Enter key in normal mode for node name editing
     if (event.key === 'Enter' && this.currentMode?.name === 'normal') {
+      // Skip if any dialog is open
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+        return;
+      }
       if (this.selectedNodes.size === 1) {
         // Edit the name of the single selected node
         const nodeId = Array.from(this.selectedNodes)[0];
@@ -233,6 +247,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // First, let the mode handle the event
     if (this.modeManager.handleKeyDown(event)) {
+      // Skip mode-specific shortcuts if any dialog is open
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+        return;
+      }
       // Handle mode-specific shortcuts
       if (event.key === 'p' || event.key === 'P') {
         this.switchMode('pin-edit');
@@ -253,6 +271,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       this.isCtrlPressed = true;
     }
     if (event.key === 'Delete') {
+      // Skip if any dialog is open
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+        return;
+      }
       // Only handle node deletion in Normal mode
       if (this.currentMode?.name === 'normal' && this.selectedNodes.size > 0) {
         this.deleteSelectedNodes();
