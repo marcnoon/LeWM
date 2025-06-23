@@ -36,6 +36,7 @@ interface SelectionBox {
 })
 export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('svgCanvas', { static: true }) svgCanvas!: ElementRef<SVGElement>;
+  @ViewChild('pinDialog', { static: false }) pinDialog: any;
 
   // Expose the nodes and edges observables directly to the template
   nodes$!: Observable<GraphNode[]>;
@@ -544,11 +545,36 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   onPinCreated(pinName: string): void {
     if (this.pendingPinNode && this.selectedSideForPin) {
-      this.createPinOnSide(this.pendingPinNode, this.selectedSideForPin, pinName);
+      // Trim whitespace and check for empty names
+      const trimmedName = pinName.trim();
+      if (!trimmedName) {
+        console.warn('Pin name cannot be empty');
+        if (this.pinDialog) {
+          this.pinDialog.showError('Pin name cannot be empty. Please enter a valid name.');
+        }
+        return;
+      }
+      
+      // Check if pin name already exists on this node
+      if (this.isPinNameDuplicate(this.pendingPinNode, trimmedName)) {
+        // Show error and keep dialog open
+        console.warn(`Pin name "${trimmedName}" already exists on node ${this.pendingPinNode.id}`);
+        if (this.pinDialog) {
+          this.pinDialog.showError(`Pin name "${trimmedName}" already exists on this node. Please choose a different name.`);
+        }
+        return;
+      }
+      
+      this.createPinOnSide(this.pendingPinNode, this.selectedSideForPin, trimmedName);
+      // Only close dialog and clear state if pin creation was successful
+      this.showPinDialog = false;
+      this.pendingPinNode = null;
+      this.selectedSideForPin = '';
+      // Reset the dialog component to clear any error messages
+      if (this.pinDialog) {
+        this.pinDialog.reset();
+      }
     }
-    this.showPinDialog = false;
-    this.pendingPinNode = null;
-    this.selectedSideForPin = '';
   }
   
   onPinDialogCancelled(): void {
@@ -557,6 +583,11 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedSideForPin = '';
   }
   
+  private isPinNameDuplicate(node: GraphNode, pinName: string): boolean {
+    if (!node.pins) return false;
+    return node.pins.some(pin => pin.name === pinName);
+  }
+
   private createPinOnSide(node: GraphNode, side: string, pinName: string): void {
     const updatedNode = { ...node };
     if (!updatedNode.pins) updatedNode.pins = [];
