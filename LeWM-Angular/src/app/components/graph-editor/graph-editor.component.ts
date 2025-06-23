@@ -93,6 +93,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   showConnectionBulkDialog = false;
   selectedConnectionsForBulkEdit: GraphEdge[] = [];
 
+  // Node name dialog state
+  showNodeDialog = false;
+  selectedNodeForEdit: GraphNode | null = null;
+
   Math = Math;
 
   constructor(
@@ -210,6 +214,20 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         this.modeManager.openPinLayoutEditor();
         event.preventDefault();
         return;
+      }
+    }
+    
+    // Handle Enter key in normal mode for node name editing
+    if (event.key === 'Enter' && this.currentMode?.name === 'normal') {
+      if (this.selectedNodes.size === 1) {
+        // Edit the name of the single selected node
+        const nodeId = Array.from(this.selectedNodes)[0];
+        const node = this.currentNodes.find(n => n.id === nodeId);
+        if (node) {
+          this.openNodeNameDialog(node);
+          event.preventDefault();
+          return;
+        }
       }
     }
     
@@ -913,6 +931,28 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     
     subscription.unsubscribe();
     return isSelected;
+  }
+
+  // Node name dialog methods
+  openNodeNameDialog(node: GraphNode): void {
+    this.selectedNodeForEdit = node;
+    this.showNodeDialog = true;
+  }
+
+  onNodeNameChanged(newName: string): void {
+    if (this.selectedNodeForEdit) {
+      const updatedNode = { 
+        ...this.selectedNodeForEdit, 
+        label: newName 
+      };
+      this.graphState.updateNode(this.selectedNodeForEdit.id, updatedNode);
+      this.onNodeDialogCancelled(); // Close the dialog
+    }
+  }
+
+  onNodeDialogCancelled(): void {
+    this.showNodeDialog = false;
+    this.selectedNodeForEdit = null;
   }
 
   // File operations

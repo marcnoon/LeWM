@@ -6,6 +6,7 @@ import { AppRoutingModule } from './app-routing-module';
 import { AppComponent } from './app.component';
 import { GraphEditorComponent } from './components/graph-editor/graph-editor.component';
 import { PinNameDialogComponent } from './components/pin-name-dialog/pin-name-dialog.component';
+import { NodeNameDialogComponent } from './components/node-name-dialog/node-name-dialog.component';
 import { ConnectionPropertiesDialogComponent } from './components/connection-properties-dialog/connection-properties-dialog.component';
 import { ConnectionBulkEditDialogComponent } from './components/connection-bulk-edit-dialog/connection-bulk-edit-dialog.component';
 import { PinModeToolbarComponent } from './components/pin-mode-toolbar/pin-mode-toolbar.component';
@@ -17,6 +18,7 @@ import { PinStateService } from './services/pin-state.service';
     AppComponent,
     GraphEditorComponent,
     PinNameDialogComponent,
+    NodeNameDialogComponent,
     ConnectionPropertiesDialogComponent,
     ConnectionBulkEditDialogComponent,
     PinModeToolbarComponent,

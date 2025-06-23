@@ -262,6 +262,15 @@
     (cancelled)="onPinDialogCancelled()">
   </app-pin-name-dialog>
   
+  <!-- Node Name Dialog -->
+  <app-node-name-dialog
+    #nodeDialog
+    [isVisible]="showNodeDialog"
+    [currentName]="selectedNodeForEdit?.label || ''"
+    (nameChanged)="onNodeNameChanged($event)"
+    (cancelled)="onNodeDialogCancelled()">
+  </app-node-name-dialog>
+  
   <!-- Connection Properties Dialog -->
   <app-connection-properties-dialog
     #connectionDialog
