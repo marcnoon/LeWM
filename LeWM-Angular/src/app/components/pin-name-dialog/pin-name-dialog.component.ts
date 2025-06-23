@@ -18,7 +18,9 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
             [(ngModel)]="pinName" 
             (keydown)="onKeyDown($event)"
             placeholder="Enter pin name..."
-            class="pin-input">
+            class="pin-input"
+            [class.error]="errorMessage">
+          <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         </div>
         <div class="pin-dialog-footer">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
@@ -85,6 +87,16 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       border-color: #007bff;
     }
 
+    .pin-input.error {
+      border-color: #dc3545;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+
     .pin-dialog-footer {
       padding: 1rem 1.5rem;
       border-top: 1px solid #e9ecef;
@@ -134,11 +146,14 @@ export class PinNameDialogComponent {
   @Output() cancelled = new EventEmitter<void>();
 
   pinName = '';
+  errorMessage = '';
 
   onOk(): void {
     if (this.pinName.trim()) {
+      this.clearError(); // Clear any previous error
       this.pinCreated.emit(this.pinName.trim());
-      this.reset();
+      // Note: Don't reset here if there's a validation error
+      // The parent component will handle whether to close the dialog
     }
   }
 
@@ -159,15 +174,25 @@ export class PinNameDialogComponent {
     }
   }
 
-  private reset(): void {
+  reset(): void {
     this.pinName = '';
+    this.errorMessage = '';
     this.isVisible = false;
+  }
+
+  private clearError(): void {
+    this.errorMessage = '';
+  }
+
+  showError(message: string): void {
+    this.errorMessage = message;
   }
 
   show(side: string): void {
     this.side = side;
     this.isVisible = true;
     this.pinName = '';
+    this.errorMessage = '';
     
     // Focus the input after a short delay to ensure the dialog is rendered
     setTimeout(() => {
