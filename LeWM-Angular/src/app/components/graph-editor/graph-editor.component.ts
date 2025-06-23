@@ -51,6 +51,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   private currentEdges: GraphEdge[] = [];
   private nodesSubscription?: Subscription;
   private edgesSubscription?: Subscription;
+  private pinLayoutEditorSubscription?: Subscription;
 
   availableNodes: AvailableNode[] = [
     { type: 'power', label: '9V Battery', width: 80, height: 60 },
@@ -96,6 +97,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   // Node name dialog state
   showNodeDialog = false;
   selectedNodeForEdit: GraphNode | null = null;
+
+  // Pin layout editor state
+  showPinLayoutEditor = false;
 
   Math = Math;
 
@@ -143,6 +147,11 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       this.currentEdges = edges;
     });
     
+    // Subscribe to pin layout editor visibility
+    this.pinLayoutEditorSubscription = this.pinState.layoutEditorVisible$.subscribe(visible => {
+      this.showPinLayoutEditor = visible;
+    });
+    
     // Initialize mode system
     this.initializeModes();
 
@@ -166,6 +175,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.nodesSubscription?.unsubscribe();
     this.edgesSubscription?.unsubscribe();
     this.modeSubscription?.unsubscribe();
+    this.pinLayoutEditorSubscription?.unsubscribe();
   }
 
   ngAfterViewInit(): void {
@@ -180,7 +190,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     console.log('GraphEditor: Key pressed:', event.key, 'Current mode:', this.currentMode.name);
 
     // Skip mode switching if any dialog is open
-    if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+    if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
       console.log('Dialog is open, skipping mode switching for key:', event.key);
       return;
     }
@@ -215,7 +225,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     // Handle Enter key in pin edit mode
     if (event.key === 'Enter' && this.currentMode?.name === 'pin-edit') {
       // Skip if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       const pinEditMode = this.modeManager.getActiveMode() as any;
@@ -230,7 +240,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     // Handle Enter key in normal mode for node name editing
     if (event.key === 'Enter' && this.currentMode?.name === 'normal') {
       // Skip if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       if (this.selectedNodes.size === 1) {
@@ -248,7 +258,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     // First, let the mode handle the event
     if (this.modeManager.handleKeyDown(event)) {
       // Skip mode-specific shortcuts if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       // Handle mode-specific shortcuts
@@ -272,7 +282,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (event.key === 'Delete') {
       // Skip if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog) {
+      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       // Only handle node deletion in Normal mode
