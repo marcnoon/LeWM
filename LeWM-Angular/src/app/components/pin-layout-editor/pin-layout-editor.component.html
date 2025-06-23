@@ -37,6 +37,96 @@
     </div>
 
     <div class="editor-content" *ngIf="editingPins.length > 0; else noPinsTemplate">
+      <!-- Live Preview Section -->
+      <div class="live-preview-section" *ngIf="previewMode">
+        <h3>Live Preview</h3>
+        <div class="preview-container">
+          <svg class="pin-preview-svg" 
+               [attr.viewBox]="getPreviewViewBox()" 
+               preserveAspectRatio="xMidYMid meet">
+            <!-- Node rectangles -->
+            <g *ngFor="let group of getGroupedPinsArray(); trackBy: trackByNodeId">
+              <rect [attr.x]="getNodePreviewPosition(group[0]).x"
+                    [attr.y]="getNodePreviewPosition(group[0]).y" 
+                    [attr.width]="getNodePreviewSize(group[0]).width"
+                    [attr.height]="getNodePreviewSize(group[0]).height"
+                    [attr.fill]="getNodeColor(group[0])"
+                    stroke="#333"
+                    stroke-width="2"
+                    rx="4"/>
+              
+              <!-- Node label -->
+              <text [attr.x]="getNodePreviewPosition(group[0]).x + getNodePreviewSize(group[0]).width / 2"
+                    [attr.y]="getNodePreviewPosition(group[0]).y + getNodePreviewSize(group[0]).height / 2"
+                    text-anchor="middle"
+                    dominant-baseline="middle"
+                    fill="#fff"
+                    font-family="Arial, sans-serif"
+                    font-size="12"
+                    font-weight="bold">
+                {{ group[0] }}
+              </text>
+              
+              <!-- Pins -->
+              <g *ngFor="let pin of group[1]; trackBy: trackByPinId">
+                <!-- Pin circle -->
+                <circle [attr.cx]="getAbsolutePinPosition(pin).x"
+                        [attr.cy]="getAbsolutePinPosition(pin).y"
+                        [attr.r]="pin.pinStyle?.size || 4"
+                        [attr.fill]="pin.pinStyle?.color || '#ff6b35'"
+                        stroke="#333"
+                        stroke-width="1"/>
+                
+                <!-- Pin text -->
+                <text [attr.x]="getAbsolutePinPosition(pin).x + (pin.textStyle?.offset?.x || 0)"
+                      [attr.y]="getAbsolutePinPosition(pin).y + (pin.textStyle?.offset?.y || 0)"
+                      [attr.text-anchor]="pin.textStyle?.alignment || 'middle'"
+                      [attr.dominant-baseline]="getVerticalAlignment(pin.textStyle?.verticalAlignment || 'middle')"
+                      [attr.fill]="pin.textStyle?.color || '#000'"
+                      [attr.font-family]="pin.textStyle?.fontFamily || 'Arial, sans-serif'"
+                      [attr.font-size]="pin.textStyle?.fontSize || 12"
+                      [attr.transform]="getPinTextTransform(pin)">
+                  {{ pin.label || pin.id.split('.')[1] }}
+                </text>
+                
+                <!-- Pin connection guide line -->
+                <line [attr.x1]="getAbsolutePinPosition(pin).x"
+                      [attr.y1]="getAbsolutePinPosition(pin).y"
+                      [attr.x2]="getNodeEdgeConnection(pin).x"
+                      [attr.y2]="getNodeEdgeConnection(pin).y"
+                      stroke="#666"
+                      stroke-width="1"
+                      stroke-dasharray="2,2"
+                      opacity="0.7"/>
+              </g>
+            </g>
+            
+            <!-- Grid overlay -->
+            <g class="grid-overlay" *ngIf="gridSnapEnabled">
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
+                </pattern>
+              </defs>
+              <rect [attr.width]="getPreviewViewBox().split(' ')[2]" 
+                    [attr.height]="getPreviewViewBox().split(' ')[3]" 
+                    fill="url(#grid)" opacity="0.3"/>
+            </g>
+          </svg>
+        </div>
+        
+        <!-- Preview Controls -->
+        <div class="preview-controls">
+          <label>
+            <input type="range" min="0.5" max="3" step="0.1" 
+                   [value]="previewZoom" 
+                   (input)="updatePreviewZoom(+$any($event.target).value)"/>
+            Zoom: {{ previewZoom.toFixed(1) }}x
+          </label>
+          <button (click)="resetPreviewView()" class="secondary-btn">Reset View</button>
+        </div>
+      </div>
+
       <div class="node-group" *ngFor="let group of getGroupedPinsArray(); trackBy: trackByNodeId">
         <h3>Node: {{ group[0] }}</h3>
         

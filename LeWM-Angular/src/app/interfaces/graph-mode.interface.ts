@@ -10,7 +10,7 @@ export interface GraphMode {
   
   // Lifecycle methods
   activate(): void;
-  deactivate(): void;
+  deactivate(): void | Promise<void>;
   
   // Event handlers - return true if handled, false to pass through
   handleNodeClick(node: GraphNode, event: MouseEvent): boolean;

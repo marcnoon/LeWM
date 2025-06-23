@@ -17,6 +17,11 @@ export class PinStateService {
   });
   private layoutEditorVisibleSubject = new BehaviorSubject<boolean>(false);
   private pinModeActiveSubject = new BehaviorSubject<boolean>(false);
+  
+  constructor() {
+    // Initialize and load any saved enhanced properties
+    this.initializeEnhancedProperties();
+  }
 
   public pins$ = this.pinsSubject.asObservable();
   public modeState$ = this.modeStateSubject.asObservable();
@@ -68,6 +73,9 @@ export class PinStateService {
       newPins.set(pinId, { ...pin, ...updates });
       this.pinsSubject.next(newPins);
       console.log(`Updated pin ${pinId} with:`, updates);
+      
+      // Persist enhanced pin properties to localStorage
+      this.saveEnhancedPinProperties();
     }
   }
 
@@ -86,6 +94,9 @@ export class PinStateService {
         textStyle: { ...pin.textStyle, ...textStyle }
       });
       this.pinsSubject.next(newPins);
+      
+      // Persist enhanced pin properties to localStorage
+      this.saveEnhancedPinProperties();
     }
   }
 
@@ -100,6 +111,9 @@ export class PinStateService {
         pinStyle: { ...pin.pinStyle, ...pinStyle }
       });
       this.pinsSubject.next(newPins);
+      
+      // Persist enhanced pin properties to localStorage
+      this.saveEnhancedPinProperties();
     }
   }
 
@@ -171,7 +185,10 @@ export class PinStateService {
     console.log('Importing pin to PinStateService:', pin.id);
     const currentPins = this.pinsSubject.value;
     const newPins = new Map(currentPins);
-    newPins.set(pin.id, pin);
+    
+    // Apply enhanced properties if available
+    const enhancedPin = this.applyEnhancedPropertiesToPin(pin);
+    newPins.set(pin.id, enhancedPin);
     this.pinsSubject.next(newPins);
   }
 
@@ -181,7 +198,9 @@ export class PinStateService {
     const newPins = new Map(currentPins);
     
     pins.forEach(pin => {
-      newPins.set(pin.id, pin);
+      // Apply enhanced properties if available
+      const enhancedPin = this.applyEnhancedPropertiesToPin(pin);
+      newPins.set(pin.id, enhancedPin);
     });
     
     this.pinsSubject.next(newPins);
@@ -284,6 +303,9 @@ export class PinStateService {
     });
     
     this.pinsSubject.next(newPins);
+    
+    // Persist enhanced pin properties to localStorage
+    this.saveEnhancedPinProperties();
   }
 
   handleKeyboard(event: KeyboardEvent): boolean {
@@ -338,5 +360,141 @@ export class PinStateService {
     
     console.log('Returning selected pins:', result.length, result.map(p => ({ id: p.id, label: p.label })));
     return result;
+  }
+
+  /**
+   * Validates that pin data is consistent between PinStateService and legacy system
+   * @param graphStateService Reference to GraphStateService for validation
+   */
+  validatePinConsistency(graphStateService: any): { inconsistencies: string[]; isValid: boolean } {
+    const inconsistencies: string[] = [];
+    const currentPins = this.pinsSubject.value;
+    const nodes = graphStateService.getNodes();
+    
+    console.log('🔍 Validating pin consistency between systems...');
+    
+    // Check each pin in PinStateService against legacy system
+    Array.from(currentPins.values()).forEach(pin => {
+      const [nodeId, pinName] = pin.id.split('.');
+      const node = nodes.find((n: any) => n.id === nodeId);
+      
+      if (node && node.pins) {
+        const legacyPin = node.pins.find((p: any) => p.name === pinName);
+        if (legacyPin) {
+          // Check position consistency
+          if (legacyPin.x !== pin.position.x || legacyPin.y !== pin.position.y) {
+            const msg = `Position mismatch for ${pin.id}: PinState(${pin.position.x},${pin.position.y}) vs Legacy(${legacyPin.x},${legacyPin.y})`;
+            inconsistencies.push(msg);
+            console.warn(`⚠️ ${msg}`);
+          }
+        } else {
+          const msg = `Pin ${pin.id} exists in PinStateService but not in legacy system`;
+          inconsistencies.push(msg);
+          console.warn(`⚠️ ${msg}`);
+        }
+      } else {
+        const msg = `Node ${nodeId} not found in legacy system for pin ${pin.id}`;
+        inconsistencies.push(msg);
+        console.warn(`⚠️ ${msg}`);
+      }
+    });
+    
+    const isValid = inconsistencies.length === 0;
+    console.log(`🔍 Pin consistency validation: ${isValid ? '✅ VALID' : `❌ ${inconsistencies.length} issues found`}`);
+    
+    return { inconsistencies, isValid };
+  }
+
+  /**
+   * Save enhanced pin properties to localStorage
+   */
+  private saveEnhancedPinProperties(): void {
+    try {
+      const currentPins = this.pinsSubject.value;
+      const enhancedPinData: { [pinId: string]: any } = {};
+      
+      // Extract enhanced properties for each pin
+      Array.from(currentPins.values()).forEach(pin => {
+        enhancedPinData[pin.id] = {
+          textStyle: pin.textStyle,
+          pinStyle: pin.pinStyle,
+          pinType: pin.pinType,
+          isInput: pin.isInput,
+          isOutput: pin.isOutput,
+          dataType: pin.dataType,
+          pinNumber: pin.pinNumber,
+          signalName: pin.signalName,
+          pinSize: pin.pinSize,
+          pinColor: pin.pinColor,
+          showPinNumber: pin.showPinNumber
+        };
+      });
+      
+      localStorage.setItem('lewm-enhanced-pin-properties', JSON.stringify(enhancedPinData));
+      console.log('💾 Saved enhanced pin properties to localStorage');
+    } catch (error) {
+      console.error('Failed to save enhanced pin properties:', error);
+    }
+  }
+
+  /**
+   * Load enhanced pin properties from localStorage
+   */
+  private loadEnhancedPinProperties(): { [pinId: string]: any } {
+    try {
+      const saved = localStorage.getItem('lewm-enhanced-pin-properties');
+      if (saved) {
+        const enhancedData = JSON.parse(saved);
+        console.log('📥 Loaded enhanced pin properties from localStorage');
+        return enhancedData;
+      }
+    } catch (error) {
+      console.error('Failed to load enhanced pin properties:', error);
+    }
+    return {};
+  }
+
+  /**
+   * Apply enhanced properties to a pin when importing from legacy system
+   */
+  private applyEnhancedPropertiesToPin(pin: Pin): Pin {
+    const enhancedData = this.loadEnhancedPinProperties();
+    const saved = enhancedData[pin.id];
+    
+    if (saved) {
+      console.log(`🎨 Applying enhanced properties to pin ${pin.id}`);
+      return {
+        ...pin,
+        textStyle: saved.textStyle || pin.textStyle,
+        pinStyle: saved.pinStyle || pin.pinStyle,
+        pinType: saved.pinType || pin.pinType,
+        isInput: saved.isInput !== undefined ? saved.isInput : pin.isInput,
+        isOutput: saved.isOutput !== undefined ? saved.isOutput : pin.isOutput,
+        dataType: saved.dataType || pin.dataType,
+        pinNumber: saved.pinNumber || pin.pinNumber,
+        signalName: saved.signalName || pin.signalName,
+        pinSize: saved.pinSize || pin.pinSize,
+        pinColor: saved.pinColor || pin.pinColor,
+        showPinNumber: saved.showPinNumber !== undefined ? saved.showPinNumber : pin.showPinNumber
+      };
+    }
+    
+    return pin;
+  }
+
+  /**
+   * Initialize enhanced properties system
+   */
+  private initializeEnhancedProperties(): void {
+    console.log('🎨 Initializing enhanced pin properties system');
+    // Enhanced properties will be loaded automatically when pins are imported
+  }
+
+  /**
+   * Clear saved enhanced pin properties from localStorage
+   */
+  clearEnhancedPinProperties(): void {
+    localStorage.removeItem('lewm-enhanced-pin-properties');
+    console.log('🗑️ Cleared enhanced pin properties from localStorage');
   }
 }

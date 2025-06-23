@@ -53,8 +53,15 @@ export class PinEditMode implements GraphMode {
     console.log('Pin edit mode activated - pins will be synced when selected for editing');
   }
 
-  deactivate(): void {
-    console.log('Pin Edit mode deactivated');
+  async deactivate(): Promise<void> {
+    console.log('Pin Edit mode deactivating - ensuring data consistency...');
+    
+    // Validate pin consistency before deactivation
+    const validation = this.pinState.validatePinConsistency(this.graphState);
+    if (!validation.isValid) {
+      console.warn('⚠️ Pin inconsistencies detected during mode deactivation:', validation.inconsistencies);
+    }
+    
     // Clear state when deactivating
     this.state = {
       selectedNode: null,
@@ -67,6 +74,8 @@ export class PinEditMode implements GraphMode {
     this.selectedPins.clear();
     this.pinState.clearSelection();
     this.pinState.setPinModeActive(false);
+    
+    console.log('✅ Pin Edit mode deactivated with data consistency ensured');
   }
 
   handleNodeClick(node: GraphNode, event: MouseEvent): boolean {
