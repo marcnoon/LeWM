@@ -225,6 +225,12 @@ export class PinStateService {
     this.updatePinSelectionState([]);
   }
 
+  clearAll(): void {
+    console.log('Clearing all pins from PinStateService');
+    this.pinsSubject.next(new Map());
+    this.clearSelection();
+  }
+
   setSubMode(subMode: PinSubMode): void {
     const currentState = this.modeStateSubject.value;
     this.modeStateSubject.next({

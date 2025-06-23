@@ -102,11 +102,8 @@ export class GraphStateService {
   updateNodeSync(nodeId: string, updatedNode: GraphNode): Promise<void> {
     return new Promise((resolve) => {
       this.updateNode(nodeId, updatedNode);
-      // Use setTimeout to ensure localStorage write completes
-      setTimeout(() => {
-        console.log(`✅ Node ${nodeId} update and persistence completed`);
-        resolve();
-      }, 10);
+      // Add a small delay to ensure state is updated
+      setTimeout(() => resolve(), 10);
     });
   }
 

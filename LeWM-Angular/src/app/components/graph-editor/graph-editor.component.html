@@ -20,6 +20,39 @@
         </button>
       </div>
       
+      <!-- Mode Buttons -->
+      <div class="mode-buttons">
+        <button (click)="switchToNormalMode()" [class.active]="currentModeName === 'normal'">
+          Normal (N)
+        </button>
+        <button (click)="switchToPinEditMode()" [class.active]="currentModeName === 'pin-edit'">
+          Pin Edit (P)
+        </button>
+        <button (click)="switchToFileMode()" [class.active]="currentModeName === 'file'">
+          File (F)
+        </button>
+      </div>
+
+      <!-- File Mode Toolbar -->
+      <div class="file-toolbar" *ngIf="currentModeName === 'file'">
+        <h3>File Operations</h3>
+        <button (click)="saveGraph()" title="Save graph (Ctrl+S)">
+          <i class="icon-save"></i> Save
+        </button>
+        <button (click)="saveGraphAs()" title="Save as... (Ctrl+Shift+S)">
+          <i class="icon-save-as"></i> Save As...
+        </button>
+        <button (click)="openGraph()" title="Open graph (Ctrl+O)">
+          <i class="icon-open"></i> Open...
+        </button>
+        <button (click)="newGraph()" title="New graph (Ctrl+N)">
+          <i class="icon-new"></i> New
+        </button>
+        <div class="file-info" *ngIf="currentFileName">
+          Current file: {{ currentFileName }}
+        </div>
+      </div>
+
       <h4>Controls</h4>
       <button (click)="clearConnections()" class="clear-btn">
         Clear Edges

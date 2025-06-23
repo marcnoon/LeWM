@@ -26,7 +26,9 @@ For a complete list of available schematics (such as `components`, `directives`,
 ng generate --help
 ```
 
-## Standard Mode
+## Modes
+
+### Standard Mode
 
 The default interaction mode for basic graph editing and connection creation:
 
@@ -37,7 +39,7 @@ The default interaction mode for basic graph editing and connection creation:
 - **Clear All:** Use "Clear Edges" button to remove all connections.
 - **Deselect:** Click blank canvas or press Escape key to deselect all nodes.
 
-## Pin Edit Mode
+### Pin Edit Mode
 
 An advanced mode for customizing node pins and their distribution:
 
@@ -96,11 +98,11 @@ For complex components requiring precise pin arrangements, LeWM offers an **Adva
 9.  Select the `IN_A` pin and use the `←` arrow key to move it 2 pixels to the left to match a schematic perfectly.
 10. Press **Escape** to exit Advanced Pin Layout and return to the standard Pin Edit Mode. The new pin layout is saved.
 
-## Connection Mode
+### Connection Mode
 
 A specialized mode for creating and managing relationships between pins. This mode provides comprehensive connection editing capabilities including single and bulk editing operations.
 
-### Basic Features
+#### Basic Features
 
 -   **Enter Connection Mode:** Click the "Connection" button in the toolbar
 -   **Create Connections:** Click one pin, then another to draw a connection line
@@ -110,7 +112,7 @@ A specialized mode for creating and managing relationships between pins. This mo
 -   **Edit Properties:** Double-click a connection to open the properties dialog
 -   **Unique Key Enforcement:** Connection value keys are unique per connection; duplicates are automatically numbered to maintain uniqueness.
 
-### Connection Properties
+#### Connection Properties
 
 Each connection supports rich metadata through the properties dialog:
 
@@ -120,7 +122,7 @@ Each connection supports rich metadata through the properties dialog:
 -   **Visual Style:** Customize color, stroke width, and line style (solid, dashed, dotted)
 -   **Key-Value Pairs:** Assign typed values with comprehensive unit support
 
-### Value System
+#### Value System
 
 Connection values support multiple data types and extensive unit systems:
 
@@ -128,11 +130,11 @@ Connection values support multiple data types and extensive unit systems:
 -   **UnitType:** Electrical (volts, amps, ohms), Physical (meters, grams, seconds), Data (bits, bytes, Hz), and more
 -   **Calculated Values:** Support for formula-based values that compute from other connection properties
 
-### Multi-Connection Bulk Editing
+#### Multi-Connection Bulk Editing
 
 **New Feature:** When multiple connections are selected, press **Enter** to open the bulk edit dialog:
 
-#### Bulk Edit Capabilities
+##### Bulk Edit Capabilities
 
 -   **Connection Properties:** Edit properties across all selected connections
     -   Direction (forward, backward, bidirectional) - always available
@@ -145,7 +147,7 @@ Connection values support multiple data types and extensive unit systems:
     -   **Key Management:** Add prefixes or suffixes to existing keys (maintaining key uniqueness within each connection)
     -   **Bulk Value Addition:** Add new key-value pairs to all selected connections
 
-#### Bulk Edit Workflow
+##### Bulk Edit Workflow
 
 1. **Select Multiple Connections:** Use Ctrl+click or selection box to select multiple connections
 2. **Activate Bulk Edit:** Press **Enter** key to open the bulk edit dialog
@@ -155,7 +157,7 @@ Connection values support multiple data types and extensive unit systems:
 6. **Unit Management:** Change units for values that share compatible unit types
 7. **Apply Changes:** Confirm to update all selected connections simultaneously
 
-#### Smart Property Detection
+##### Smart Property Detection
 
 The bulk edit system intelligently identifies:
 - **Identical Values:** Properties that have exactly the same value across all selections
@@ -163,7 +165,7 @@ The bulk edit system intelligently identifies:
 - **Shared Types:** Connections that use the same connection type or direction
 - **Key Management Opportunities:** Existing keys that can benefit from consistent prefixing or suffixing
 
-#### Key Uniqueness and Management
+##### Key Uniqueness and Management
 
 **Important Design Principle:** Keys in connection value dictionaries must remain unique within each connection. The bulk edit system respects this by:
 
@@ -175,7 +177,7 @@ The bulk edit system intelligently identifies:
   - Suffix: `"voltage"` → `"voltage_primary"`
   - Combined: `"voltage"` → `"signal_voltage_backup"`
 
-#### Comprehensive Duplicate Key Detection and Numbering
+##### Comprehensive Duplicate Key Detection and Numbering
 
 The system analyzes ALL keys across ALL connections to detect duplicates and applies intelligent numbering:
 
