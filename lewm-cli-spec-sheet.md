@@ -2,25 +2,32 @@
 
 **LeWM Command Line Interface for Programmatic Graph Creation**
 
-Version: 1.0.0  
-Status: Basic Implementation Specification
+Version: 1.1.0  
+Status: Enhanced Implementation Specification
 
 ## Overview
 
 LeWM-CLI provides a command-line interface for programmatically creating, editing, and managing graph-based diagrams including circuit diagrams, flowcharts, network diagrams, and other node-based visualizations. The CLI operates on the same data models as the LeWM Angular application, ensuring full compatibility and interoperability.
 
-## Core Concepts
+The CLI is built around three core architectural concepts with clear separation of concerns:
 
-### Data Model Alignment
-LeWM-CLI operates on the established LeWM data models:
-- **GraphNode**: Nodes with properties (id, type, position, dimensions, label, pins)
-- **Pin**: Connection points with advanced positioning and styling
-- **GraphEdge**: Connections between pins with rich metadata and value systems
-- **ConnectionValue**: Typed key-value pairs with comprehensive unit support
+## Architecture: Three-Domain Model
+
+### 1. **NODES** - Container Elements
+Nodes are the primary container elements that represent components, processes, or entities in your graph. They provide spatial positioning and serve as hosts for pins.
+
+### 2. **PINS** - Connection Interfaces  
+Pins are the connection interfaces attached to nodes. They define how data, signals, or relationships can flow into and out of nodes. Each pin has specific properties, positioning, and data types.
+
+### 3. **CONNECTIONS** - Functional Relationships
+Connections are functional relationships between pins that can contain methods, transformations, and computed values. They represent not just visual links, but active functional relationships that can process, transform, or operate on data flowing between pins.
 
 ### Command Structure
 ```
-lewm <command> [subcommand] [options] [arguments]
+lewm <domain> <operation> [options] [arguments]
+
+Domains:  node | pin | connection | project
+Operations: add | edit | delete | list | bulk-add | apply-function
 ```
 
 ## Installation & Setup
@@ -30,47 +37,19 @@ lewm <command> [subcommand] [options] [arguments]
 npm install -g lewm-cli
 
 # Initialize a new project
-lewm init [project-name]
+lewm project init [project-name]
 
 # Set working directory (optional, defaults to current directory)
-lewm config workspace /path/to/project
+lewm project config workspace /path/to/project
 ```
 
-## Core Commands
+---
 
-### 1. Project Management
+## DOMAIN 1: NODE OPERATIONS
 
-#### `lewm init [name]`
-Initialize a new LeWM project with default configuration.
+Nodes are container elements that represent components, processes, or entities. They provide spatial positioning and serve as hosts for pins.
 
-```bash
-# Create new project
-lewm init my-circuit
-
-# Create project in current directory
-lewm init .
-```
-
-**Output:** Creates `lewm.json` configuration file and project structure.
-
-#### `lewm load <file>`
-Load an existing LeWM project file.
-
-```bash
-lewm load circuit.lewm
-lewm load --format json data.json
-```
-
-#### `lewm save [file] [options]`
-Save current project state.
-
-```bash
-lewm save circuit.lewm
-lewm save --format json --output data.json
-lewm save --format svg --output diagram.svg
-```
-
-### 2. Node Operations
+### Core Node Commands
 
 #### `lewm node add <type> [options]`
 Add a new node to the graph.
@@ -91,14 +70,14 @@ lewm node add <type> --id <id> --label <label> --x <x> --y <y> [options]
 
 **Examples:**
 ```bash
-# Add basic resistor
+# Add basic resistor component
 lewm node add circuit-resistor --id R1 --label "1kΩ Resistor" --x 100 --y 200
 
 # Add IC chip with custom dimensions
 lewm node add ic-chip --id U1 --label "Op-Amp" --x 300 --y 150 --width 80 --height 60
 
-# Add basic node with minimal parameters
-lewm node add basic --label "Process Step" --x 50 --y 100
+# Add processing node
+lewm node add process --label "Signal Filter" --x 50 --y 100
 ```
 
 #### `lewm node list [options]`
@@ -125,14 +104,32 @@ Remove a node and all associated pins and connections.
 lewm node delete R1
 ```
 
-### 3. Pin Operations
+### Node Templates & Types
+
+#### `lewm node template list`
+List available node templates.
+
+#### `lewm node template create <name> [options]`
+Create custom node template.
+
+```bash
+lewm node template create amplifier-stage --width 100 --height 60 --default-pins config.json
+```
+
+---
+
+## DOMAIN 2: PIN OPERATIONS
+
+Pins are connection interfaces attached to nodes. They define how data, signals, or relationships can flow into and out of nodes.
+
+### Core Pin Commands
 
 #### `lewm pin add <node-id> [options]`
 Add pins to a node.
 
 **Basic Syntax:**
 ```bash
-lewm pin add <node-id> --name <name> --side <side> [options]
+lewm pin add <node-id> --name <n> --side <side> [options]
 ```
 
 **Options:**
@@ -150,11 +147,10 @@ lewm pin add <node-id> --name <name> --side <side> [options]
 # Add single pin with auto-positioning
 lewm pin add U1 --name VCC --side top --type input
 
-# Add multiple pins with specific positioning
-lewm pin add U1 --name GND --side bottom --offset 0.2 --type input
-lewm pin add U1 --name OUT --side right --offset 0.5 --type output
+# Add pin with specific positioning and data type
+lewm pin add U1 --name OUT --side right --offset 0.5 --type output --data-type analog
 
-# Add pin with styling
+# Add styled pin
 lewm pin add U1 --name CLK --side left --type input --color "#FF5722" --shape square --size 10
 ```
 
@@ -175,22 +171,15 @@ lewm pin bulk-add U1 --config pins.json
   "pins": [
     {
       "name": "VCC",
-      "side": "top",
+      "side": "top", 
       "offset": 0.2,
       "type": "input",
       "dataType": "power"
     },
     {
-      "name": "GND", 
-      "side": "top",
-      "offset": 0.8,
-      "type": "input",
-      "dataType": "power"
-    },
-    {
       "name": "OUT",
-      "side": "right", 
-      "offset": 0.5,
+      "side": "right",
+      "offset": 0.5, 
       "type": "output",
       "dataType": "signal"
     }
@@ -222,85 +211,167 @@ Remove a pin and all associated connections.
 lewm pin delete U1 VCC
 ```
 
-### 4. Connection Operations
+---
 
-#### `lewm connect <from> <to> [options]`
-Create a connection between two pins.
+## DOMAIN 3: CONNECTION OPERATIONS
+
+Connections are functional relationships between pins that can contain methods, transformations, and computed values. They represent active functional relationships, not just visual links.
+
+### Core Connection Commands
+
+#### `lewm connection add <from> <to> [options]`
+Create a functional connection between two pins.
 
 **Basic Syntax:**
 ```bash
-lewm connect <node-id>.<pin-name> <node-id>.<pin-name> [options]
+lewm connection add <node-id>.<pin-name> <node-id>.<pin-name> [options]
 ```
 
 **Options:**
 - `--label <string>`: Connection display name
-- `--direction <forward|backward|bidirectional>`: Connection flow direction (default: forward)
-- `--type <signal|power|data|control|custom>`: Connection category (default: signal)
+- `--direction <forward|backward|bidirectional>`: Connection flow direction
+- `--type <signal|power|data|control|custom>`: Connection category
+- `--function <function-name>`: Apply transformation function
 - `--color <string>`: Connection line color
-- `--width <number>`: Line stroke width (default: 2)
-- `--style <solid|dashed|dotted>`: Line style (default: solid)
-- `--values <json>`: Connection values and metadata
+- `--width <number>`: Line stroke width
+- `--style <solid|dashed|dotted>`: Line style
 
 **Examples:**
 ```bash
 # Basic connection
-lewm connect R1.A U1.INPUT
+lewm connection add R1.A U1.INPUT
 
-# Connection with properties
-lewm connect U1.VCC VCC.POWER --type power --label "Power Supply" --color "#FF0000" --width 3
+# Connection with function
+lewm connection add U1.OUT R2.A --function amplify --gain 2.5
 
-# Connection with values
-lewm connect R1.A U1.INPUT --values '{"voltage": {"value": 5.0, "unit": "V"}, "current": {"value": 0.1, "unit": "A"}}'
+# Power connection with properties
+lewm connection add VCC.POWER U1.VCC --type power --label "Power Supply" --color "#FF0000" --width 3
 ```
 
-#### `lewm connection add-value <from> <to> <key> <value> [options]`
-Add metadata values to an existing connection.
+### Functional Connections
 
-**Options:**
-- `--type <string|number|decimal|integer|boolean|calculated>`: Value type (default: string)
-- `--unit-type <voltage|current|resistance|...>`: Unit category
-- `--unit-symbol <string>`: Unit symbol (e.g., "V", "A", "Ω")
-- `--description <string>`: Value description
+#### `lewm connection apply-function <from> <to> <function> [options]`
+Apply transformation functions to connections.
+
+**Built-in Functions:**
+- `amplify`: Signal amplification with gain parameter
+- `filter`: Signal filtering (low-pass, high-pass, band-pass)
+- `convert`: Unit/type conversion
+- `transform`: Mathematical transformation
+- `gate`: Logic gate operations
+- `delay`: Time delay operations
 
 **Examples:**
 ```bash
-# Add voltage measurement
+# Apply amplification
+lewm connection apply-function U1.OUT R2.A amplify --gain 2.5 --bandwidth 1000
+
+# Apply filtering
+lewm connection apply-function INPUT.signal FILTER.in filter --type low-pass --cutoff 1000
+
+# Apply conversion
+lewm connection apply-function ADC.out PROCESSOR.in convert --from analog --to digital --resolution 12
+
+# Custom mathematical transformation
+lewm connection apply-function A.out B.in transform --formula "x * 2 + 1"
+```
+
+#### `lewm connection add-value <from> <to> <key> <value> [options]`
+Add computed values and metadata to connections.
+
+**Options:**
+- `--type <string|number|decimal|integer|boolean|calculated>`: Value type
+- `--unit-type <voltage|current|resistance|...>`: Unit category
+- `--unit-symbol <string>`: Unit symbol
+- `--description <string>`: Value description
+- `--formula <string>`: Calculation formula for computed values
+
+**Examples:**
+```bash
+# Add measured voltage
 lewm connection add-value R1.A U1.INPUT voltage 5.0 --type decimal --unit-type voltage --unit-symbol V
 
-# Add calculated value
-lewm connection add-value R1.A U1.INPUT power 0.5 --type calculated --unit-type power --unit-symbol W --description "P = V * I"
+# Add calculated power
+lewm connection add-value R1.A U1.INPUT power 0.5 --type calculated --formula "V * I" --unit-type power --unit-symbol W
 
-# Add string metadata
-lewm connection add-value R1.A U1.INPUT signal_name "AUDIO_IN" --type string --description "Audio input signal"
+# Add signal characteristics
+lewm connection add-value U1.OUT LOAD.IN frequency 1000 --unit-type frequency --unit-symbol Hz
+lewm connection add-value U1.OUT LOAD.IN amplitude 3.3 --unit-type voltage --unit-symbol V
+```
+
+### Connection Functions Library
+
+#### `lewm connection function list`
+List available transformation functions.
+
+#### `lewm connection function create <name> [options]`
+Create custom transformation function.
+
+```bash
+lewm connection function create custom-filter --type signal-processing --formula "lowpass(x, cutoff)" --parameters "cutoff:number"
 ```
 
 #### `lewm connection list [options]`
-List all connections in the project.
+List all connections with their functions.
 
 ```bash
 lewm connection list
 lewm connection list --type power
-lewm connection list --format table --include-values
+lewm connection list --format table --include-values --include-functions
 ```
 
 #### `lewm connection edit <from> <to> [options]`
-Modify an existing connection.
+Modify existing connection or its function.
 
 ```bash
 lewm connection edit R1.A U1.INPUT --color "#00FF00" --label "Modified Connection"
-lewm connection edit R1.A U1.INPUT --direction bidirectional --type data
+lewm connection edit R1.A U1.INPUT --function amplify --gain 3.0
 ```
 
 #### `lewm connection delete <from> <to>`
-Remove a connection.
+Remove a connection and its functions.
 
 ```bash
 lewm connection delete R1.A U1.INPUT
 ```
 
+---
+
+## PROJECT MANAGEMENT
+
+### Core Project Commands
+
+#### `lewm project init [name]`
+Initialize a new LeWM project.
+
+```bash
+# Create new project
+lewm project init my-circuit
+
+# Create project in current directory
+lewm project init .
+```
+
+#### `lewm project load <file>`
+Load an existing LeWM project file.
+
+```bash
+lewm project load circuit.lewm
+lewm project load --format json data.json
+```
+
+#### `lewm project save [file] [options]`
+Save current project state.
+
+```bash
+lewm project save circuit.lewm
+lewm project save --format json --output data.json
+lewm project save --format svg --output diagram.svg
+```
+
 ## Advanced Features
 
-### 5. Batch Operations
+### Batch Operations
 
 #### `lewm batch <script-file>`
 Execute multiple commands from a script file.
@@ -322,48 +393,48 @@ pin add U1 --name OUT --side right --type output
 pin bulk-add R1 --side left --names "A" --type bidirectional
 pin bulk-add R1 --side right --names "B" --type bidirectional
 
-# Create connections
-connect R1.B U1.IN+ --type signal --label "Input Signal"
-connect U1.OUT R2.A --type signal --label "Output Signal"
+# Create functional connections
+connection add R1.B U1.IN+ --type signal --label "Input Signal"
+connection add U1.OUT R2.A --type signal --label "Output Signal" --function amplify --gain 2.0
 ```
 
-### 6. Project Import/Export
+### Project Import/Export
 
-#### `lewm export [options]`
+#### `lewm project export [options]`
 Export project in various formats.
 
 ```bash
-lewm export --format json --output circuit.json
-lewm export --format svg --output diagram.svg
-lewm export --format png --output image.png --width 800 --height 600
-lewm export --format netlist --output circuit.net
+lewm project export --format json --output circuit.json
+lewm project export --format svg --output diagram.svg
+lewm project export --format png --output image.png --width 800 --height 600
+lewm project export --format netlist --output circuit.net
 ```
 
-#### `lewm import <file> [options]`
+#### `lewm project import <file> [options]`
 Import from external formats.
 
 ```bash
-lewm import spice-netlist.cir --format spice
-lewm import kicad-schematic.sch --format kicad
-lewm import existing-project.json --format lewm-json
+lewm project import spice-netlist.cir --format spice
+lewm project import kicad-schematic.sch --format kicad
+lewm project import existing-project.json --format lewm-json
 ```
 
-### 7. Validation & Analysis
+### Validation & Analysis
 
-#### `lewm validate [options]`
+#### `lewm project validate [options]`
 Validate project integrity.
 
 ```bash
-lewm validate
-lewm validate --strict --report validation.txt
+lewm project validate
+lewm project validate --strict --report validation.txt
 ```
 
-#### `lewm analyze [options]`
+#### `lewm project analyze [options]`
 Analyze project for optimization opportunities.
 
 ```bash
-lewm analyze --connections --routing --layout
-lewm analyze --output analysis.json
+lewm project analyze --connections --routing --layout
+lewm project analyze --output analysis.json
 ```
 
 ## Configuration
@@ -381,7 +452,7 @@ lewm config connection.default-width 2
 ### Project Configuration (lewm.json)
 ```json
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "My Circuit Project",
   "defaults": {
     "node": {
@@ -412,6 +483,16 @@ lewm config connection.default-width 2
       "width": 80,
       "height": 60,
       "defaultPins": []
+    }
+  },
+  "connectionFunctions": {
+    "amplify": {
+      "parameters": ["gain", "bandwidth"],
+      "description": "Amplifies signal by specified gain"
+    },
+    "filter": {
+      "parameters": ["type", "cutoff", "order"],
+      "description": "Filters signal (low-pass, high-pass, band-pass)"
     }
   }
 }
@@ -477,6 +558,13 @@ lewm config connection.default-width 2
       "color": "#2196F3",
       "strokeWidth": 2,
       "strokeStyle": "solid",
+      "function": {
+        "name": "amplify",
+        "parameters": {
+          "gain": 2.5,
+          "bandwidth": 1000
+        }
+      },
       "values": [
         {
           "key": "voltage",
@@ -501,6 +589,7 @@ lewm config connection.default-width 2
 - `DUPLICATE_ID`: Attempting to create node/pin with existing ID
 - `INVALID_POSITION`: Coordinates outside valid range
 - `INVALID_CONNECTION`: Cannot connect incompatible pin types
+- `FUNCTION_NOT_FOUND`: Referenced connection function does not exist
 - `VALIDATION_ERROR`: Project fails validation checks
 
 ### Error Output Format
@@ -524,10 +613,11 @@ lewm config connection.default-width 2
 - **Layout Commands**: Automatic node arrangement and alignment
 - **Routing Commands**: Advanced connection path optimization
 - **Template System**: Reusable component templates
-- **Simulation Integration**: Circuit simulation and analysis
+- **Simulation Integration**: Circuit simulation and analysis with connection functions
 - **Version Control**: Git-like versioning for projects
 - **Collaboration**: Multi-user project sharing
 - **Plugin System**: Custom command extensions
+- **Advanced Functions**: ML-based signal processing, custom algorithms
 
 ### Extensibility Points
 - Custom node types via plugins
@@ -535,13 +625,15 @@ lewm config connection.default-width 2
 - External tool integration
 - Custom validation rules
 - Advanced scripting support
+- Custom connection functions
+- Integration with simulation engines
 
 ## Examples
 
-### Complete Circuit Creation Example
+### Complete Functional Circuit Creation Example
 ```bash
 # Initialize project
-lewm init amplifier-circuit
+lewm project init amplifier-circuit
 
 # Add power supply
 lewm node add power-supply --id VCC --label "+5V" --x 50 --y 50
@@ -558,18 +650,50 @@ lewm pin bulk-add U1 --side right --names "OUT" --type output
 lewm node add circuit-resistor --id R1 --label "1kΩ" --x 50 --y 150
 lewm pin bulk-add R1 --names "A,B" --side "left,right"
 
-# Create connections
-lewm connect VCC.POWER U1.VCC --type power --color "#FF0000"
-lewm connect R1.B U1.IN+ --type signal
+# Create functional connections
+lewm connection add VCC.POWER U1.VCC --type power --color "#FF0000"
+lewm connection add R1.B U1.IN+ --type signal
+lewm connection add U1.OUT R2.A --function amplify --gain 2.5
+
+# Add computed values to connections
 lewm connection add-value R1.B U1.IN+ voltage 2.5 --unit-type voltage --unit-symbol V
+lewm connection add-value U1.OUT R2.A power 0.25 --type calculated --formula "V²/R" --unit-type power --unit-symbol W
 
 # Save project
-lewm save amplifier.lewm
+lewm project save amplifier.lewm
 
-# Export to SVG
-lewm export --format svg --output amplifier.svg
+# Export to SVG with function annotations
+lewm project export --format svg --output amplifier.svg --include-functions
+```
+
+### Signal Processing Chain Example
+```bash
+# Create signal processing chain
+lewm project init signal-processor
+
+# Add signal input
+lewm node add signal-source --id INPUT --label "Audio Input" --x 50 --y 100
+lewm pin add INPUT --name signal --side right --type output --data-type analog
+
+# Add filter stage
+lewm node add filter --id FILTER --label "Low-Pass Filter" --x 200 --y 100
+lewm pin add FILTER --name in --side left --type input --data-type analog
+lewm pin add FILTER --name out --side right --type output --data-type analog
+
+# Add amplifier stage
+lewm node add amplifier --id AMP --label "Amplifier" --x 350 --y 100
+lewm pin add AMP --name in --side left --type input --data-type analog
+lewm pin add AMP --name out --side right --type output --data-type analog
+
+# Create functional connections with processing
+lewm connection add INPUT.signal FILTER.in --function filter --type low-pass --cutoff 1000
+lewm connection add FILTER.out AMP.in --function amplify --gain 3.0 --bandwidth 5000
+
+# Add signal analysis values
+lewm connection add-value INPUT.signal FILTER.in frequency 2000 --unit-type frequency --unit-symbol Hz
+lewm connection add-value FILTER.out AMP.in amplitude 1.2 --unit-type voltage --unit-symbol V
 ```
 
 ---
 
-**Note**: This specification represents the basic implementation of LeWM-CLI. Additional features and commands will be added based on user feedback and requirements. The CLI maintains full compatibility with the LeWM Angular application data models and project files.
+**Note**: This enhanced specification represents the domain-separated implementation of LeWM-CLI with functional connection capabilities. The CLI maintains full compatibility with the LeWM Angular application data models while adding powerful functional relationship modeling between pins. Additional features and connection functions will be added based on user feedback and domain-specific requirements.
