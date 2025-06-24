@@ -151,6 +151,10 @@ export class NodeNameDialogComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['currentName'] && changes['currentName'].currentValue !== undefined) {
       this.nodeName = this.currentName;
+      // If the dialog is visible, focus the input when currentName changes
+      if (this.isVisible) {
+        this.focusInput();
+      }
     }
   }
 
@@ -200,6 +204,10 @@ export class NodeNameDialogComponent implements OnChanges {
     this.isVisible = true;
     this.errorMessage = '';
     
+    this.focusInput();
+  }
+
+  private focusInput(): void {
     // Focus the input after a short delay to ensure the dialog is rendered
     setTimeout(() => {
       const input = document.getElementById('nodeName') as HTMLInputElement;
