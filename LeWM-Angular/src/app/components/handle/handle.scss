@@ -1,0 +1,28 @@
+.resize-handle {
+  width: 6px;
+  background-color: #e9ecef;
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  transition: background-color 0.2s ease;
+  
+  &:hover, &.resizing {
+    background-color: #007bff;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 20px;
+    background-color: #6c757d;
+    border-radius: 1px;
+  }
+  
+  &:hover::after, &.resizing::after {
+    background-color: white;
+  }
+}
