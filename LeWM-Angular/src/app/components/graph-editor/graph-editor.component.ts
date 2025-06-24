@@ -184,6 +184,16 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.edgesSubscription?.unsubscribe();
     this.modeSubscription?.unsubscribe();
     this.pinLayoutEditorSubscription?.unsubscribe();
+    
+    // Clean up resize event listeners
+    document.removeEventListener('mousemove', this.resizeMoveHandler);
+    document.removeEventListener('mouseup', this.resizeEndHandler);
+    
+    // Restore default styles if component was destroyed during resize
+    if (this.isResizing) {
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    }
   }
 
   ngAfterViewInit(): void {
@@ -1022,6 +1032,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Resize functionality methods
+  private resizeMoveHandler = (event: MouseEvent) => this.onResizeMove(event);
+  private resizeEndHandler = () => this.onResizeEnd();
+
   onResizeStart(event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -1031,8 +1044,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.resizeStartWidth = this.toolbarWidth;
     
     // Add global listeners for mouse move and up
-    document.addEventListener('mousemove', this.onResizeMove.bind(this));
-    document.addEventListener('mouseup', this.onResizeEnd.bind(this));
+    document.addEventListener('mousemove', this.resizeMoveHandler);
+    document.addEventListener('mouseup', this.resizeEndHandler);
     
     // Prevent text selection during resize
     document.body.style.userSelect = 'none';
@@ -1058,8 +1071,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isResizing = false;
     
     // Remove global listeners
-    document.removeEventListener('mousemove', this.onResizeMove.bind(this));
-    document.removeEventListener('mouseup', this.onResizeEnd.bind(this));
+    document.removeEventListener('mousemove', this.resizeMoveHandler);
+    document.removeEventListener('mouseup', this.resizeEndHandler);
     
     // Restore default cursor and text selection
     document.body.style.userSelect = '';
