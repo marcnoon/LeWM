@@ -1,19 +1,20 @@
 :host {
   display: flex;
   height: 100%;
+  cursor: col-resize; /* Ensure cursor is always col-resize */
 }
 
 .resize-handle {
   width: 6px;
   height: 100%;
   background-color: #e9ecef;
-  cursor: col-resize;
+  cursor: col-resize !important; /* Force col-resize cursor */
   flex-shrink: 0;
   position: relative;
   transition: background-color 0.2s ease;
   
   &:hover, &.resizing {
-    background-color: #007bff;
+    background-color: #007bff !important; /* Ensure blue color shows */
   }
   
   &::after {
@@ -26,6 +27,7 @@
     height: 20px;
     background-color: #6c757d;
     border-radius: 1px;
+    pointer-events: none; /* Ensure pseudo-element doesn't interfere */
   }
   
   &:hover::after, &.resizing::after {

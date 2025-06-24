@@ -33,9 +33,8 @@ export class HandleComponent implements OnDestroy {
     document.addEventListener('mousemove', this.resizeMoveHandler);
     document.addEventListener('mouseup', this.resizeEndHandler);
     
-    // Prevent text selection during resize
+    // Prevent text selection during resize - but don't change body cursor
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
   }
 
   private onResizeMove(event: MouseEvent): void {
@@ -56,9 +55,8 @@ export class HandleComponent implements OnDestroy {
     document.removeEventListener('mousemove', this.resizeMoveHandler);
     document.removeEventListener('mouseup', this.resizeEndHandler);
     
-    // Restore default cursor and text selection
+    // Restore default text selection - but don't change body cursor
     document.body.style.userSelect = '';
-    document.body.style.cursor = '';
     
     // Emit resize end event to parent
     this.resizeEnd.emit();
@@ -72,7 +70,6 @@ export class HandleComponent implements OnDestroy {
     // Restore default styles if component was destroyed during resize
     if (this.isResizing) {
       document.body.style.userSelect = '';
-      document.body.style.cursor = '';
     }
   }
 

@@ -75,7 +75,7 @@
   </div>
   
   <!-- Resize handle -->
-  <app-handle (resize)="onResize($event)" (resizeStart)="onResizeStart()"></app-handle>
+  <app-handle (resize)="onResize($event)" (resizeStart)="onResizeStart()" (resizeEnd)="onResizeEnd()"></app-handle>
   
   <div class="canvas-container">
     <svg #svgCanvas 

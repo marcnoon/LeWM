@@ -1033,4 +1033,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       Math.min(this.maxToolbarWidth, newWidth)
     );
   }
+
+  onResizeEnd(): void {
+    // Handle can be implemented if needed for cleanup
+  }
 }
