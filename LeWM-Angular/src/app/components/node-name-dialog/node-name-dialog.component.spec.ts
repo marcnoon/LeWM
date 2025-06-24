@@ -92,4 +92,70 @@ describe('NodeNameDialogComponent', () => {
     expect(component.errorMessage).toBe('');
     expect(component.isVisible).toBe(false);
   });
+
+  it('should focus input when currentName changes and dialog is visible', (done) => {
+    // Set up the component to be visible
+    component.isVisible = true;
+    fixture.detectChanges();
+
+    // Spy on the private focusInput method indirectly by spying on document.getElementById
+    const mockInput = {
+      focus: jasmine.createSpy('focus'),
+      select: jasmine.createSpy('select')
+    };
+    spyOn(document, 'getElementById').and.returnValue(mockInput as any);
+
+    // Simulate input change when dialog is visible
+    component.currentName = 'Node A';
+    component.ngOnChanges({
+      currentName: new SimpleChange(undefined, 'Node A', false)
+    });
+
+    // Wait for the setTimeout in focusInput to execute
+    setTimeout(() => {
+      expect(document.getElementById).toHaveBeenCalledWith('nodeName');
+      expect(mockInput.focus).toHaveBeenCalled();
+      expect(mockInput.select).toHaveBeenCalled();
+      done();
+    }, 150);
+  });
+
+  it('should not focus input when currentName changes and dialog is not visible', (done) => {
+    // Set up the component to be not visible
+    component.isVisible = false;
+    fixture.detectChanges();
+
+    // Spy on document.getElementById to ensure it's not called
+    spyOn(document, 'getElementById');
+
+    // Simulate input change when dialog is not visible
+    component.currentName = 'Node A';
+    component.ngOnChanges({
+      currentName: new SimpleChange(undefined, 'Node A', false)
+    });
+
+    // Wait a bit to ensure no focus attempt was made
+    setTimeout(() => {
+      expect(document.getElementById).not.toHaveBeenCalled();
+      done();
+    }, 150);
+  });
+
+  it('should focus input when show is called', (done) => {
+    const mockInput = {
+      focus: jasmine.createSpy('focus'),
+      select: jasmine.createSpy('select')
+    };
+    spyOn(document, 'getElementById').and.returnValue(mockInput as any);
+
+    component.show('Test Node');
+
+    // Wait for the setTimeout in focusInput to execute
+    setTimeout(() => {
+      expect(document.getElementById).toHaveBeenCalledWith('nodeName');
+      expect(mockInput.focus).toHaveBeenCalled();
+      expect(mockInput.select).toHaveBeenCalled();
+      done();
+    }, 150);
+  });
 });
