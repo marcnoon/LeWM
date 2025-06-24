@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 
 @Component({
   selector: 'app-node-name-dialog',
@@ -19,7 +19,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
             (keydown)="onKeyDown($event)"
             placeholder="Enter node name..."
             class="node-input"
-            [class.error]="errorMessage">
+            [class.error]="errorMessage"
+            [attr.data-autofocus]="autofocusMethod()">
           <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         </div>
         <div class="node-dialog-footer">
@@ -139,14 +140,32 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     }
   `]
 })
-export class NodeNameDialogComponent {
+export class NodeNameDialogComponent implements AfterViewInit {
   @Input() isVisible = false;
   @Input() currentName: string = '';
   @Output() nameChanged = new EventEmitter<string>();
   @Output() cancelled = new EventEmitter<void>();
+  
+  @ViewChild('nodeInput') nodeInputRef!: ElementRef<HTMLInputElement>;
 
   nodeName = '';
   errorMessage = '';
+
+  ngAfterViewInit(): void {
+    // Initial setup if needed
+  }
+
+  autofocusMethod(): string {
+    // This method is called via attribute binding when the dialog is visible
+    // Use setTimeout to ensure the DOM is updated and element is visible
+    if (this.isVisible && this.nodeInputRef?.nativeElement) {
+      setTimeout(() => {
+        this.nodeInputRef.nativeElement.focus();
+        this.nodeInputRef.nativeElement.select();
+      }, 0);
+    }
+    return 'focused'; // Return a string value for the attribute
+  }
 
   onOk(): void {
     if (this.nodeName.trim()) {
@@ -193,14 +212,6 @@ export class NodeNameDialogComponent {
     this.nodeName = currentName;
     this.isVisible = true;
     this.errorMessage = '';
-    
-    // Focus the input after a short delay to ensure the dialog is rendered
-    setTimeout(() => {
-      const input = document.getElementById('nodeName') as HTMLInputElement;
-      if (input) {
-        input.focus();
-        input.select(); // Select the current text for easy editing
-      }
-    }, 100);
+    // Auto-focus is now handled by the attribute binding [attr.data-autofocus]="autofocusMethod()"
   }
 }
