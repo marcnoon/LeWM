@@ -1,5 +1,11 @@
+:host {
+  display: flex;
+  height: 100%;
+}
+
 .resize-handle {
   width: 6px;
+  height: 100%;
   background-color: #e9ecef;
   cursor: col-resize;
   flex-shrink: 0;
