@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, AfterViewInit, signal, effect } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-node-name-dialog',
@@ -139,39 +139,14 @@ import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, AfterVie
     }
   `]
 })
-export class NodeNameDialogComponent implements AfterViewInit {
+export class NodeNameDialogComponent {
   @Input() isVisible = false;
   @Input() currentName: string = '';
   @Output() nameChanged = new EventEmitter<string>();
   @Output() cancelled = new EventEmitter<void>();
-  
-  @ViewChild('nodeInput') nodeInputRef!: ElementRef<HTMLInputElement>;
 
   nodeName = '';
   errorMessage = '';
-
-  // Signal to trigger focus - use a counter to ensure it always changes
-  private focusTrigger = signal<number>(0);
-
-  constructor() {
-    // Effect to handle focusing when signal changes
-    effect(() => {
-      const trigger = this.focusTrigger();
-      if (trigger > 0 && this.nodeInputRef?.nativeElement) {
-        // Use setTimeout to ensure the element is visible and ready
-        setTimeout(() => {
-          if (this.nodeInputRef?.nativeElement) {
-            this.nodeInputRef.nativeElement.focus();
-            this.nodeInputRef.nativeElement.select();
-          }
-        }, 0);
-      }
-    });
-  }
-
-  ngAfterViewInit(): void {
-    // Initial setup if needed
-  }
 
   onOk(): void {
     if (this.nodeName.trim()) {
@@ -203,7 +178,6 @@ export class NodeNameDialogComponent implements AfterViewInit {
     this.nodeName = '';
     this.errorMessage = '';
     this.isVisible = false;
-    // Don't reset focus trigger - let it maintain its counter for next time
   }
 
   private clearError(): void {
@@ -219,7 +193,14 @@ export class NodeNameDialogComponent implements AfterViewInit {
     this.nodeName = currentName;
     this.isVisible = true;
     this.errorMessage = '';
-    // Trigger focus using signal - increment to always change the value
-    this.focusTrigger.set(this.focusTrigger() + 1);
+    
+    // Focus the input after a short delay to ensure the dialog is rendered
+    setTimeout(() => {
+      const input = document.getElementById('nodeName') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select(); // Select the current text for easy editing
+      }
+    }, 100);
   }
 }
