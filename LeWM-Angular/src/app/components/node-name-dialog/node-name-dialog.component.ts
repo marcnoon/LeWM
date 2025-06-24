@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, AfterViewInit, signal, effect } from '@angular/core';
 
 @Component({
   selector: 'app-node-name-dialog',
@@ -19,8 +19,7 @@ import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, AfterVie
             (keydown)="onKeyDown($event)"
             placeholder="Enter node name..."
             class="node-input"
-            [class.error]="errorMessage"
-            [attr.data-autofocus]="autofocusMethod()">
+            [class.error]="errorMessage">
           <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         </div>
         <div class="node-dialog-footer">
@@ -151,20 +150,27 @@ export class NodeNameDialogComponent implements AfterViewInit {
   nodeName = '';
   errorMessage = '';
 
-  ngAfterViewInit(): void {
-    // Initial setup if needed
+  // Signal to trigger focus - use a counter to ensure it always changes
+  private focusTrigger = signal<number>(0);
+
+  constructor() {
+    // Effect to handle focusing when signal changes
+    effect(() => {
+      const trigger = this.focusTrigger();
+      if (trigger > 0 && this.nodeInputRef?.nativeElement) {
+        // Use setTimeout to ensure the element is visible and ready
+        setTimeout(() => {
+          if (this.nodeInputRef?.nativeElement) {
+            this.nodeInputRef.nativeElement.focus();
+            this.nodeInputRef.nativeElement.select();
+          }
+        }, 0);
+      }
+    });
   }
 
-  autofocusMethod(): string {
-    // This method is called via attribute binding when the dialog is visible
-    // Use setTimeout to ensure the DOM is updated and element is visible
-    if (this.isVisible && this.nodeInputRef?.nativeElement) {
-      setTimeout(() => {
-        this.nodeInputRef.nativeElement.focus();
-        this.nodeInputRef.nativeElement.select();
-      }, 0);
-    }
-    return 'focused'; // Return a string value for the attribute
+  ngAfterViewInit(): void {
+    // Initial setup if needed
   }
 
   onOk(): void {
@@ -197,6 +203,7 @@ export class NodeNameDialogComponent implements AfterViewInit {
     this.nodeName = '';
     this.errorMessage = '';
     this.isVisible = false;
+    // Don't reset focus trigger - let it maintain its counter for next time
   }
 
   private clearError(): void {
@@ -212,6 +219,7 @@ export class NodeNameDialogComponent implements AfterViewInit {
     this.nodeName = currentName;
     this.isVisible = true;
     this.errorMessage = '';
-    // Auto-focus is now handled by the attribute binding [attr.data-autofocus]="autofocusMethod()"
+    // Trigger focus using signal - increment to always change the value
+    this.focusTrigger.set(this.focusTrigger() + 1);
   }
 }
