@@ -101,6 +101,14 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   // Pin layout editor state
   showPinLayoutEditor = false;
 
+  // Resizable panel state
+  toolbarWidth = 250; // Initial width
+  isResizing = false;
+  resizeStartX = 0;
+  resizeStartWidth = 0;
+  minToolbarWidth = 200;
+  maxToolbarWidth = 500;
+
   Math = Math;
 
   constructor(
@@ -176,6 +184,16 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.edgesSubscription?.unsubscribe();
     this.modeSubscription?.unsubscribe();
     this.pinLayoutEditorSubscription?.unsubscribe();
+    
+    // Clean up resize event listeners
+    document.removeEventListener('mousemove', this.resizeMoveHandler);
+    document.removeEventListener('mouseup', this.resizeEndHandler);
+    
+    // Restore default styles if component was destroyed during resize
+    if (this.isResizing) {
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    }
   }
 
   ngAfterViewInit(): void {
@@ -1011,5 +1029,53 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   // Add currentModeName getter
   get currentModeName(): string {
     return this.currentMode?.name || '';
+  }
+
+  // Resize functionality methods
+  private resizeMoveHandler = (event: MouseEvent) => this.onResizeMove(event);
+  private resizeEndHandler = () => this.onResizeEnd();
+
+  onResizeStart(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    this.isResizing = true;
+    this.resizeStartX = event.clientX;
+    this.resizeStartWidth = this.toolbarWidth;
+    
+    // Add global listeners for mouse move and up
+    document.addEventListener('mousemove', this.resizeMoveHandler);
+    document.addEventListener('mouseup', this.resizeEndHandler);
+    
+    // Prevent text selection during resize
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+  }
+
+  onResizeMove(event: MouseEvent): void {
+    if (!this.isResizing) return;
+    
+    const deltaX = event.clientX - this.resizeStartX;
+    const newWidth = this.resizeStartWidth + deltaX;
+    
+    // Clamp the width between min and max values
+    this.toolbarWidth = Math.max(
+      this.minToolbarWidth,
+      Math.min(this.maxToolbarWidth, newWidth)
+    );
+  }
+
+  onResizeEnd(): void {
+    if (!this.isResizing) return;
+    
+    this.isResizing = false;
+    
+    // Remove global listeners
+    document.removeEventListener('mousemove', this.resizeMoveHandler);
+    document.removeEventListener('mouseup', this.resizeEndHandler);
+    
+    // Restore default cursor and text selection
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
   }
 }

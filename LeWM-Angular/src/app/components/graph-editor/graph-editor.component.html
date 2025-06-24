@@ -1,5 +1,5 @@
 <div class="graph-editor">
-  <div class="toolbar">
+  <div class="toolbar" [style.width.px]="toolbarWidth">
     <h3>Node Library</h3>
     <div class="node-buttons">
       <button *ngFor="let node of availableNodes" 
@@ -72,6 +72,12 @@
         </button>
       </div>
     </div>
+  </div>
+  
+  <!-- Resize handle -->
+  <div class="resize-handle" 
+       (mousedown)="onResizeStart($event)"
+       [class.resizing]="isResizing">
   </div>
   
   <div class="canvas-container">
