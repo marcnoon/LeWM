@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 
 @Component({
   selector: 'app-node-name-dialog',
@@ -139,7 +139,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     }
   `]
 })
-export class NodeNameDialogComponent {
+export class NodeNameDialogComponent implements OnChanges {
   @Input() isVisible = false;
   @Input() currentName: string = '';
   @Output() nameChanged = new EventEmitter<string>();
@@ -147,6 +147,12 @@ export class NodeNameDialogComponent {
 
   nodeName = '';
   errorMessage = '';
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['currentName'] && changes['currentName'].currentValue !== undefined) {
+      this.nodeName = this.currentName;
+    }
+  }
 
   onOk(): void {
     if (this.nodeName.trim()) {
