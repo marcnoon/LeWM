@@ -9,9 +9,9 @@ Status: Enhanced Implementation Specification
 
 LeWM-CLI provides a command-line interface for programmatically creating, editing, and managing graph-based diagrams including circuit diagrams, flowcharts, network diagrams, and other node-based visualizations. The CLI operates on the same data models as the LeWM Angular application, ensuring full compatibility and interoperability.
 
-The CLI is built around three core architectural concepts with clear separation of concerns:
+The CLI is built around four core architectural concepts with clear separation of concerns:
 
-## Architecture: Three-Domain Model
+## Architecture: Four-Domain Model
 
 ### 1. **NODES** - Container Elements
 Nodes are the primary container elements that represent components, processes, or entities in your graph. They provide spatial positioning and serve as hosts for pins.
@@ -22,12 +22,15 @@ Pins are the connection interfaces attached to nodes. They define how data, sign
 ### 3. **CONNECTIONS** - Functional Relationships
 Connections are functional relationships between pins that can contain methods, transformations, and computed values. They represent not just visual links, but active functional relationships that can process, transform, or operate on data flowing between pins.
 
+### 4. **AI INTEGRATION** - Intelligent Design Assistance
+AI-powered features provide intelligent suggestions, automated design completion, pattern recognition, and domain-specific expertise to transform manual design work into an assisted experience.
+
 ### Command Structure
 ```
 lewm <domain> <operation> [options] [arguments]
 
-Domains:  node | pin | connection | project
-Operations: add | edit | delete | list | bulk-add | apply-function
+Domains:  node | pin | connection | project | ai
+Operations: add | edit | delete | list | bulk-add | apply-function | suggest | analyze | complete
 ```
 
 ## Installation & Setup
@@ -607,6 +610,220 @@ lewm config connection.default-width 2
 }
 ```
 
+---
+
+## DOMAIN 4: AI-POWERED OPERATIONS
+
+LeWM-CLI integrates artificial intelligence to transform manual design work into an intelligent, assisted experience. The AI system provides suggestions, automation, pattern recognition, and domain-specific expertise.
+
+### AI Assistant Commands
+
+#### `lewm ai suggest [context] [options]`
+Get AI-powered suggestions for your current design.
+
+**Contexts:**
+- `next-component`: Suggest what component to add next
+- `connections`: Suggest missing or optimal connections  
+- `optimization`: Suggest improvements to current design
+- `completion`: Complete partial designs
+- `validation`: Identify potential issues before formal validation
+
+**Examples:**
+```bash
+# Get component suggestions based on current circuit
+lewm ai suggest next-component --based-on "audio amplifier"
+> Suggested: Input coupling capacitor (10µF), Output filter (RC network), Volume control (10kΩ pot)
+
+# Find missing connections
+lewm ai suggest connections
+> Missing: U1.GND to ground, R2.B needs termination, C1 bypass capacitor recommended
+
+# Optimize current design
+lewm ai suggest optimization --target "low-noise"
+> Suggestions: Add 100nF bypass caps near U1.VCC, Use metal film resistors, Add input EMI filter
+```
+
+#### `lewm ai complete [description] [options]`
+Complete partial designs using AI.
+
+```bash
+# Complete a partial circuit
+lewm ai complete "finish the power supply section"
+> Adding: Voltage regulator U2, Filter capacitors C1-C3, Protection diode D1
+> Run 'lewm ai apply' to implement suggestions
+
+# Generate from description
+lewm ai complete "create 3-stage audio filter" --cutoff 1kHz --type butterworth
+```
+
+#### `lewm ai analyze [type] [options]`
+AI-powered design analysis.
+
+```bash
+# Analyze signal flow
+lewm ai analyze signal-path --verbose
+> Signal path: INPUT → R1 (attenuation: -6dB) → U1 (gain: +20dB) → C1 (high-pass: 20Hz) → OUTPUT
+> Total gain: +14dB, Bandwidth: 20Hz-20kHz
+
+# Analyze for common issues
+lewm ai analyze issues
+> Warning: No bypass capacitor on U1.VCC - may cause instability
+> Info: R1/R2 form voltage divider - verify intended ratio
+```
+
+#### `lewm ai apply [suggestion-id]`
+Apply AI suggestions to your design.
+
+```bash
+# List pending suggestions
+lewm ai suggestions list
+> 1. Add bypass capacitor to U1.VCC
+> 2. Add input protection diode
+> 3. Optimize R1 value for impedance matching
+
+# Apply specific suggestion
+lewm ai apply 1
+> Added: C3 (100nF) connected between U1.VCC and GND
+
+# Apply all suggestions
+lewm ai apply --all --preview
+```
+
+### AI Function Generation
+
+#### `lewm ai function generate [description] [options]`
+Generate custom connection functions using AI.
+
+```bash
+# Generate signal processing function
+lewm ai function generate "butterworth filter 2nd order"
+> Generated function 'butterworth_2nd' with parameters: cutoff, Q
+> Preview: H(s) = 1 / (s² + s/Q + 1) where s = jω/ωc
+
+# Generate custom transform
+lewm ai function generate "temperature compensation for voltage"
+> Generated function 'temp_compensate' with parameters: temp_coeff, ref_temp
+```
+
+### AI Integration with Core Commands
+
+**Enhanced node operations with AI:**
+```bash
+# AI-assisted node placement
+lewm node add amplifier --ai-position
+> AI positioned at (200, 150) for optimal layout
+
+# Smart pin assignment
+lewm pin add U1 --ai-suggest
+> Suggested pins based on LM358 datasheet: VCC(top), GND(bottom), IN+(left,0.3), IN-(left,0.7), OUT(right)
+```
+
+**Enhanced connection operations with AI:**
+```bash
+# AI-suggested routing
+lewm connection add R1.B U1.IN+ --ai-route
+> Routed with minimal crossings, length: 45 units
+
+# AI function selection
+lewm connection add SENSOR.out ADC.in --ai-function
+> Suggested: 'level_shift' function to match ADC input range (0-3.3V)
+```
+
+### AI Learning and Patterns
+
+#### `lewm ai pattern save [selection]`
+Save design patterns for AI learning.
+
+```bash
+# Save successful design pattern
+lewm ai pattern save "low-noise-input-stage" --select "R1,R2,C1,U1"
+> Pattern saved: 4 nodes, 3 connections, 2 functions
+```
+
+#### `lewm ai pattern apply <name> [options]`
+Apply learned patterns to new designs.
+
+```bash
+# Apply saved pattern
+lewm ai pattern apply "low-noise-input-stage" --at 300,200
+> Applied pattern: Added 4 nodes, 3 connections
+```
+
+### AI Configuration
+
+```bash
+# Configure AI provider
+lewm config ai.provider "openai"
+lewm config ai.model "gpt-4"
+lewm config ai.api-key "YOUR_API_KEY"
+
+# Set AI behavior
+lewm config ai.suggestion-mode "proactive"  # or "on-demand"
+lewm config ai.confidence-threshold 0.8
+lewm config ai.include-explanations true
+```
+
+### AI Batch Operations
+
+```bash
+# AI-powered batch optimization
+lewm ai batch optimize *.lewm --target "power-efficiency"
+
+# Bulk analysis
+lewm ai batch analyze circuits/*.lewm --report analysis.md
+```
+
+### Project-Level AI Integration
+
+**In lewm.json:**
+```json
+{
+  "ai": {
+    "enabled": true,
+    "provider": "openai",
+    "features": {
+      "auto-suggest": true,
+      "real-time-validation": true,
+      "pattern-learning": true,
+      "smart-routing": true
+    },
+    "domain-knowledge": {
+      "type": "electronics",
+      "specialty": "audio-circuits",
+      "constraints": ["low-power", "low-noise"]
+    }
+  }
+}
+```
+
+### AI Interactive Mode
+
+```bash
+lewm ai interactive
+LeWM AI> help me design a microphone preamp
+AI: I'll help you design a microphone preamp. What type of microphone will you use?
+LeWM AI> electret condenser
+AI: Creating circuit... Added: U1 (op-amp), R1-R4 (biasing), C1-C3 (coupling/bypass)
+AI: The design provides 40dB gain with phantom power. Would you like to add tone control?
+LeWM AI> yes, add bass boost
+AI: Added active bass boost: U2 (op-amp), R5-R6, C4-C5. Boost: +6dB at 100Hz
+```
+
+### AI Capabilities Summary
+
+The AI integration transforms the CLI from a manual tool into an intelligent design assistant that can:
+
+- **Suggest Next Steps**: Recommend components and connections based on current design
+- **Complete Partial Designs**: Automatically fill in missing sections based on descriptions
+- **Identify Issues**: Find potential problems before they become critical failures
+- **Learn Patterns**: Recognize and reuse successful design patterns
+- **Provide Domain Expertise**: Offer specialized knowledge for electronics, signal processing, etc.
+- **Automate Repetitive Tasks**: Handle routine design tasks automatically
+- **Optimize Designs**: Suggest improvements for power, noise, performance, or other criteria
+- **Interactive Assistance**: Provide conversational design guidance
+
+---
+
 ## Future Extensions
 
 ### Planned Features
@@ -696,4 +913,4 @@ lewm connection add-value FILTER.out AMP.in amplitude 1.2 --unit-type voltage --
 
 ---
 
-**Note**: This enhanced specification represents the domain-separated implementation of LeWM-CLI with functional connection capabilities. The CLI maintains full compatibility with the LeWM Angular application data models while adding powerful functional relationship modeling between pins. Additional features and connection functions will be added based on user feedback and domain-specific requirements.
+**Note**: This enhanced specification represents the domain-separated implementation of LeWM-CLI with functional connection capabilities and comprehensive AI integration. The CLI maintains full compatibility with the LeWM Angular application data models while adding powerful functional relationship modeling between pins and intelligent design assistance. The combination of the three-domain architecture with functional connections and AI assistance makes this a next-generation tool that provides both programmatic control and intelligent automation for graph-based design work.
