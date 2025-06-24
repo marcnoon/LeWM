@@ -12,6 +12,7 @@ import { ConnectionBulkEditDialogComponent } from './components/connection-bulk-
 import { PinModeToolbarComponent } from './components/pin-mode-toolbar/pin-mode-toolbar.component';
 import { PinLayoutEditorComponent } from './components/pin-layout-editor/pin-layout-editor.component';
 import { PinStateService } from './services/pin-state.service';
+import { HandleComponent } from './components/handle/handle';
 
 @NgModule({
   declarations: [
@@ -22,7 +23,8 @@ import { PinStateService } from './services/pin-state.service';
     ConnectionPropertiesDialogComponent,
     ConnectionBulkEditDialogComponent,
     PinModeToolbarComponent,
-    PinLayoutEditorComponent
+    PinLayoutEditorComponent,
+    HandleComponent
   ],
   imports: [
     BrowserModule,
