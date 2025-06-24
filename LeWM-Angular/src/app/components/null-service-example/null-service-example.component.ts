@@ -20,6 +20,18 @@ import { NullAuditSummary } from '../../interfaces/null-audit.interface';
         </button>
       </div>
       
+      <div class="log-level-controls">
+        <h4>Logging Level: {{ auditConfig.logLevel || 'normal' }}</h4>
+        <button (click)="setLogLevel('quiet')" [class.active]="auditConfig.logLevel === 'quiet'">Quiet</button>
+        <button (click)="setLogLevel('normal')" [class.active]="auditConfig.logLevel === 'normal'">Normal</button>
+        <button (click)="setLogLevel('verbose')" [class.active]="auditConfig.logLevel === 'verbose'">Verbose</button>
+        <p class="log-level-description">
+          <strong>Quiet:</strong> No console output | 
+          <strong>Normal:</strong> Log null/undefined accesses | 
+          <strong>Verbose:</strong> Log all operations with details
+        </p>
+      </div>
+      
       <div class="summary" *ngIf="auditSummary">
         <h4>Audit Summary</h4>
         <p>Total Entries: {{ auditSummary!.totalEntries }}</p>
@@ -68,6 +80,37 @@ import { NullAuditSummary } from '../../interfaces/null-audit.interface';
     }
     .controls button:hover {
       background: #0056b3;
+    }
+    .log-level-controls {
+      margin: 15px 0;
+      padding: 15px;
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 5px;
+    }
+    .log-level-controls button {
+      margin: 5px;
+      padding: 5px 12px;
+      border: 1px solid #6c757d;
+      background: #6c757d;
+      color: white;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .log-level-controls button.active {
+      background: #28a745;
+      border-color: #28a745;
+    }
+    .log-level-controls button:hover {
+      background: #5a6268;
+    }
+    .log-level-controls button.active:hover {
+      background: #218838;
+    }
+    .log-level-description {
+      font-size: 0.9em;
+      color: #6c757d;
+      margin-top: 10px;
     }
     .summary {
       margin: 20px 0;
@@ -131,6 +174,12 @@ export class NullServiceExampleComponent implements OnInit {
     this.nullService.updateConfig({ enabled: !currentConfig.enabled });
     this.auditConfig = this.nullService.getConfig();
     console.log('🔍 Tracking toggled:', this.auditConfig.enabled);
+  }
+
+  setLogLevel(level: 'quiet' | 'normal' | 'verbose'): void {
+    this.nullService.setLogLevel(level);
+    this.auditConfig = this.nullService.getConfig();
+    console.log(`🔍 Log level changed to: ${level}`);
   }
 
   testNullAccess(): void {

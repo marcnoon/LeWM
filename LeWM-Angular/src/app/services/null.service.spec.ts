@@ -31,6 +31,7 @@ describe('NullService', () => {
       expect(config.storageKey).toBe('lewm-null-audit-log');
       expect(config.includedContexts).toEqual([]);
       expect(config.excludedContexts).toEqual([]);
+      expect(config.logLevel).toBe('normal');
     });
 
     it('should update configuration', () => {
@@ -45,6 +46,15 @@ describe('NullService', () => {
       expect(config.enabled).toBe(false);
       expect(config.maxEntries).toBe(500);
       expect(config.persistToStorage).toBe(true); // Should remain unchanged
+    });
+
+    it('should set log level', () => {
+      service.setLogLevel('verbose');
+      const config = service.getConfig();
+      expect(config.logLevel).toBe('verbose');
+
+      service.setLogLevel('quiet');
+      expect(service.getConfig().logLevel).toBe('quiet');
     });
   });
 

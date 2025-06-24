@@ -15,7 +15,8 @@ export class NullService {
     persistToStorage: true,
     storageKey: 'lewm-null-audit-log',
     includedContexts: [],
-    excludedContexts: []
+    excludedContexts: [],
+    logLevel: 'normal'
   };
 
   private config: NullAuditConfig;
@@ -25,7 +26,7 @@ export class NullService {
   constructor() {
     this.config = { ...this.defaultConfig };
     this.loadAuditLog();
-    console.log('🔍 NullService initialized - experimental null/undefined tracking enabled');
+    console.log(`🔍 NullService initialized - experimental null/undefined tracking enabled (log level: ${this.config.logLevel})`);
   }
 
   /**
@@ -51,6 +52,16 @@ export class NullService {
   }
 
   /**
+   * Set logging level for console output
+   */
+  setLogLevel(level: 'quiet' | 'normal' | 'verbose'): void {
+    this.updateConfig({ logLevel: level });
+    if (level !== 'quiet') {
+      console.log(`🔍 NullService: Logging level set to '${level}'`);
+    }
+  }
+
+  /**
    * Record a null/undefined access for audit tracking
    */
   recordAccess(
@@ -69,14 +80,26 @@ export class NullService {
       return;
     }
 
+    const isNull = value === null || value === undefined;
+    
+    // Console logging based on log level
+    try {
+      this.logAccess(context, propertyPath, accessType, isNull, value, metadata);
+    } catch (error) {
+      // Handle logging errors gracefully
+      if (this.config.logLevel !== 'quiet') {
+        console.error('🔍 NullService: Error during logging:', error);
+      }
+    }
+
     const entry: NullAuditEntry = {
       id: this.generateId(),
       timestamp: new Date(),
       context,
       propertyPath,
       accessType,
-      wasNull: value === null || value === undefined,
-      value: value === null || value === undefined ? undefined : value,
+      wasNull: isNull,
+      value: isNull ? undefined : value,
       metadata
     };
 
@@ -92,8 +115,30 @@ export class NullService {
     propertyPath: string,
     metadata?: NullAuditEntry['metadata']
   ): value is T {
-    this.recordAccess(context, propertyPath, 'check', value, metadata);
-    return value !== null && value !== undefined;
+    try {
+      // Log the check operation before performing it
+      if (this.config.logLevel === 'verbose') {
+        console.log(`🔍 NullService: Checking ${propertyPath} in ${context}`, 
+          { value: value === null ? 'null' : value === undefined ? 'undefined' : 'defined', metadata });
+      }
+
+      this.recordAccess(context, propertyPath, 'check', value, metadata);
+      const result = value !== null && value !== undefined;
+      
+      // Log the result in verbose mode
+      if (this.config.logLevel === 'verbose') {
+        console.log(`🔍 NullService: Check result for ${propertyPath}: ${result ? 'SAFE' : 'NULL/UNDEFINED'}`);
+      }
+      
+      return result;
+    } catch (error) {
+      // Handle and log any errors that occur during safe check
+      if (this.config.logLevel !== 'quiet') {
+        console.error(`🔍 NullService: Error during safeCheck for ${propertyPath} in ${context}:`, error);
+      }
+      // Return false for safety if an error occurs
+      return false;
+    }
   }
 
   /**
@@ -107,14 +152,34 @@ export class NullService {
   ): T[K] | undefined {
     const propertyPath = `${typeof obj}.${String(key)}`;
     
-    if (obj === null || obj === undefined) {
-      this.recordAccess(context, propertyPath, 'read', undefined, metadata);
+    try {
+      if (this.config.logLevel === 'verbose') {
+        console.log(`🔍 NullService: Getting property ${String(key)} from object in ${context}`);
+      }
+      
+      if (obj === null || obj === undefined) {
+        this.recordAccess(context, propertyPath, 'read', undefined, metadata);
+        if (this.config.logLevel === 'verbose') {
+          console.log(`🔍 NullService: Object is ${obj === null ? 'null' : 'undefined'}, returning undefined`);
+        }
+        return undefined;
+      }
+
+      const value = obj[key];
+      this.recordAccess(context, propertyPath, 'read', value, metadata);
+      
+      if (this.config.logLevel === 'verbose') {
+        console.log(`🔍 NullService: Retrieved property ${String(key)}:`, 
+          value === null ? 'null' : value === undefined ? 'undefined' : 'defined');
+      }
+      
+      return value;
+    } catch (error) {
+      if (this.config.logLevel !== 'quiet') {
+        console.error(`🔍 NullService: Error during safeGet for ${propertyPath} in ${context}:`, error);
+      }
       return undefined;
     }
-
-    const value = obj[key];
-    this.recordAccess(context, propertyPath, 'read', value, metadata);
-    return value;
   }
 
   /**
@@ -130,20 +195,40 @@ export class NullService {
     let current = obj;
     let currentPath = '';
 
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      currentPath = currentPath ? `${currentPath}.${key}` : key;
-
-      if (current === null || current === undefined) {
-        this.recordAccess(context, currentPath, 'read', undefined, metadata);
-        return undefined;
+    try {
+      if (this.config.logLevel === 'verbose') {
+        console.log(`🔍 NullService: Getting nested property '${path}' in ${context}`);
       }
 
-      current = current[key];
-    }
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        currentPath = currentPath ? `${currentPath}.${key}` : key;
 
-    this.recordAccess(context, path, 'read', current, metadata);
-    return current;
+        if (current === null || current === undefined) {
+          this.recordAccess(context, currentPath, 'read', undefined, metadata);
+          if (this.config.logLevel === 'verbose') {
+            console.log(`🔍 NullService: Path ${currentPath} is ${current === null ? 'null' : 'undefined'}`);
+          }
+          return undefined;
+        }
+
+        current = current[key];
+      }
+
+      this.recordAccess(context, path, 'read', current, metadata);
+      
+      if (this.config.logLevel === 'verbose') {
+        console.log(`🔍 NullService: Successfully retrieved nested property '${path}':`, 
+          current === null ? 'null' : current === undefined ? 'undefined' : 'defined');
+      }
+      
+      return current;
+    } catch (error) {
+      if (this.config.logLevel !== 'quiet') {
+        console.error(`🔍 NullService: Error during safeGetNested for '${path}' in ${context}:`, error);
+      }
+      return undefined;
+    }
   }
 
   /**
@@ -304,5 +389,41 @@ export class NullService {
 
   private generateId(): string {
     return `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Log access operations based on configured log level
+   */
+  private logAccess(
+    context: string,
+    propertyPath: string,
+    accessType: 'read' | 'write' | 'check',
+    isNull: boolean,
+    value: any,
+    metadata?: NullAuditEntry['metadata']
+  ): void {
+    if (this.config.logLevel === 'quiet') {
+      return;
+    }
+
+    const logData = {
+      context,
+      propertyPath,
+      accessType,
+      isNull,
+      value: isNull ? (value === null ? 'null' : 'undefined') : 'defined',
+      metadata
+    };
+
+    if (this.config.logLevel === 'verbose') {
+      if (isNull) {
+        console.warn(`🔍 NullService [${accessType.toUpperCase()}]: NULL/UNDEFINED access detected`, logData);
+      } else {
+        console.log(`🔍 NullService [${accessType.toUpperCase()}]: Safe access`, logData);
+      }
+    } else if (this.config.logLevel === 'normal' && isNull) {
+      // In normal mode, only log null/undefined accesses
+      console.warn(`🔍 NullService: ${propertyPath} in ${context} is ${value === null ? 'null' : 'undefined'}`);
+    }
   }
 }

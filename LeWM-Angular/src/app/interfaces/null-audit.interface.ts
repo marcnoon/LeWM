@@ -43,6 +43,8 @@ export interface NullAuditConfig {
   includedContexts: string[];
   /** Contexts to exclude from auditing */
   excludedContexts: string[];
+  /** Logging level for console output */
+  logLevel: 'quiet' | 'normal' | 'verbose';
 }
 
 /**
