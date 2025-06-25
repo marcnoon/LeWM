@@ -6,6 +6,7 @@ import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { FileService } from '../../services/file.service';
+import { NullService } from '../../services/null.service';
 import { GraphNode } from '../../models/graph-node.model';
 
 describe('GraphEditorComponent', () => {
@@ -19,7 +20,8 @@ describe('GraphEditorComponent', () => {
         GraphStateService,
         ModeManagerService,
         PinStateService,
-        FileService
+        FileService,
+        NullService
       ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA]
     }).compileComponents();

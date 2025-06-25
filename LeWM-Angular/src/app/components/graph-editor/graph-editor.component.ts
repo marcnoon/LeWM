@@ -7,6 +7,7 @@ import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { FileService } from '../../services/file.service';
+import { NullService } from '../../services/null.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { Pin } from '../../interfaces/pin.interface';
 import { NormalMode } from '../../modes/normal.mode';
@@ -118,7 +119,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     public modeManager: ModeManagerService,
     private pinState: PinStateService,
     private fileService: FileService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private nullService: NullService
   ) {
     this.normalMode = new NormalMode(this.graphState);
     this.pinEditMode = new PinEditMode(this.graphState, this.pinState);
@@ -652,13 +654,27 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   
   private isPinNameDuplicate(node: GraphNode, pinName: string): boolean {
-    if (!node.pins) return false;
+    // Use NullService to track pin access patterns
+    if (!this.nullService.safeCheck(node.pins, 'GraphEditorComponent', 'node.pins', {
+      method: 'isPinNameDuplicate',
+      extra: { nodeId: node.id, pinName }
+    })) {
+      return false;
+    }
+    
     return node.pins.some(pin => pin.name === pinName);
   }
 
   private createPinOnSide(node: GraphNode, side: string, pinName: string): void {
     const updatedNode = { ...node };
-    if (!updatedNode.pins) updatedNode.pins = [];
+    
+    // Use NullService to track and ensure pins array exists
+    if (!this.nullService.safeCheck(updatedNode.pins, 'GraphEditorComponent', 'node.pins', {
+      method: 'createPinOnSide',
+      extra: { nodeId: node.id, side, pinName }
+    })) {
+      updatedNode.pins = [];
+    }
     
     // Calculate position based on side and existing pins
     const position = this.calculateOptimalPinPosition(updatedNode, side);
@@ -676,7 +692,12 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   
   private calculateOptimalPinPosition(node: GraphNode, side: string): { x: number; y: number } {
-    const existingPins = node.pins || [];
+    // Use NullService to safely access pins with fallback
+    const existingPins = this.nullService.safeGet(node, 'pins', 'GraphEditorComponent', {
+      method: 'calculateOptimalPinPosition',
+      extra: { nodeId: node.id, side }
+    }) || [];
+    
     const sideId = ['top', 'right', 'bottom', 'left'].indexOf(side);
     
     // Count pins on this side (simplified - assumes pins are distributed evenly)
@@ -802,7 +823,13 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     const node = this.currentNodes.find(n => n.id === nodeId);
     if (!node) return;
     
-    const pin = node.pins?.find(p => p.name === pinName);
+    // Use NullService to safely find pin with audit tracking
+    const pins = this.nullService.safeGetNested<any[]>(node, 'pins', 'GraphEditorComponent', {
+      method: 'onPinMouseDown',
+      extra: { nodeId, pinName }
+    });
+    
+    const pin = pins?.find((p: any) => p.name === pinName);
     if (!pin) return;
     
     // Let the mode handle the event first
@@ -917,8 +944,13 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   // Get the original pin position from the legacy pin system
   getOriginalPinPosition(pin: Pin, node: GraphNode): { x: number; y: number } {
-    // Find the original pin in the node.pins array
-    const originalPin = node.pins?.find(p => p.name === pin.label);
+    // Find the original pin in the node.pins array using NullService
+    const pins = this.nullService.safeGetNested<any[]>(node, 'pins', 'GraphEditorComponent', {
+      method: 'getOriginalPinPosition',
+      extra: { pinLabel: pin.label, nodeId: node.id }
+    });
+    
+    const originalPin = pins?.find((p: any) => p.name === pin.label);
     if (originalPin) {
       return { x: originalPin.x, y: originalPin.y };
     }
