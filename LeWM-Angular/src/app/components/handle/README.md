@@ -13,9 +13,11 @@ The HandleComponent encapsulates all resize handle behavior, including mouse eve
 - **Visual Feedback**: Shows hover and active states with CSS transitions
 - **Parent Communication**: Emits events for resize start, resize deltas, and resize end
 - **Proper Cleanup**: Removes event listeners and restores styles on component destruction
+- **Dual Orientation Support**: Works as both vertical and horizontal resize handles
 
 ## Usage
 
+### Vertical Handle (Default)
 ```html
 <app-handle 
   (resize)="onResize($event)" 
@@ -24,9 +26,23 @@ The HandleComponent encapsulates all resize handle behavior, including mouse eve
 </app-handle>
 ```
 
+### Horizontal Handle
+```html
+<app-handle 
+  orientation="horizontal"
+  (resize)="onResize($event)" 
+  (resizeStart)="onResizeStart()" 
+  (resizeEnd)="onResizeEnd()">
+</app-handle>
+```
+
+## Inputs
+
+- `@Input() orientation: 'horizontal' | 'vertical' = 'vertical'` - Controls handle orientation and behavior
+
 ## Events
 
-- `@Output() resize: EventEmitter<number>` - Emits the delta X movement during resize
+- `@Output() resize: EventEmitter<number>` - Emits the delta movement during resize (deltaX for vertical, deltaY for horizontal)
 - `@Output() resizeStart: EventEmitter<void>` - Emitted when resize begins
 - `@Output() resizeEnd: EventEmitter<void>` - Emitted when resize ends
 

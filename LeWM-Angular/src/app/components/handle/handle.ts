@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, HostListener, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, HostBinding, OnDestroy } from '@angular/core';
 
 @Component({
   selector: 'app-handle',
@@ -7,12 +7,17 @@ import { Component, Output, EventEmitter, HostListener, OnDestroy } from '@angul
   styleUrl: './handle.scss'
 })
 export class HandleComponent implements OnDestroy {
+  @Input() orientation: 'horizontal' | 'vertical' = 'vertical';
   @Output() resize = new EventEmitter<number>();
   @Output() resizeStart = new EventEmitter<void>();
   @Output() resizeEnd = new EventEmitter<void>();
 
+  @HostBinding('class.horizontal') get isHorizontal() { return this.orientation === 'horizontal'; }
+  @HostBinding('class.vertical') get isVertical() { return this.orientation === 'vertical'; }
+
   private isResizing = false;
   private resizeStartX = 0;
+  private resizeStartY = 0;
 
   // Bound methods for event listeners
   private resizeMoveHandler = (event: MouseEvent) => this.onResizeMove(event);
@@ -25,6 +30,7 @@ export class HandleComponent implements OnDestroy {
     
     this.isResizing = true;
     this.resizeStartX = event.clientX;
+    this.resizeStartY = event.clientY;
     
     // Emit resize start event to parent
     this.resizeStart.emit();
@@ -40,10 +46,13 @@ export class HandleComponent implements OnDestroy {
   private onResizeMove(event: MouseEvent): void {
     if (!this.isResizing) return;
     
-    const deltaX = event.clientX - this.resizeStartX;
+    // Calculate delta based on orientation
+    const delta = this.orientation === 'horizontal' 
+      ? event.clientY - this.resizeStartY
+      : event.clientX - this.resizeStartX;
     
     // Emit the delta to the parent component
-    this.resize.emit(deltaX);
+    this.resize.emit(delta);
   }
 
   private onResizeEnd(): void {

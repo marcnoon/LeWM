@@ -1,23 +1,41 @@
 :host {
   display: flex;
+}
+
+:host(.horizontal) {
+  width: 100%;
+  height: 6px;
+  cursor: row-resize;
+}
+
+:host(.vertical) {
   height: 100%;
-  cursor: col-resize; /* Ensure cursor is always col-resize */
+  cursor: col-resize;
 }
 
 .resize-handle {
-  width: 6px;
-  height: 100%;
   background-color: #e9ecef;
-  cursor: col-resize !important; /* Force col-resize cursor */
   flex-shrink: 0;
   position: relative;
   transition: background-color 0.2s ease;
   
-  &:hover, &.resizing {
-    background-color: #007bff !important; /* Ensure blue color shows */
+  &.vertical {
+    width: 6px;
+    height: 100%;
+    cursor: col-resize !important;
   }
   
-  &::after {
+  &.horizontal {
+    width: 100%;
+    height: 6px;
+    cursor: row-resize !important;
+  }
+  
+  &:hover, &.resizing {
+    background-color: #007bff !important;
+  }
+  
+  &.vertical::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -27,7 +45,20 @@
     height: 20px;
     background-color: #6c757d;
     border-radius: 1px;
-    pointer-events: none; /* Ensure pseudo-element doesn't interfere */
+    pointer-events: none;
+  }
+  
+  &.horizontal::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 2px;
+    background-color: #6c757d;
+    border-radius: 1px;
+    pointer-events: none;
   }
   
   &:hover::after, &.resizing::after {

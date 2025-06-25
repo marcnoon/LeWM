@@ -56,4 +56,49 @@ describe('HandleComponent', () => {
     expect(document.removeEventListener).toHaveBeenCalledWith('mousemove', jasmine.any(Function));
     expect(document.removeEventListener).toHaveBeenCalledWith('mouseup', jasmine.any(Function));
   });
+
+  // Tests for new orientation functionality
+  it('should default to vertical orientation', () => {
+    expect(component.orientation).toBe('vertical');
+    expect(component.isVertical).toBe(true);
+    expect(component.isHorizontal).toBe(false);
+  });
+
+  it('should support horizontal orientation', () => {
+    component.orientation = 'horizontal';
+    fixture.detectChanges();
+    
+    expect(component.isVertical).toBe(false);
+    expect(component.isHorizontal).toBe(true);
+  });
+
+  it('should emit deltaX for vertical orientation', () => {
+    spyOn(component.resize, 'emit');
+    component.orientation = 'vertical';
+    
+    // Start resize
+    const startEvent = new MouseEvent('mousedown', { clientX: 100, clientY: 100 });
+    component.onResizeStart(startEvent);
+    
+    // Simulate mouse move
+    const moveEvent = new MouseEvent('mousemove', { clientX: 120, clientY: 110 });
+    document.dispatchEvent(moveEvent);
+    
+    expect(component.resize.emit).toHaveBeenCalledWith(20); // deltaX = 120 - 100
+  });
+
+  it('should emit deltaY for horizontal orientation', () => {
+    spyOn(component.resize, 'emit');
+    component.orientation = 'horizontal';
+    
+    // Start resize
+    const startEvent = new MouseEvent('mousedown', { clientX: 100, clientY: 100 });
+    component.onResizeStart(startEvent);
+    
+    // Simulate mouse move
+    const moveEvent = new MouseEvent('mousemove', { clientX: 120, clientY: 110 });
+    document.dispatchEvent(moveEvent);
+    
+    expect(component.resize.emit).toHaveBeenCalledWith(10); // deltaY = 110 - 100
+  });
 });
