@@ -98,6 +98,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   showNodeDialog = false;
   selectedNodeForEdit: GraphNode | null = null;
 
+  // Node batch edit dialog state
+  showNodeBatchDialog = false;
+  selectedNodesForBatchEdit: GraphNode[] = [];
+
   // Pin layout editor state
   showPinLayoutEditor = false;
 
@@ -196,7 +200,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     console.log('GraphEditor: Key pressed:', event.key, 'Current mode:', this.currentMode.name);
 
     // Skip mode switching if any dialog is open
-    if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+    if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
       console.log('Dialog is open, skipping mode switching for key:', event.key);
       return;
     }
@@ -231,7 +235,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     // Handle Enter key in pin edit mode
     if (event.key === 'Enter' && this.currentMode?.name === 'pin-edit') {
       // Skip if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+      if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       const pinEditMode = this.modeManager.getActiveMode() as any;
@@ -246,7 +250,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     // Handle Enter key in normal mode for node name editing
     if (event.key === 'Enter' && this.currentMode?.name === 'normal') {
       // Skip if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+      if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       if (this.selectedNodes.size === 1) {
@@ -258,13 +262,21 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
           event.preventDefault();
           return;
         }
+      } else if (this.selectedNodes.size > 1) {
+        // Open batch edit dialog for multiple selected nodes
+        const nodes = this.currentNodes.filter(n => this.selectedNodes.has(n.id));
+        if (nodes.length > 1) {
+          this.openNodeBatchEditDialog(nodes);
+          event.preventDefault();
+          return;
+        }
       }
     }
     
     // First, let the mode handle the event
     if (this.modeManager.handleKeyDown(event)) {
       // Skip mode-specific shortcuts if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+      if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       // Handle mode-specific shortcuts
@@ -288,7 +300,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (event.key === 'Delete') {
       // Skip if any dialog is open
-      if (this.showNodeDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+      if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
       // Only handle node deletion in Normal mode
@@ -993,6 +1005,25 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   onNodeDialogCancelled(): void {
     this.showNodeDialog = false;
     this.selectedNodeForEdit = null;
+  }
+
+  // Node batch edit dialog methods
+  openNodeBatchEditDialog(nodes: GraphNode[]): void {
+    this.selectedNodesForBatchEdit = nodes;
+    this.showNodeBatchDialog = true;
+  }
+
+  onNodesBatchUpdated(updatedNodes: GraphNode[]): void {
+    // Update all the nodes in the graph state
+    updatedNodes.forEach(node => {
+      this.graphState.updateNode(node.id, node);
+    });
+    this.onNodeBatchDialogCancelled(); // Close the dialog
+  }
+
+  onNodeBatchDialogCancelled(): void {
+    this.showNodeBatchDialog = false;
+    this.selectedNodesForBatchEdit = [];
   }
 
   // File operations
