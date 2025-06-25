@@ -1,5 +1,5 @@
 <!-- LeWM Angular Graph Editor Application -->
-<div class="app-container">
+<div class="app-container" [class.is-resizing]="isResizing$ | async">
   <header class="header" [style.height.px]="headerHeight">
     <h1>LeWM Graph Editor</h1>
     <p>Angular-based interactive graph visualization tool</p>

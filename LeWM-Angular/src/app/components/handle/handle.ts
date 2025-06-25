@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter, HostListener, HostBinding, OnDestroy } from '@angular/core';
+import { LayoutStateService } from '../../services/layout-state.service';
 
 @Component({
   selector: 'app-handle',
@@ -23,6 +24,8 @@ export class HandleComponent implements OnDestroy {
   private resizeMoveHandler = (event: MouseEvent) => this.onResizeMove(event);
   private resizeEndHandler = () => this.onResizeEnd();
 
+  constructor(private layoutStateService: LayoutStateService) {}
+
   @HostListener('mousedown', ['$event'])
   onResizeStart(event: MouseEvent): void {
     event.preventDefault();
@@ -32,15 +35,15 @@ export class HandleComponent implements OnDestroy {
     this.resizeStartX = event.clientX;
     this.resizeStartY = event.clientY;
     
+    // Set global resize state
+    this.layoutStateService.setResizing(true);
+    
     // Emit resize start event to parent
     this.resizeStart.emit();
     
     // Add global listeners for mouse move and up
     document.addEventListener('mousemove', this.resizeMoveHandler);
     document.addEventListener('mouseup', this.resizeEndHandler);
-    
-    // Prevent text selection during resize - but don't change body cursor
-    document.body.style.userSelect = 'none';
   }
 
   private onResizeMove(event: MouseEvent): void {
@@ -60,12 +63,12 @@ export class HandleComponent implements OnDestroy {
     
     this.isResizing = false;
     
+    // Clear global resize state
+    this.layoutStateService.setResizing(false);
+    
     // Remove global listeners
     document.removeEventListener('mousemove', this.resizeMoveHandler);
     document.removeEventListener('mouseup', this.resizeEndHandler);
-    
-    // Restore default text selection - but don't change body cursor
-    document.body.style.userSelect = '';
     
     // Emit resize end event to parent
     this.resizeEnd.emit();
@@ -76,9 +79,9 @@ export class HandleComponent implements OnDestroy {
     document.removeEventListener('mousemove', this.resizeMoveHandler);
     document.removeEventListener('mouseup', this.resizeEndHandler);
     
-    // Restore default styles if component was destroyed during resize
+    // Clear global resize state if component was destroyed during resize
     if (this.isResizing) {
-      document.body.style.userSelect = '';
+      this.layoutStateService.setResizing(false);
     }
   }
 
