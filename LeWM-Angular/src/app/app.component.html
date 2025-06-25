@@ -1,9 +1,17 @@
 <!-- LeWM Angular Graph Editor Application -->
 <div class="app-container">
-  <header class="header">
+  <header class="header" [style.height.px]="headerHeight">
     <h1>LeWM Graph Editor</h1>
     <p>Angular-based interactive graph visualization tool</p>
   </header>
+  
+  <!-- Horizontal resize handle for header -->
+  <app-handle 
+    orientation="horizontal"
+    (resize)="onHeaderResize($event)" 
+    (resizeStart)="onHeaderResizeStart()" 
+    (resizeEnd)="onHeaderResizeEnd()">
+  </app-handle>
   
   <main class="main-content">
     <app-graph-editor></app-graph-editor>
