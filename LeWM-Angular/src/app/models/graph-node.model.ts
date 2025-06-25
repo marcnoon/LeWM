@@ -6,6 +6,8 @@ export interface GraphNode {
   width: number; // Width of the node
   height: number; // Height of the node
   label: string; // Display label for the node
+  value?: string; // Optional value (can be number, string, symbols, etc.)
+  unit?: string; // Optional unit string representation
   pins?: Pin[]; // Optional connection points for domain-specific nodes
 }
 

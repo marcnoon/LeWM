@@ -270,7 +270,9 @@
     #nodeDialog
     [isVisible]="showNodeDialog"
     [currentName]="selectedNodeForEdit?.label || ''"
-    (nameChanged)="onNodeNameChanged($event)"
+    [currentValue]="selectedNodeForEdit?.value || ''"
+    [currentUnit]="selectedNodeForEdit?.unit || ''"
+    (propertiesChanged)="onNodePropertiesChanged($event)"
     (cancelled)="onNodeDialogCancelled()">
   </app-node-name-dialog>
   

@@ -22,53 +22,79 @@ describe('NodeNameDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should update nodeName when currentName input changes', () => {
+  it('should update all properties when input changes', () => {
     // Initial state
     expect(component.nodeName).toBe('');
+    expect(component.nodeValue).toBe('');
+    expect(component.nodeUnit).toBe('');
     
     // Simulate input change from parent component
     component.currentName = 'Node A';
+    component.currentValue = '42';
+    component.currentUnit = 'V';
     component.ngOnChanges({
-      currentName: new SimpleChange(undefined, 'Node A', false)
+      currentName: new SimpleChange(undefined, 'Node A', false),
+      currentValue: new SimpleChange(undefined, '42', false),
+      currentUnit: new SimpleChange(undefined, 'V', false)
     });
     
     expect(component.nodeName).toBe('Node A');
+    expect(component.nodeValue).toBe('42');
+    expect(component.nodeUnit).toBe('V');
     
     // Change to different node
     component.currentName = 'Node B';
+    component.currentValue = '100';
+    component.currentUnit = 'A';
     component.ngOnChanges({
-      currentName: new SimpleChange('Node A', 'Node B', false)
+      currentName: new SimpleChange('Node A', 'Node B', false),
+      currentValue: new SimpleChange('42', '100', false),
+      currentUnit: new SimpleChange('V', 'A', false)
     });
     
     expect(component.nodeName).toBe('Node B');
+    expect(component.nodeValue).toBe('100');
+    expect(component.nodeUnit).toBe('A');
   });
 
-  it('should not update nodeName when currentName is undefined', () => {
-    component.nodeName = 'existing value';
+  it('should not update properties when current values are undefined', () => {
+    component.nodeName = 'existing name';
+    component.nodeValue = 'existing value';
+    component.nodeUnit = 'existing unit';
     
     component.ngOnChanges({
-      currentName: new SimpleChange('old', undefined, false)
+      currentName: new SimpleChange('old', undefined, false),
+      currentValue: new SimpleChange('old', undefined, false),
+      currentUnit: new SimpleChange('old', undefined, false)
     });
     
-    expect(component.nodeName).toBe('existing value');
+    expect(component.nodeName).toBe('existing name');
+    expect(component.nodeValue).toBe('existing value');
+    expect(component.nodeUnit).toBe('existing unit');
   });
 
-  it('should emit nameChanged when onOk is called with valid name', () => {
-    spyOn(component.nameChanged, 'emit');
+  it('should emit propertiesChanged when onOk is called with valid name', () => {
+    spyOn(component.propertiesChanged, 'emit');
     component.nodeName = '  Valid Name  ';
+    component.nodeValue = '  42  ';
+    component.nodeUnit = '  V  ';
     
     component.onOk();
     
-    expect(component.nameChanged.emit).toHaveBeenCalledWith('Valid Name');
+    expect(component.propertiesChanged.emit).toHaveBeenCalledWith({
+      name: 'Valid Name',
+      value: '42',
+      unit: 'V'
+    });
   });
 
-  it('should not emit nameChanged when onOk is called with empty name', () => {
-    spyOn(component.nameChanged, 'emit');
+  it('should not emit propertiesChanged when onOk is called with empty name', () => {
+    spyOn(component.propertiesChanged, 'emit');
     component.nodeName = '   ';
     
     component.onOk();
     
-    expect(component.nameChanged.emit).not.toHaveBeenCalled();
+    expect(component.propertiesChanged.emit).not.toHaveBeenCalled();
   });
 
   it('should emit cancelled and reset when onCancel is called', () => {
@@ -81,14 +107,18 @@ describe('NodeNameDialogComponent', () => {
     expect(component.reset).toHaveBeenCalled();
   });
 
-  it('should reset state when reset is called', () => {
+  it('should reset all state when reset is called', () => {
     component.nodeName = 'test name';
+    component.nodeValue = 'test value';
+    component.nodeUnit = 'test unit';
     component.errorMessage = 'test error';
     component.isVisible = true;
     
     component.reset();
     
     expect(component.nodeName).toBe('');
+    expect(component.nodeValue).toBe('');
+    expect(component.nodeUnit).toBe('');
     expect(component.errorMessage).toBe('');
     expect(component.isVisible).toBe(false);
   });
@@ -141,14 +171,22 @@ describe('NodeNameDialogComponent', () => {
     }, 150);
   });
 
-  it('should focus input when show is called', (done) => {
+  it('should focus input when show is called with all properties', (done) => {
     const mockInput = {
       focus: jasmine.createSpy('focus'),
       select: jasmine.createSpy('select')
     };
     spyOn(document, 'getElementById').and.returnValue(mockInput as any);
 
-    component.show('Test Node');
+    component.show('Test Node', 'Test Value', 'Test Unit');
+    
+    expect(component.currentName).toBe('Test Node');
+    expect(component.currentValue).toBe('Test Value');
+    expect(component.currentUnit).toBe('Test Unit');
+    expect(component.nodeName).toBe('Test Node');
+    expect(component.nodeValue).toBe('Test Value');
+    expect(component.nodeUnit).toBe('Test Unit');
+    expect(component.isVisible).toBe(true);
 
     // Wait for the setTimeout in focusInput to execute
     setTimeout(() => {
@@ -157,5 +195,17 @@ describe('NodeNameDialogComponent', () => {
       expect(mockInput.select).toHaveBeenCalled();
       done();
     }, 150);
+  });
+
+  it('should handle show method with only name parameter', () => {
+    component.show('Test Node Only');
+    
+    expect(component.currentName).toBe('Test Node Only');
+    expect(component.currentValue).toBe('');
+    expect(component.currentUnit).toBe('');
+    expect(component.nodeName).toBe('Test Node Only');
+    expect(component.nodeValue).toBe('');
+    expect(component.nodeUnit).toBe('');
+    expect(component.isVisible).toBe(true);
   });
 });
