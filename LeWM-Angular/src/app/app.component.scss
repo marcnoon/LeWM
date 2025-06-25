@@ -50,3 +50,24 @@
   height: 100%;
   overflow: hidden; /* Ensure main content doesn't overflow */
 }
+
+/* Global resize mode styles */
+.app-container.is-resizing {
+  cursor: row-resize; /* Default cursor for horizontal resize */
+  user-select: none; /* Prevent text selection during resize */
+  
+  /* Disable pointer events on interactive elements during resize */
+  * {
+    pointer-events: none;
+  }
+  
+  /* Re-enable pointer events on the resizing handle */
+  app-handle {
+    pointer-events: auto;
+  }
+}
+
+/* When vertical handle is active, apply col-resize cursor to the container */
+.app-container.is-resizing app-handle.vertical {
+  cursor: col-resize;
+}

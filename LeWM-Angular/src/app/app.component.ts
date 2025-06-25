@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { Observable } from 'rxjs';
+import { LayoutStateService } from './services/layout-state.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +16,13 @@ export class AppComponent {
   minHeaderHeight = 20; // Minimum height to still show some content
   maxHeaderHeight = 200; // Maximum height
   private resizeStartHeight = 0;
+
+  // Observable for resize state
+  isResizing$: Observable<boolean>;
+
+  constructor(private layoutStateService: LayoutStateService) {
+    this.isResizing$ = this.layoutStateService.isResizing$;
+  }
 
   onHeaderResizeStart(): void {
     this.resizeStartHeight = this.headerHeight;

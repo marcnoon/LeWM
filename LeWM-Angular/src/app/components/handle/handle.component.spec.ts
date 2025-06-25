@@ -1,17 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HandleComponent } from './handle';
+import { LayoutStateService } from '../../services/layout-state.service';
 
 describe('HandleComponent', () => {
   let component: HandleComponent;
   let fixture: ComponentFixture<HandleComponent>;
+  let layoutStateService: LayoutStateService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [HandleComponent]
+      declarations: [HandleComponent],
+      providers: [LayoutStateService]
     }).compileComponents();
 
     fixture = TestBed.createComponent(HandleComponent);
     component = fixture.componentInstance;
+    layoutStateService = TestBed.inject(LayoutStateService);
     fixture.detectChanges();
   });
 
@@ -40,21 +44,37 @@ describe('HandleComponent', () => {
 
   it('should emit resizeStart when mousedown occurs', () => {
     spyOn(component.resizeStart, 'emit');
+    spyOn(layoutStateService, 'setResizing');
     const event = new MouseEvent('mousedown', { clientX: 100 });
     
     component.onResizeStart(event);
     
     expect(component.resizeStart.emit).toHaveBeenCalled();
     expect(component.resizing).toBe(true);
+    expect(layoutStateService.setResizing).toHaveBeenCalledWith(true);
   });
 
   it('should clean up event listeners on destroy', () => {
     spyOn(document, 'removeEventListener');
+    spyOn(layoutStateService, 'setResizing');
     
     component.ngOnDestroy();
     
     expect(document.removeEventListener).toHaveBeenCalledWith('mousemove', jasmine.any(Function));
     expect(document.removeEventListener).toHaveBeenCalledWith('mouseup', jasmine.any(Function));
+  });
+
+  it('should clear global resize state when destroyed during resize', () => {
+    spyOn(layoutStateService, 'setResizing');
+    const event = new MouseEvent('mousedown', { clientX: 100 });
+    
+    // Start resizing
+    component.onResizeStart(event);
+    expect(layoutStateService.setResizing).toHaveBeenCalledWith(true);
+    
+    // Destroy while resizing
+    component.ngOnDestroy();
+    expect(layoutStateService.setResizing).toHaveBeenCalledWith(false);
   });
 
   // Tests for new orientation functionality
@@ -100,5 +120,22 @@ describe('HandleComponent', () => {
     document.dispatchEvent(moveEvent);
     
     expect(component.resize.emit).toHaveBeenCalledWith(10); // deltaY = 110 - 100
+  });
+
+  it('should clear global resize state on resize end', () => {
+    spyOn(component.resizeEnd, 'emit');
+    spyOn(layoutStateService, 'setResizing');
+    const startEvent = new MouseEvent('mousedown', { clientX: 100 });
+    
+    // Start resize
+    component.onResizeStart(startEvent);
+    expect(layoutStateService.setResizing).toHaveBeenCalledWith(true);
+    
+    // End resize
+    const endEvent = new MouseEvent('mouseup');
+    document.dispatchEvent(endEvent);
+    
+    expect(layoutStateService.setResizing).toHaveBeenCalledWith(false);
+    expect(component.resizeEnd.emit).toHaveBeenCalled();
   });
 });
