@@ -92,3 +92,25 @@ export class MyComponent {
 - **Maintainable**: Clear separation of resize logic from business logic
 - **Testable**: Isolated component with well-defined inputs/outputs
 - **Performant**: Efficient event handling with proper cleanup
+- **Global Resize Mode**: Integrates with `LayoutStateService` to provide application-wide resize state management
+
+## Global Resize Mode
+
+The HandleComponent now integrates with the `LayoutStateService` to provide a global "resize mode" that improves user experience during resize operations:
+
+### Features
+- **Global State Management**: Uses `LayoutStateService` to broadcast resize state across the application
+- **Cursor Management**: Automatically applies appropriate resize cursors (row-resize/col-resize) to the entire application
+- **Interaction Prevention**: Disables pointer events on non-essential elements during resize to prevent accidental clicks
+- **Text Selection Disabled**: Prevents text selection during resize operations for smoother interaction
+
+### Benefits
+- **Performance**: Reduces layout thrashing and improves responsiveness during resize
+- **User Experience**: Prevents unintended interactions while resizing
+- **Consistency**: Provides consistent visual feedback across the entire application
+
+### Implementation
+The component automatically manages global resize state through:
+1. Calls `layoutStateService.setResizing(true)` on resize start
+2. Calls `layoutStateService.setResizing(false)` on resize end or component destruction
+3. The application subscribes to this state and applies global CSS classes accordingly
