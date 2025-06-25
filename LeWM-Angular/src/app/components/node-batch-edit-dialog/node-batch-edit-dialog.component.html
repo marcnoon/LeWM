@@ -1,0 +1,95 @@
+<div *ngIf="isVisible" class="dialog-overlay" (click)="onOverlayClick($event)">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <h3>Batch Edit Nodes ({{ nodes.length }} selected)</h3>
+    
+    <div class="dialog-content">
+      <!-- Node Naming Section -->
+      <div class="section">
+        <h4>Node Names</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Base Name:</label>
+            <input 
+              type="text" 
+              [(ngModel)]="bulkChanges.baseName" 
+              (keydown)="onKeyDown($event)"
+              placeholder="Enter base name (e.g., 'R' for R1, R2, R3...)"
+              class="form-input"
+              autofocus>
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label>
+              <input 
+                type="checkbox" 
+                [(ngModel)]="bulkChanges.applyAutoNumbering">
+              Auto-number names (R1, R2, R3...)
+            </label>
+            <small class="help-text">
+              <span *ngIf="bulkChanges.applyAutoNumbering">Names will be auto-numbered to ensure uniqueness</span>
+              <span *ngIf="!bulkChanges.applyAutoNumbering">All nodes will have the same name (may create duplicates)</span>
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Value/Unit Section -->
+      <div class="section">
+        <h4>Properties</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Value:</label>
+            <input 
+              type="text" 
+              [(ngModel)]="bulkChanges.value" 
+              (keydown)="onKeyDown($event)"
+              [placeholder]="getValuePlaceholder()"
+              class="form-input">
+            <small class="help-text">
+              <span *ngIf="batchEditData?.hasCommonValue">All nodes currently have the same value</span>
+              <span *ngIf="!batchEditData?.hasCommonValue && nodes.length > 1">Nodes have different values - new value will overwrite all</span>
+            </small>
+          </div>
+          
+          <div class="form-group">
+            <label>Unit:</label>
+            <input 
+              type="text" 
+              [(ngModel)]="bulkChanges.unit" 
+              (keydown)="onKeyDown($event)"
+              [placeholder]="getUnitPlaceholder()"
+              class="form-input">
+            <small class="help-text">
+              <span *ngIf="batchEditData?.hasCommonUnit">All nodes currently have the same unit</span>
+              <span *ngIf="!batchEditData?.hasCommonUnit && nodes.length > 1">Nodes have different units - new unit will overwrite all</span>
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Section -->
+      <div *ngIf="bulkChanges.baseName.trim()" class="section preview-section">
+        <h4>Preview</h4>
+        <div class="preview-list">
+          <div *ngFor="let node of nodes.slice(0, 3); let i = index" class="preview-item">
+            <span class="preview-original">{{ node.label }}</span>
+            <span class="preview-arrow">→</span>
+            <span class="preview-new">
+              <span *ngIf="bulkChanges.applyAutoNumbering">{{ bulkChanges.baseName }}{{ i + 1 }}</span>
+              <span *ngIf="!bulkChanges.applyAutoNumbering">{{ bulkChanges.baseName }}</span>
+              <span *ngIf="bulkChanges.value" class="preview-value"> ({{ bulkChanges.value }}<span *ngIf="bulkChanges.unit">{{ bulkChanges.unit }}</span>)</span>
+            </span>
+          </div>
+          <div *ngIf="nodes.length > 3" class="preview-more">
+            ... and {{ nodes.length - 3 }} more nodes
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button type="button" (click)="onCancel()" class="cancel-btn">Cancel</button>
+      <button type="button" (click)="onApply()" class="apply-btn" [disabled]="!isFormValid()">Apply Changes</button>
+    </div>
+  </div>
+</div>

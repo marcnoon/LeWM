@@ -276,6 +276,15 @@
     (cancelled)="onNodeDialogCancelled()">
   </app-node-name-dialog>
   
+  <!-- Node Batch Edit Dialog -->
+  <app-node-batch-edit-dialog
+    #nodeBatchDialog
+    [isVisible]="showNodeBatchDialog"
+    [nodes]="selectedNodesForBatchEdit"
+    (nodesUpdated)="onNodesBatchUpdated($event)"
+    (cancelled)="onNodeBatchDialogCancelled()">
+  </app-node-batch-edit-dialog>
+
   <!-- Connection Properties Dialog -->
   <app-connection-properties-dialog
     #connectionDialog

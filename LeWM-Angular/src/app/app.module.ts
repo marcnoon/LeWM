@@ -9,6 +9,7 @@ import { PinNameDialogComponent } from './components/pin-name-dialog/pin-name-di
 import { NodeNameDialogComponent } from './components/node-name-dialog/node-name-dialog.component';
 import { ConnectionPropertiesDialogComponent } from './components/connection-properties-dialog/connection-properties-dialog.component';
 import { ConnectionBulkEditDialogComponent } from './components/connection-bulk-edit-dialog/connection-bulk-edit-dialog.component';
+import { NodeBatchEditDialogComponent } from './components/node-batch-edit-dialog/node-batch-edit-dialog.component';
 import { PinModeToolbarComponent } from './components/pin-mode-toolbar/pin-mode-toolbar.component';
 import { PinLayoutEditorComponent } from './components/pin-layout-editor/pin-layout-editor.component';
 import { PinStateService } from './services/pin-state.service';
@@ -22,6 +23,7 @@ import { HandleComponent } from './components/handle/handle';
     NodeNameDialogComponent,
     ConnectionPropertiesDialogComponent,
     ConnectionBulkEditDialogComponent,
+    NodeBatchEditDialogComponent,
     PinModeToolbarComponent,
     PinLayoutEditorComponent,
     HandleComponent
