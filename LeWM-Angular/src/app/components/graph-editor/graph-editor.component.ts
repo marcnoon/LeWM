@@ -977,11 +977,13 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showNodeDialog = true;
   }
 
-  onNodeNameChanged(newName: string): void {
+  onNodePropertiesChanged(properties: {name: string, value: string, unit: string}): void {
     if (this.selectedNodeForEdit) {
       const updatedNode = { 
         ...this.selectedNodeForEdit, 
-        label: newName 
+        label: properties.name,
+        value: properties.value || undefined, // Don't store empty strings
+        unit: properties.unit || undefined // Don't store empty strings
       };
       this.graphState.updateNode(this.selectedNodeForEdit.id, updatedNode);
       this.onNodeDialogCancelled(); // Close the dialog

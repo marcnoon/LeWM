@@ -7,19 +7,44 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from
     <div class="node-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
       <div class="node-dialog" (click)="$event.stopPropagation()">
         <div class="node-dialog-header">
-          <h4>Edit Node Name</h4>
+          <h4>Edit Node Properties</h4>
         </div>
         <div class="node-dialog-body">
-          <label for="nodeName">Node Name:</label>
-          <input 
-            #nodeInput
-            type="text" 
-            id="nodeName" 
-            [(ngModel)]="nodeName" 
-            (keydown)="onKeyDown($event)"
-            placeholder="Enter node name..."
-            class="node-input"
-            [class.error]="errorMessage">
+          <div class="form-group">
+            <label for="nodeName">Node Name:</label>
+            <input 
+              #nodeInput
+              type="text" 
+              id="nodeName" 
+              [(ngModel)]="nodeName" 
+              (keydown)="onKeyDown($event)"
+              placeholder="Enter node name..."
+              class="node-input"
+              [class.error]="errorMessage">
+          </div>
+          
+          <div class="form-group">
+            <label for="nodeValue">Value (optional):</label>
+            <input 
+              type="text" 
+              id="nodeValue" 
+              [(ngModel)]="nodeValue" 
+              (keydown)="onKeyDown($event)"
+              placeholder="Enter value (number, string, symbols...)..."
+              class="node-input">
+          </div>
+          
+          <div class="form-group">
+            <label for="nodeUnit">Unit (optional):</label>
+            <input 
+              type="text" 
+              id="nodeUnit" 
+              [(ngModel)]="nodeUnit" 
+              (keydown)="onKeyDown($event)"
+              placeholder="Enter unit (V, A, Ω, m/s, etc.)..."
+              class="node-input">
+          </div>
+          
           <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         </div>
         <div class="node-dialog-footer">
@@ -64,6 +89,14 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from
 
     .node-dialog-body {
       padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group:last-of-type {
+      margin-bottom: 0;
     }
 
     .node-dialog-body label {
@@ -142,26 +175,40 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from
 export class NodeNameDialogComponent implements OnChanges {
   @Input() isVisible = false;
   @Input() currentName: string = '';
-  @Output() nameChanged = new EventEmitter<string>();
+  @Input() currentValue: string = '';
+  @Input() currentUnit: string = '';
+  @Output() propertiesChanged = new EventEmitter<{name: string, value: string, unit: string}>();
   @Output() cancelled = new EventEmitter<void>();
 
   nodeName = '';
+  nodeValue = '';
+  nodeUnit = '';
   errorMessage = '';
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['currentName'] && changes['currentName'].currentValue !== undefined) {
       this.nodeName = this.currentName;
-      // If the dialog is visible, focus the input when currentName changes
-      if (this.isVisible) {
-        this.focusInput();
-      }
+    }
+    if (changes['currentValue'] && changes['currentValue'].currentValue !== undefined) {
+      this.nodeValue = this.currentValue;
+    }
+    if (changes['currentUnit'] && changes['currentUnit'].currentValue !== undefined) {
+      this.nodeUnit = this.currentUnit;
+    }
+    // If the dialog is visible, focus the input when any current value changes
+    if (this.isVisible && (changes['currentName'] || changes['currentValue'] || changes['currentUnit'])) {
+      this.focusInput();
     }
   }
 
   onOk(): void {
     if (this.nodeName.trim()) {
       this.clearError(); // Clear any previous error
-      this.nameChanged.emit(this.nodeName.trim());
+      this.propertiesChanged.emit({
+        name: this.nodeName.trim(),
+        value: this.nodeValue.trim(),
+        unit: this.nodeUnit.trim()
+      });
       // Note: Don't reset here if there's a validation error
       // The parent component will handle whether to close the dialog
     }
@@ -186,6 +233,8 @@ export class NodeNameDialogComponent implements OnChanges {
 
   reset(): void {
     this.nodeName = '';
+    this.nodeValue = '';
+    this.nodeUnit = '';
     this.errorMessage = '';
     this.isVisible = false;
   }
@@ -198,9 +247,13 @@ export class NodeNameDialogComponent implements OnChanges {
     this.errorMessage = message;
   }
 
-  show(currentName: string): void {
+  show(currentName: string, currentValue: string = '', currentUnit: string = ''): void {
     this.currentName = currentName;
+    this.currentValue = currentValue;
+    this.currentUnit = currentUnit;
     this.nodeName = currentName;
+    this.nodeValue = currentValue;
+    this.nodeUnit = currentUnit;
     this.isVisible = true;
     this.errorMessage = '';
     
