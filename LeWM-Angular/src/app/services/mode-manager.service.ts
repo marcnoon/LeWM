@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { GraphMode } from '../interfaces/graph-mode.interface';
 import { GraphNode } from '../models/graph-node.model';
 import { PinStateService } from './pin-state.service';
+import { FeatureGraphService } from './feature-graph.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,10 @@ export class ModeManagerService {
   
   readonly activeMode$ = this._activeMode.asObservable();
   
-  constructor(private pinState: PinStateService) {}
+  constructor(
+    private pinState: PinStateService,
+    private featureGraphService: FeatureGraphService
+  ) {}
   
   /**
    * Registers a mode with the manager
@@ -143,5 +147,27 @@ export class ModeManagerService {
    */
   openPinLayoutEditor(): void {
     this.pinState.openLayoutEditor();
+  }
+
+  /**
+   * Initializes modes based on enabled features
+   * This method will be expanded in future iterations to register mode factories
+   * based on feature flags from the FeatureGraphService
+   */
+  initializeFeatureModes(): void {
+    // Placeholder for future feature-based mode registration
+    // Will be implemented as features are migrated to the feature flag system
+    const enabledFeatures = this.featureGraphService.getEnabledFeatures();
+    console.log('Available features for mode registration:', enabledFeatures);
+    
+    // TODO: Register mode factories based on enabled features
+    // Example future implementation:
+    // enabledFeatures.forEach(featureName => {
+    //   const factory = this.getModeFactory(featureName);
+    //   if (factory) {
+    //     const mode = factory.create();
+    //     this.registerMode(mode);
+    //   }
+    // });
   }
 }
