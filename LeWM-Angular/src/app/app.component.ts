@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs';
 import { LayoutStateService } from './services/layout-state.service';
+import { FeatureGraphService } from './services/feature-graph.service';
+import { ModeManagerService } from './services/mode-manager.service';
 
 @Component({
   selector: 'app-root',
@@ -20,8 +22,26 @@ export class AppComponent {
   // Observable for resize state
   isResizing$: Observable<boolean>;
 
-  constructor(private layoutStateService: LayoutStateService) {
+  constructor(
+    private layoutStateService: LayoutStateService,
+    private featureGraphService: FeatureGraphService,
+    private modeManagerService: ModeManagerService
+  ) {
     this.isResizing$ = this.layoutStateService.isResizing$;
+    
+    // Demonstrate feature flag system is working
+    this.featureGraphService.featuresLoaded.subscribe(loaded => {
+      if (loaded) {
+        console.log('Feature Flag System Status:');
+        console.log('- basic-graph-editing enabled:', this.featureGraphService.isFeatureEnabled('basic-graph-editing'));
+        console.log('- advanced-features enabled:', this.featureGraphService.isFeatureEnabled('advanced-features'));
+        console.log('- non-existent-feature enabled:', this.featureGraphService.isFeatureEnabled('non-existent-feature'));
+        console.log('- all enabled features:', this.featureGraphService.getEnabledFeatures());
+        
+        // Initialize mode manager with current features
+        this.modeManagerService.initializeFeatureModes();
+      }
+    });
   }
 
   onHeaderResizeStart(): void {

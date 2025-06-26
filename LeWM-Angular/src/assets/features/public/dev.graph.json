@@ -1,3 +1,15 @@
 {
-  "features": []
+  "features": [
+    {
+      "id": "basic-graph-editing",
+      "name": "basic-graph-editing",
+      "enabled": true
+    },
+    {
+      "id": "advanced-features",
+      "name": "advanced-features", 
+      "enabled": false,
+      "dependencies": ["basic-graph-editing"]
+    }
+  ]
 }
