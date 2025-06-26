@@ -805,6 +805,12 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     const pin = node.pins?.find(p => p.name === pinName);
     if (!pin) return;
     
+    // Bridge to enhanced pin system in pin-edit mode
+    if (this.currentMode?.name === 'pin-edit') {
+      this.onPinClick(node, pin, event);
+      return;
+    }
+    
     // Let the mode handle the event first
     if (this.modeManager.handlePinClick(node, pin, event)) {
       return; // Mode handled the event
@@ -812,6 +818,31 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // No default pin behavior - connections should only be created in Connection Mode
     console.log(`Pin ${nodeId}.${pinName} clicked, but no mode handled it. Switch to Connection Mode to create connections.`);
+  }
+
+  // Bridge method: Handle legacy pin clicks and sync to enhanced system
+  onPinClick(node: GraphNode, pin: any, event: MouseEvent): void {
+    if (this.currentMode?.name !== 'pin-edit') return;
+    
+    const pinId = `${node.id}.${pin.name}`;
+    
+    // Sync legacy pin to enhanced system if not already there
+    if (!this.pinState.getPin(pinId)) {
+      this.syncLegacyPinToEnhanced(node.id, pin);
+    }
+    
+    // Select the pin in enhanced system
+    this.pinState.selectPin(pinId, event.ctrlKey || event.metaKey);
+    
+    console.log(`Pin ${pinId} selected through legacy bridge`);
+  }
+
+  // Helper method to sync a legacy pin to the enhanced system
+  private syncLegacyPinToEnhanced(nodeId: string, legacyPin: any): void {
+    const pinId = `${nodeId}.${legacyPin.name}`;
+    
+    // Import the legacy pin to enhanced system
+    this.pinState.importLegacyPin(nodeId, legacyPin);
   }
   
   // Enhanced pin system handler
@@ -945,6 +976,29 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     const currentState = this.pinState.modeState$.pipe(map(state => state));
     // This is a simplified check - in practice, you might want to use a more reactive approach
     return false; // Will be handled by the pin selection logic
+  }
+
+  // Bridge method: Check if a legacy pin is selected (for template styling)
+  isPinSelectedLegacy(nodeId: string, pinName: string): boolean {
+    const pinId = `${nodeId}.${pinName}`;
+    let isSelected = false;
+    
+    // Subscribe to current pin state synchronously to get current selection
+    const subscription = this.pinState.modeState$.subscribe(state => {
+      isSelected = state.selectedPins.includes(pinId);
+    });
+    subscription.unsubscribe();
+    
+    return isSelected;
+  }
+
+  // Bridge method: Get CSS classes for legacy pin styling
+  getPinClass(nodeId: string, pinName: string): string {
+    const baseClass = 'pin-circle';
+    if (this.isPinSelectedLegacy(nodeId, pinName)) {
+      return `${baseClass} pin-selected`;
+    }
+    return baseClass;
   }
   
   // TrackBy function for pin rendering performance
