@@ -7,7 +7,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     <div class="node-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
       <div class="node-dialog" (click)="$event.stopPropagation()">
         <div class="node-dialog-header">
-          <h4>Edit Node Name</h4>
+          <h4>Edit Node Properties</h4>
         </div>
         <div class="node-dialog-body">
           <label for="nodeName">Node Name:</label>
@@ -20,6 +20,25 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
             placeholder="Enter node name..."
             class="node-input"
             [class.error]="errorMessage">
+          
+          <label for="nodeValue">Value (optional):</label>
+          <input 
+            type="text" 
+            id="nodeValue" 
+            [(ngModel)]="nodeValue" 
+            (keydown)="onKeyDown($event)"
+            placeholder="Enter value..."
+            class="node-input">
+          
+          <label for="nodeUnit">Unit (optional):</label>
+          <input 
+            type="text" 
+            id="nodeUnit" 
+            [(ngModel)]="nodeUnit" 
+            (keydown)="onKeyDown($event)"
+            placeholder="Enter unit..."
+            class="node-input">
+            
           <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         </div>
         <div class="node-dialog-footer">
@@ -69,8 +88,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     .node-dialog-body label {
       display: block;
       margin-bottom: 0.5rem;
+      margin-top: 1rem;
       font-weight: 600;
       color: #555;
+    }
+
+    .node-dialog-body label:first-of-type {
+      margin-top: 0;
     }
 
     .node-input {
@@ -142,16 +166,24 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 export class NodeNameDialogComponent {
   @Input() isVisible = false;
   @Input() currentName: string = '';
-  @Output() nameChanged = new EventEmitter<string>();
+  @Input() currentValue: string = '';
+  @Input() currentUnit: string = '';
+  @Output() propertiesChanged = new EventEmitter<{name: string, value: string, unit: string}>();
   @Output() cancelled = new EventEmitter<void>();
 
   nodeName = '';
+  nodeValue = '';
+  nodeUnit = '';
   errorMessage = '';
 
   onOk(): void {
     if (this.nodeName.trim()) {
       this.clearError(); // Clear any previous error
-      this.nameChanged.emit(this.nodeName.trim());
+      this.propertiesChanged.emit({
+        name: this.nodeName.trim(),
+        value: this.nodeValue.trim(),
+        unit: this.nodeUnit.trim()
+      });
       // Note: Don't reset here if there's a validation error
       // The parent component will handle whether to close the dialog
     }
@@ -176,6 +208,8 @@ export class NodeNameDialogComponent {
 
   reset(): void {
     this.nodeName = '';
+    this.nodeValue = '';
+    this.nodeUnit = '';
     this.errorMessage = '';
     this.isVisible = false;
   }
@@ -194,10 +228,14 @@ export class NodeNameDialogComponent {
     
     // Force clear any cached value first
     this.nodeName = '';
+    this.nodeValue = '';
+    this.nodeUnit = '';
     
-    // Then set the correct value
+    // Then set the correct values
     this.currentName = currentName;
     this.nodeName = currentName;
+    this.nodeValue = this.currentValue;
+    this.nodeUnit = this.currentUnit;
     this.isVisible = true;
     this.errorMessage = '';
     

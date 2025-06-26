@@ -1,6 +1,7 @@
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing-module';
 import { AppComponent } from './app.component';
@@ -13,7 +14,15 @@ import { NodeBatchEditDialogComponent } from './components/node-batch-edit-dialo
 import { PinModeToolbarComponent } from './components/pin-mode-toolbar/pin-mode-toolbar.component';
 import { PinLayoutEditorComponent } from './components/pin-layout-editor/pin-layout-editor.component';
 import { PinStateService } from './services/pin-state.service';
+import { FeatureGraphService } from './services/feature-graph.service';
 import { HandleComponent } from './components/handle/handle';
+
+/**
+ * Factory function to initialize feature flags before app startup
+ */
+export function initializeFeatures(featureGraphService: FeatureGraphService) {
+  return () => featureGraphService.loadFeatures();
+}
 
 @NgModule({
   declarations: [
@@ -31,10 +40,18 @@ import { HandleComponent } from './components/handle/handle';
   imports: [
     BrowserModule,
     FormsModule,
+    HttpClientModule,
     AppRoutingModule
   ],
   providers: [
-    PinStateService
+    PinStateService,
+    FeatureGraphService,
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeFeatures,
+      deps: [FeatureGraphService],
+      multi: true
+    }
   ],
   bootstrap: [AppComponent]
 })
