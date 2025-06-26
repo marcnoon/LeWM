@@ -274,6 +274,63 @@ export class PinStateService {
     );
   }
 
+  // Bridge method: Get a single pin by ID
+  getPin(pinId: string): Pin | undefined {
+    return this.pinsSubject.value.get(pinId);
+  }
+
+  // Bridge method: Import a legacy pin to the enhanced system
+  importLegacyPin(nodeId: string, legacyPin: any): void {
+    const pinId = `${nodeId}.${legacyPin.name}`;
+    
+    // Check if pin already exists
+    if (this.getPin(pinId)) {
+      console.log(`Pin ${pinId} already exists in enhanced system`);
+      return;
+    }
+
+    // Create enhanced pin from legacy pin
+    const enhancedPin: Pin = {
+      id: pinId,
+      nodeId: nodeId,
+      label: legacyPin.name,
+      position: {
+        x: legacyPin.x || 0,
+        y: legacyPin.y || 0,
+        side: this.detectPinSide(legacyPin),
+        offset: 0
+      },
+      textStyle: { ...DEFAULT_PIN_TEXT_STYLE },
+      pinStyle: { ...DEFAULT_PIN_STYLE },
+      isInput: true,
+      isOutput: true,
+      isSelected: false,
+      pinType: legacyPin.type || 'bidirectional',
+      pinNumber: legacyPin.pinNumber || '',
+      signalName: legacyPin.signalName || legacyPin.name,
+      pinSize: legacyPin.pinSize || 8,
+      pinColor: legacyPin.pinColor || '#4CAF50',
+      showPinNumber: legacyPin.showPinNumber || false,
+      dataType: legacyPin.dataType
+    };
+
+    console.log(`Importing legacy pin ${pinId} to enhanced system`);
+    this.importPin(enhancedPin);
+  }
+
+  // Helper method to detect which side of the node a pin is on
+  private detectPinSide(pin: any): 'top' | 'right' | 'bottom' | 'left' {
+    // Simple detection based on position - this could be made more sophisticated
+    const x = pin.x || 0;
+    const y = pin.y || 0;
+    
+    // For now, default to left side since most legacy pins seem to be on the left
+    if (x <= 10) return 'left';
+    if (x >= 70) return 'right'; 
+    if (y <= 10) return 'top';
+    return 'bottom';
+  }
+
   openLayoutEditor(): void {
     const selectedPinIds = this.modeStateSubject.value.selectedPins;
     console.log('Opening layout editor with selected pin IDs:', selectedPinIds);

@@ -185,21 +185,22 @@
             <circle *ngIf="!isPinSelectedInEnhancedMode(node.id, pin.name)"
                     [attr.cx]="node.x + pin.x"
                     [attr.cy]="node.y + pin.y"
-                    r="3"
-                    fill="#FF5722"
-                    stroke="#333"
-                    stroke-width="1"
-                    class="pin"
-                    [class.selected]="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.has(node.id + '.' + pin.name) || false)"
+                    [attr.r]="4"
+                    [attr.class]="getPinClass(node.id, pin.name)"
+                    [attr.fill]="isPinSelectedLegacy(node.id, pin.name) ? '#ff6b35' : '#FF5722'"
+                    [attr.stroke]="isPinSelectedLegacy(node.id, pin.name) ? '#ff6b35' : '#333'"
+                    [attr.stroke-width]="isPinSelectedLegacy(node.id, pin.name) ? '2' : '1'"
                     [attr.data-node-id]="node.id"
                     [attr.data-pin-name]="pin.name"
-                    (mousedown)="onPinMouseDown($event, node.id, pin.name)" />
+                    (mousedown)="onPinMouseDown($event, node.id, pin.name)"
+                    style="cursor: pointer;" />
             <text *ngIf="!isPinSelectedInEnhancedMode(node.id, pin.name)"
-                  [attr.x]="node.x + pin.x + 8"
-                  [attr.y]="node.y + pin.y + 4"
-                  font-size="10"
-                  fill="#666"
-                  class="pin-label">
+                  [attr.x]="node.x + pin.x + 10"
+                  [attr.y]="node.y + pin.y + 3"
+                  class="pin-label"
+                  [attr.fill]="isPinSelectedLegacy(node.id, pin.name) ? '#ff6b35' : '#666'"
+                  [attr.font-weight]="isPinSelectedLegacy(node.id, pin.name) ? 'bold' : 'normal'"
+                  font-size="10">
               {{ pin.name }}
             </text>
           </g>
