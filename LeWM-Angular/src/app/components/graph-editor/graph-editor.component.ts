@@ -6,6 +6,7 @@ import { GraphEdge } from '../../models/graph-edge.model';
 import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
+import { PinSyncService } from '../../services/pin-sync.service';
 import { FileService } from '../../services/file.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { Pin } from '../../interfaces/pin.interface';
@@ -117,6 +118,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     private graphState: GraphStateService,
     public modeManager: ModeManagerService,
     private pinState: PinStateService,
+    private pinSync: PinSyncService,
     private fileService: FileService,
     private cdr: ChangeDetectorRef
   ) {
@@ -663,16 +665,21 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     // Calculate position based on side and existing pins
     const position = this.calculateOptimalPinPosition(updatedNode, side);
     
-    updatedNode.pins.push({
+    const newPin = {
       x: Math.round(position.x),
       y: Math.round(position.y),
       name: pinName
-    });
+    };
+    
+    updatedNode.pins.push(newPin);
     
     // Update the node in the service
     this.graphState.updateNode(node.id, updatedNode);
     
-    console.log(`Added pin ${pinName} to node ${node.id} on ${side} side`);
+    // Sync the new pin to enhanced system
+    this.pinSync.syncLegacyToEnhanced(node.id, newPin);
+    
+    console.log(`Added pin ${pinName} to node ${node.id} on ${side} side and synced to enhanced system`);
   }
   
   private calculateOptimalPinPosition(node: GraphNode, side: string): { x: number; y: number } {
@@ -839,10 +846,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Helper method to sync a legacy pin to the enhanced system
   private syncLegacyPinToEnhanced(nodeId: string, legacyPin: any): void {
-    const pinId = `${nodeId}.${legacyPin.name}`;
-    
-    // Import the legacy pin to enhanced system
-    this.pinState.importLegacyPin(nodeId, legacyPin);
+    this.pinSync.syncLegacyToEnhanced(nodeId, legacyPin);
   }
   
   // Enhanced pin system handler
