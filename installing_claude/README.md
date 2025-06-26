@@ -73,3 +73,13 @@ claude-code --version
 - The LTS (Long Term Support) version of Node.js is recommended for stability
 - Keep your API key secure and never commit it to version control
 - You may want to update npm if prompted: `npm install -g npm@latest`
+
+
+@workspace how do get to this folder form my ubuntu bash prompt? C:\src\LeWM-Private? Currently I'm on: (base) PS C:\folder\MyRepo> ubuntu mnoon@WIN-VBPM6HICCJC:<del>$ pwd /home/mnoon mnoon@WIN-VBPM6HICCJC:</del>$
+
+Workspace
+Collecting workspace information
+
+To access your Windows folder LeWM-Private from your Ubuntu (WSL) bash prompt, use the /mnt/c/ mount point. The equivalent path is:
+
+You can then run ls to see the contents.
