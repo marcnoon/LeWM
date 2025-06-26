@@ -645,18 +645,56 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     const nodeId = pin.nodeId;
     const nodePos = this.getNodePreviewPosition(nodeId);
     const nodeSize = this.getNodePreviewSize(nodeId);
+    const nodeInfo = this.getNodeInfo(nodeId);
+    
+    // Use the same shape-aware logic as graph editor
+    const shape = nodeInfo?.shape || 'rectangle';
+    
+    return this.calculatePinPositionForShape(pin, nodePos, nodeSize, shape);
+  }
 
-    // Mirror the logic from graph-editor calculatePinPosition method
-    // Use absolute x,y coordinates if they exist (from legacy system)
-    // Otherwise calculate from side/offset
-    if (pin.position.x !== 0 || pin.position.y !== 0) {
-      return {
-        x: nodePos.x + pin.position.x,
-        y: nodePos.y + pin.position.y
-      };
+  /**
+   * Shape-aware algorithmic positioning for pins - matches graph editor logic
+   */
+  private calculatePinPositionForShape(
+    pin: Pin, 
+    nodePos: { x: number; y: number }, 
+    nodeSize: { width: number; height: number }, 
+    shape: 'rectangle' | 'circle' | 'polygon'
+  ): { x: number; y: number } {
+    const { side, offset } = pin.position;
+    
+    // Always prioritize side and offset for semantic positioning
+    // Only use x,y coordinates as fallback when side is not properly defined
+    if (side && typeof offset === 'number') {
+      switch (shape) {
+        case 'rectangle':
+          return this.calculateRectangularPinPosition(pin, nodePos, nodeSize);
+        case 'circle':
+          return this.calculateCircularPinPosition(pin, nodePos, nodeSize);
+        case 'polygon':
+          // For future extension - currently fallback to rectangle
+          return this.calculateRectangularPinPosition(pin, nodePos, nodeSize);
+        default:
+          return this.calculateRectangularPinPosition(pin, nodePos, nodeSize);
+      }
     }
     
-    // Side-based positioning
+    // Fallback to absolute x,y coordinates only when semantic positioning is not available
+    return {
+      x: nodePos.x + pin.position.x,
+      y: nodePos.y + pin.position.y
+    };
+  }
+
+  /**
+   * Calculate pin position for rectangular nodes
+   */
+  private calculateRectangularPinPosition(
+    pin: Pin, 
+    nodePos: { x: number; y: number }, 
+    nodeSize: { width: number; height: number }
+  ): { x: number; y: number } {
     const { side, offset } = pin.position;
     let pinX: number, pinY: number;
     
@@ -684,6 +722,46 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     }
 
     return { x: pinX, y: pinY };
+  }
+
+  /**
+   * Calculate pin position for circular nodes
+   */
+  private calculateCircularPinPosition(
+    pin: Pin, 
+    nodePos: { x: number; y: number }, 
+    nodeSize: { width: number; height: number }
+  ): { x: number; y: number } {
+    const { side, offset } = pin.position;
+    const centerX = nodePos.x + nodeSize.width / 2;
+    const centerY = nodePos.y + nodeSize.height / 2;
+    const radius = Math.min(nodeSize.width, nodeSize.height) / 2;
+    
+    let angle = 0;
+    
+    // Map sides to angles and adjust by offset
+    switch (side) {
+      case 'top':
+        angle = -Math.PI / 2 + (offset - 0.5) * Math.PI; // Top arc
+        break;
+      case 'right':
+        angle = 0 + (offset - 0.5) * Math.PI; // Right arc
+        break;
+      case 'bottom':
+        angle = Math.PI / 2 + (offset - 0.5) * Math.PI; // Bottom arc
+        break;
+      case 'left':
+        angle = Math.PI + (offset - 0.5) * Math.PI; // Left arc
+        break;
+      default:
+        console.warn(`Unknown pin side: ${side}, falling back to center`);
+        return { x: centerX, y: centerY };
+    }
+    
+    return {
+      x: centerX + radius * Math.cos(angle),
+      y: centerY + radius * Math.sin(angle)
+    };
   }
 
   /**

@@ -881,15 +881,44 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   // Pin position calculation methods
   calculatePinPosition(pin: Pin, node: GraphNode): { x: number; y: number } {
-    // Use absolute x,y coordinates if they exist (from legacy system)
-    // Otherwise calculate from side/offset
-    if (pin.position.x !== 0 || pin.position.y !== 0) {
-      return {
-        x: node.x + pin.position.x,
-        y: node.y + pin.position.y
-      };
+    return this.calculatePinPositionForShape(pin, node, node.shape || 'rectangle');
+  }
+
+  /**
+   * Shape-aware algorithmic positioning for pins
+   * This is the primary positioning method that should be used consistently
+   */
+  private calculatePinPositionForShape(pin: Pin, node: GraphNode, shape: 'rectangle' | 'circle' | 'polygon'): { x: number; y: number } {
+    const { side, offset } = pin.position;
+    
+    // Always prioritize side and offset for semantic positioning
+    // Only use x,y coordinates as fallback when side is not properly defined
+    if (side && typeof offset === 'number') {
+      switch (shape) {
+        case 'rectangle':
+          return this.calculateRectangularPinPosition(pin, node);
+        case 'circle':
+          return this.calculateCircularPinPosition(pin, node);
+        case 'polygon':
+          // For future extension - currently fallback to rectangle
+          return this.calculateRectangularPinPosition(pin, node);
+        default:
+          return this.calculateRectangularPinPosition(pin, node);
+      }
     }
     
+    // Fallback to absolute x,y coordinates only when semantic positioning is not available
+    // This maintains backward compatibility with legacy pins
+    return {
+      x: node.x + pin.position.x,
+      y: node.y + pin.position.y
+    };
+  }
+
+  /**
+   * Calculate pin position for rectangular nodes
+   */
+  private calculateRectangularPinPosition(pin: Pin, node: GraphNode): { x: number; y: number } {
     const { side, offset } = pin.position;
     let x = 0, y = 0;
     
@@ -910,9 +939,50 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         x = node.x;
         y = node.y + (node.height * offset);
         break;
+      default:
+        console.warn(`Unknown pin side: ${side}, falling back to center`);
+        x = node.x + node.width / 2;
+        y = node.y + node.height / 2;
     }
     
     return { x, y };
+  }
+
+  /**
+   * Calculate pin position for circular nodes
+   * Interprets side as quadrant and offset as percentage along that arc
+   */
+  private calculateCircularPinPosition(pin: Pin, node: GraphNode): { x: number; y: number } {
+    const { side, offset } = pin.position;
+    const centerX = node.x + node.width / 2;
+    const centerY = node.y + node.height / 2;
+    const radius = Math.min(node.width, node.height) / 2;
+    
+    let angle = 0;
+    
+    // Map sides to angles and adjust by offset
+    switch (side) {
+      case 'top':
+        angle = -Math.PI / 2 + (offset - 0.5) * Math.PI; // Top arc
+        break;
+      case 'right':
+        angle = 0 + (offset - 0.5) * Math.PI; // Right arc
+        break;
+      case 'bottom':
+        angle = Math.PI / 2 + (offset - 0.5) * Math.PI; // Bottom arc
+        break;
+      case 'left':
+        angle = Math.PI + (offset - 0.5) * Math.PI; // Left arc
+        break;
+      default:
+        console.warn(`Unknown pin side: ${side}, falling back to center`);
+        return { x: centerX, y: centerY };
+    }
+    
+    return {
+      x: centerX + radius * Math.cos(angle),
+      y: centerY + radius * Math.sin(angle)
+    };
   }
   
   // Get the original pin position from the legacy pin system

@@ -8,6 +8,7 @@ export interface GraphNode {
   label: string; // Display label for the node
   value?: string; // Optional value (can be number, string, symbols, etc.)
   unit?: string; // Optional unit string representation
+  shape?: 'rectangle' | 'circle' | 'polygon'; // Optional shape for algorithmic pin positioning (defaults to 'rectangle')
   pins?: Pin[]; // Optional connection points for domain-specific nodes
 }
 
