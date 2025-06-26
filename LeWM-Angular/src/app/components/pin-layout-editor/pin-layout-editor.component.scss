@@ -306,66 +306,7 @@
   }
 }
 
-/* Pin z-index styling for proper layering */
-.pin {
-  cursor: pointer;
-  z-index: 10;
-}
-
-.pin:hover {
-  z-index: 15;
-}
-
-.pin.selected {
-  z-index: 20;
-}
-
-.pin.input {
-  z-index: 10;
-}
-
-.pin.input:hover,
-.pin.input.highlighted {
-  z-index: 15;
-}
-
-.pin.input.selected {
-  z-index: 20;
-}
-
-.pin.output {
-  z-index: 10;
-}
-
-.pin.output:hover,
-.pin.output.highlighted {
-  z-index: 15;
-}
-
-.pin.output.selected {
-  z-index: 20;
-}
-
-.pin.bidirectional,
-.pin.power,
-.pin.ground {
-  z-index: 10;
-}
-
-.pin.bidirectional:hover,
-.pin.bidirectional.highlighted,
-.pin.power:hover,
-.pin.power.highlighted,
-.pin.ground:hover,
-.pin.ground.highlighted {
-  z-index: 15;
-}
-
-.pin.bidirectional.selected,
-.pin.power.selected,
-.pin.ground.selected {
-  z-index: 20;
-}
+/* Pin visual styling for preview - removed ineffective z-index rules for SVG */
 
 // Preview animations
 @keyframes pin-pulse {

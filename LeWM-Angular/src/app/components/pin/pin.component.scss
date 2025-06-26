@@ -1,0 +1,58 @@
+/* Pin component styles - Visual changes only, no z-index since it's ineffective for SVG */
+.pin-group {
+  cursor: pointer;
+  
+  .pin {
+    transition: all 0.2s ease;
+    pointer-events: all;
+  }
+  
+  .pin-label {
+    pointer-events: none; /* Allow clicks to pass through to the circle */
+    user-select: none;
+  }
+  
+  /* Selection state styling */
+  &.selected {
+    .pin {
+      fill: #FFD700 !important;
+      stroke: #FF8C00 !important;
+      stroke-width: 3 !important;
+      r: 5;
+    }
+    
+    .pin-label {
+      fill: #FF8C00 !important;
+      font-weight: bold !important;
+    }
+  }
+  
+  /* Hover state styling */
+  &:hover {
+    .pin {
+      r: 4;
+      stroke-width: 2;
+    }
+  }
+  
+  /* Pin type specific styling */
+  .pin.input {
+    fill: #4CAF50;
+  }
+  
+  .pin.output {
+    fill: #FF5722;
+  }
+  
+  .pin.bidirectional {
+    fill: #2196F3;
+  }
+  
+  .pin.power {
+    fill: #FF9800;
+  }
+  
+  .pin.ground {
+    fill: #795548;
+  }
+}

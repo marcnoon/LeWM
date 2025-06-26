@@ -178,72 +178,25 @@
           {{ node.label }}
         </text>
         
-        <!-- Connection Pins (Hybrid System) -->
+        <!-- Connection Pins using PinComponent -->
         <g *ngIf="node.pins" class="pins legacy-pins">
           <!-- Legacy pins for normal rendering -->
-          <g *ngFor="let pin of node.pins">
-            <circle *ngIf="!isPinSelectedInEnhancedMode(node.id, pin.name)"
-                    [attr.cx]="node.x + pin.x"
-                    [attr.cy]="node.y + pin.y"
-                    r="3"
-                    fill="#FF5722"
-                    stroke="#333"
-                    stroke-width="1"
-                    class="pin"
-                    [class.selected]="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.has(node.id + '.' + pin.name) || false)"
-                    [attr.data-node-id]="node.id"
-                    [attr.data-pin-name]="pin.name"
-                    (mousedown)="onPinMouseDown($event, node.id, pin.name)" />
-            <text *ngIf="!isPinSelectedInEnhancedMode(node.id, pin.name)"
-                  [attr.x]="node.x + pin.x + 8"
-                  [attr.y]="node.y + pin.y + 4"
-                  font-size="10"
-                  fill="#666"
-                  class="pin-label">
-              {{ pin.name }}
-            </text>
-          </g>
+          <app-pin *ngFor="let pin of node.pins"
+                   [pin]="convertLegacyPin(pin, node.id)"
+                   [node]="node"
+                   [isSelected]="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.has(node.id + '.' + pin.name) || false)"
+                   (pinSelected)="onPinSelected($event)">
+          </app-pin>
         </g>
         
-        <!-- Enhanced pins overlay (shows selected pins with live updates) -->
+        <!-- Enhanced pins using PinComponent -->
         <g *ngIf="currentMode?.name === 'pin-edit' && (pinsByNode$ | async) as pinsByNode" class="pins enhanced-pins">
-          <g *ngFor="let pin of getPinsForNode(node.id, pinsByNode); trackBy: trackByPinId">
-            <!-- Show enhanced rendering for selected pins -->
-            <g *ngIf="pin.isSelected">              
-              <!-- Enhanced pin shape rendering -->
-              <circle *ngIf="pin.pinStyle.shape === 'circle'"
-                      [attr.cx]="calculatePinPosition(pin, node).x"
-                      [attr.cy]="calculatePinPosition(pin, node).y"
-                      [attr.r]="pin.pinStyle.size / 2"
-                      [attr.fill]="pin.isSelected ? '#FFD700' : pin.pinStyle.color"
-                      [attr.stroke]="pin.isSelected ? '#FF8C00' : pin.pinStyle.borderColor"
-                      [attr.stroke-width]="pin.isSelected ? 3 : pin.pinStyle.borderWidth"
-                      class="pin enhanced-pin selected-pin"
-                      [class.input]="pin.pinType === 'input'"
-                      [class.output]="pin.pinType === 'output'"
-                      [class.bidirectional]="pin.pinType === 'bidirectional'"
-                      [class.power]="pin.pinType === 'power'"
-                      [class.ground]="pin.pinType === 'ground'"
-                      [attr.data-pin-id]="pin.id"
-                      [attr.data-node-id]="pin.nodeId"
-                      (mousedown)="onPinMouseDownEnhanced($event, pin.nodeId, pin.id)" />
-              
-              <!-- Enhanced pin text rendering -->
-              <text *ngIf="pin.label"
-                    [attr.x]="calculatePinTextPosition(pin, node).x"
-                    [attr.y]="calculatePinTextPosition(pin, node).y"
-                    [attr.font-family]="pin.textStyle.fontFamily"
-                    [attr.font-size]="pin.textStyle.fontSize"
-                    [attr.font-weight]="pin.textStyle.fontWeight"
-                    [attr.fill]="pin.isSelected ? '#FF8C00' : pin.textStyle.color"
-                    [attr.text-anchor]="pin.textStyle.alignment"
-                    [attr.dominant-baseline]="pin.textStyle.verticalAlignment === 'middle' ? 'central' : pin.textStyle.verticalAlignment"
-                    [attr.transform]="pin.textStyle.orientation !== 0 ? 'rotate(' + pin.textStyle.orientation + ' ' + calculatePinTextPosition(pin, node).x + ' ' + calculatePinTextPosition(pin, node).y + ')' : ''"
-                    class="pin-label enhanced-pin-label selected-pin-label">
-                {{ pin.label }}
-              </text>
-            </g>
-          </g>
+          <app-pin *ngFor="let pin of getPinsForNode(node.id, pinsByNode); trackBy: trackByPinId"
+                   [pin]="pin"
+                   [node]="node"
+                   [isSelected]="pin.isSelected || false"
+                   (pinSelected)="onPinSelected($event)">
+          </app-pin>
         </g>
       </g>
       

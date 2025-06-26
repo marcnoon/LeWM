@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, ViewChildren, QueryList, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { Observable, Subscription, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { GraphNode } from '../../models/graph-node.model';
@@ -9,6 +9,7 @@ import { PinStateService } from '../../services/pin-state.service';
 import { FileService } from '../../services/file.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { Pin } from '../../interfaces/pin.interface';
+import { PinComponent } from '../pin/pin.component';
 import { NormalMode } from '../../modes/normal.mode';
 import { PinEditMode } from '../../modes/pin-edit.mode';
 import { ConnectionMode } from '../../modes/connection.mode';
@@ -37,6 +38,7 @@ interface SelectionBox {
 export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('svgCanvas', { static: true }) svgCanvas!: ElementRef<SVGElement>;
   @ViewChild('pinDialog', { static: false }) pinDialog: any;
+  @ViewChildren(PinComponent, { read: ElementRef }) pinElements!: QueryList<ElementRef>;
 
   // Expose the nodes and edges observables directly to the template
   nodes$!: Observable<GraphNode[]>;
@@ -826,6 +828,62 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       this.pinState.selectPin(pinId, event.ctrlKey || event.metaKey);
       return;
     }
+  }
+
+  /**
+   * Handle pin selection event from PinComponent
+   * Reorders SVG DOM elements to bring selected pin to front
+   */
+  onPinSelected(pinId: string): void {
+    if (!this.pinElements) return;
+    
+    // Find the selected pin element by its data-pin-id attribute
+    this.pinElements.forEach(elementRef => {
+      const pinGroup = elementRef.nativeElement.querySelector(`[data-pin-id="${pinId}"]`);
+      if (pinGroup) {
+        const parentGroup = pinGroup.closest('g.pin-group');
+        if (parentGroup && parentGroup.parentNode) {
+          // Move to end of parent's child list to bring it to front
+          parentGroup.parentNode.appendChild(parentGroup);
+        }
+      }
+    });
+  }
+
+  /**
+   * Convert legacy pin format to enhanced pin format for PinComponent
+   */
+  convertLegacyPin(legacyPin: any, nodeId: string): any {
+    return {
+      id: `${nodeId}.${legacyPin.name}`,
+      name: legacyPin.name,
+      label: legacyPin.name,
+      nodeId: nodeId,
+      pinType: legacyPin.type || 'input',
+      position: {
+        x: legacyPin.x || 0,
+        y: legacyPin.y || 0,
+        side: legacyPin.side,
+        offset: legacyPin.offset
+      },
+      pinStyle: {
+        shape: 'circle',
+        size: 6,
+        color: '#FF5722',
+        borderColor: '#333',
+        borderWidth: 1
+      },
+      textStyle: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 10,
+        fontWeight: 'normal',
+        color: '#666',
+        alignment: 'start',
+        verticalAlignment: 'middle',
+        orientation: 0,
+        offset: { x: 8, y: 4 }
+      }
+    };
   }
 
   getConnectionStartX(edge: GraphEdge): number {

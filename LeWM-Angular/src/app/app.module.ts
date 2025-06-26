@@ -1,4 +1,4 @@
-import { NgModule, APP_INITIALIZER } from '@angular/core';
+import { NgModule, APP_INITIALIZER, NO_ERRORS_SCHEMA } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -13,6 +13,7 @@ import { ConnectionBulkEditDialogComponent } from './components/connection-bulk-
 import { NodeBatchEditDialogComponent } from './components/node-batch-edit-dialog/node-batch-edit-dialog.component';
 import { PinModeToolbarComponent } from './components/pin-mode-toolbar/pin-mode-toolbar.component';
 import { PinLayoutEditorComponent } from './components/pin-layout-editor/pin-layout-editor.component';
+import { PinComponent } from './components/pin/pin.component';
 import { PinStateService } from './services/pin-state.service';
 import { FeatureGraphService } from './services/feature-graph.service';
 import { HandleComponent } from './components/handle/handle';
@@ -35,6 +36,7 @@ export function initializeFeatures(featureGraphService: FeatureGraphService) {
     NodeBatchEditDialogComponent,
     PinModeToolbarComponent,
     PinLayoutEditorComponent,
+    PinComponent,
     HandleComponent
   ],
   imports: [
@@ -53,6 +55,7 @@ export function initializeFeatures(featureGraphService: FeatureGraphService) {
       multi: true
     }
   ],
+  schemas: [NO_ERRORS_SCHEMA],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

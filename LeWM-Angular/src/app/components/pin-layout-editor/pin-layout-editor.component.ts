@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef, NgZone, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { map, debounceTime } from 'rxjs/operators';
 import { PinStateService } from '../../services/pin-state.service';
 import { GraphStateService } from '../../services/graph-state.service';
 import { Pin, PinPosition, PinTextStyle, PinModeState } from '../../interfaces/pin.interface';
+import { PinComponent } from '../pin/pin.component';
 
 @Component({
   selector: 'app-pin-layout-editor',
@@ -12,6 +13,8 @@ import { Pin, PinPosition, PinTextStyle, PinModeState } from '../../interfaces/p
   styleUrls: ['./pin-layout-editor.component.scss']
 })
 export class PinLayoutEditorComponent implements OnInit, OnDestroy {
+  @ViewChildren(PinComponent, { read: ElementRef }) pinElements!: QueryList<ElementRef>;
+  
   visible = false;
   selectedPins: Pin[] = [];
   editingPins: Pin[] = [];
@@ -170,6 +173,44 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     }
     
     this.deferredRegroupPins();
+  }
+
+  /**
+   * Handle pin selection event from PinComponent
+   * Reorders SVG DOM elements to bring selected pin to front
+   */
+  onPinSelected(pinId: string): void {
+    if (!this.pinElements) return;
+    
+    // Find the selected pin element by its data-pin-id attribute
+    this.pinElements.forEach(elementRef => {
+      const pinGroup = elementRef.nativeElement.querySelector(`[data-pin-id="${pinId}"]`);
+      if (pinGroup) {
+        const parentGroup = pinGroup.closest('g.pin-group');
+        if (parentGroup && parentGroup.parentNode) {
+          // Move to end of parent's child list to bring it to front
+          parentGroup.parentNode.appendChild(parentGroup);
+        }
+      }
+    });
+  }
+
+  /**
+   * Create a mock node for PinComponent usage in preview
+   */
+  createMockNodeForPin(pin: Pin): any {
+    const nodeInfo = this.nodeInfoCache.get(pin.nodeId);
+    const nodePos = this.getNodePreviewPosition(pin.nodeId);
+    const nodeSize = this.getNodePreviewSize(pin.nodeId);
+    
+    return {
+      id: pin.nodeId,
+      x: nodePos.x,
+      y: nodePos.y,
+      width: nodeSize.width,
+      height: nodeSize.height,
+      label: nodeInfo?.label || pin.nodeId
+    };
   }
 
   private regroupPins(): void {

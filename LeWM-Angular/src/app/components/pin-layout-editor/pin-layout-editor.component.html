@@ -67,34 +67,14 @@
                 {{ group[0] }}
               </text>
               
-              <!-- Pins -->
+              <!-- Pins using PinComponent -->
               <g *ngFor="let pin of group[1]; trackBy: trackByPinId">
-                <!-- Pin circle -->
-                <circle [attr.cx]="getAbsolutePinPosition(pin).x"
-                        [attr.cy]="getAbsolutePinPosition(pin).y"
-                        [attr.r]="pin.pinStyle?.size || 4"
-                        [attr.fill]="pin.pinStyle?.color || '#ff6b35'"
-                        stroke="#333"
-                        stroke-width="1"
-                        class="pin"
-                        [class.input]="pin.pinType === 'input'"
-                        [class.output]="pin.pinType === 'output'"
-                        [class.bidirectional]="pin.pinType === 'bidirectional'"
-                        [class.power]="pin.pinType === 'power'"
-                        [class.ground]="pin.pinType === 'ground'"
-                        [class.selected]="pin.isSelected"/>
-                
-                <!-- Pin text -->
-                <text [attr.x]="getAbsolutePinPosition(pin).x + (pin.textStyle?.offset?.x || 0)"
-                      [attr.y]="getAbsolutePinPosition(pin).y + (pin.textStyle?.offset?.y || 0)"
-                      [attr.text-anchor]="pin.textStyle?.alignment || 'middle'"
-                      [attr.dominant-baseline]="getVerticalAlignment(pin.textStyle?.verticalAlignment || 'middle')"
-                      [attr.fill]="pin.textStyle?.color || '#000'"
-                      [attr.font-family]="pin.textStyle?.fontFamily || 'Arial, sans-serif'"
-                      [attr.font-size]="pin.textStyle?.fontSize || 12"
-                      [attr.transform]="getPinTextTransform(pin)">
-                  {{ pin.label || pin.id.split('.')[1] }}
-                </text>
+                <!-- Pin component -->
+                <app-pin [pin]="pin"
+                         [node]="createMockNodeForPin(pin)"
+                         [isSelected]="pin.isSelected || false"
+                         (pinSelected)="onPinSelected($event)">
+                </app-pin>
                 
                 <!-- Pin connection guide line -->
                 <line [attr.x1]="getAbsolutePinPosition(pin).x"

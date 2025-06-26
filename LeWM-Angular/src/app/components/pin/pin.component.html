@@ -1,0 +1,35 @@
+<g class="pin-group" [ngClass]="{ 'selected': isSelected }">
+  <!-- Pin circle - always present in DOM -->
+  <circle [attr.cx]="pinCoords.x"
+          [attr.cy]="pinCoords.y"
+          [attr.r]="pin.pinStyle?.size / 2 || 3"
+          [attr.fill]="pin.pinStyle?.color || '#FF5722'"
+          [attr.stroke]="pin.pinStyle?.borderColor || '#333'"
+          [attr.stroke-width]="pin.pinStyle?.borderWidth || 1"
+          [ngClass]="{
+            'pin': true,
+            'input': pin.pinType === 'input',
+            'output': pin.pinType === 'output',
+            'bidirectional': pin.pinType === 'bidirectional',
+            'power': pin.pinType === 'power',
+            'ground': pin.pinType === 'ground'
+          }"
+          [attr.data-pin-id]="pin.id"
+          (click)="onPinClick($event)" />
+  
+  <!-- Pin text - always present in DOM -->
+  <text [attr.x]="pinCoords.x + (pin.textStyle?.offset?.x || 8)"
+        [attr.y]="pinCoords.y + (pin.textStyle?.offset?.y || 4)"
+        [attr.font-family]="pin.textStyle?.fontFamily || 'Arial, sans-serif'"
+        [attr.font-size]="pin.textStyle?.fontSize || 10"
+        [attr.font-weight]="pin.textStyle?.fontWeight || 'normal'"
+        [attr.fill]="pin.textStyle?.color || '#666'"
+        [attr.text-anchor]="pin.textStyle?.alignment || 'start'"
+        [attr.dominant-baseline]="pin.textStyle?.verticalAlignment === 'middle' ? 'central' : pin.textStyle?.verticalAlignment"
+        [attr.transform]="pin.textStyle?.orientation && pin.textStyle.orientation !== 0 ? 
+          'rotate(' + pin.textStyle.orientation + ' ' + (pinCoords.x + (pin.textStyle?.offset?.x || 8)) + ' ' + (pinCoords.y + (pin.textStyle?.offset?.y || 4)) + ')' : 
+          ''"
+        class="pin-label">
+    {{ pin.label || pin.name || pin.id?.split('.')[1] }}
+  </text>
+</g>
