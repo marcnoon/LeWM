@@ -219,6 +219,11 @@
                       [attr.stroke]="pin.isSelected ? '#FF8C00' : pin.pinStyle.borderColor"
                       [attr.stroke-width]="pin.isSelected ? 3 : pin.pinStyle.borderWidth"
                       class="pin enhanced-pin selected-pin"
+                      [class.input]="pin.pinType === 'input'"
+                      [class.output]="pin.pinType === 'output'"
+                      [class.bidirectional]="pin.pinType === 'bidirectional'"
+                      [class.power]="pin.pinType === 'power'"
+                      [class.ground]="pin.pinType === 'ground'"
                       [attr.data-pin-id]="pin.id"
                       [attr.data-node-id]="pin.nodeId"
                       (mousedown)="onPinMouseDownEnhanced($event, pin.nodeId, pin.id)" />

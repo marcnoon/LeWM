@@ -75,7 +75,14 @@
                         [attr.r]="pin.pinStyle?.size || 4"
                         [attr.fill]="pin.pinStyle?.color || '#ff6b35'"
                         stroke="#333"
-                        stroke-width="1"/>
+                        stroke-width="1"
+                        class="pin"
+                        [class.input]="pin.pinType === 'input'"
+                        [class.output]="pin.pinType === 'output'"
+                        [class.bidirectional]="pin.pinType === 'bidirectional'"
+                        [class.power]="pin.pinType === 'power'"
+                        [class.ground]="pin.pinType === 'ground'"
+                        [class.selected]="pin.isSelected"/>
                 
                 <!-- Pin text -->
                 <text [attr.x]="getAbsolutePinPosition(pin).x + (pin.textStyle?.offset?.x || 0)"

@@ -144,11 +144,15 @@
 .pin {
   cursor: pointer;
   transition: all 0.2s ease;
+  /* Ensure pins appear above nodes */
+  z-index: 10;
 }
 
 .pin:hover {
   r: 4;
   stroke-width: 2;
+  /* Higher z-index for hovered pins */
+  z-index: 15;
 }
 
 .pin.selected {
@@ -156,6 +160,66 @@
   stroke: #2E7D32 !important;
   stroke-width: 3 !important;
   r: 5;
+  /* Highest z-index for selected pins */
+  z-index: 20;
+}
+
+/* Enhanced pin styling for pin-edit mode */
+.pin.enhanced-pin {
+  z-index: 12;
+}
+
+.pin.enhanced-pin.selected-pin {
+  z-index: 22;
+}
+
+/* Pin type specific styling */
+.pin.input {
+  z-index: 10;
+}
+
+.pin.input:hover,
+.pin.input.highlighted {
+  z-index: 15;
+}
+
+.pin.input.selected {
+  z-index: 20;
+}
+
+.pin.output {
+  z-index: 10;
+}
+
+.pin.output:hover,
+.pin.output.highlighted {
+  z-index: 15;
+}
+
+.pin.output.selected {
+  z-index: 20;
+}
+
+/* Bidirectional, power, and ground pins */
+.pin.bidirectional,
+.pin.power,
+.pin.ground {
+  z-index: 10;
+}
+
+.pin.bidirectional:hover,
+.pin.bidirectional.highlighted,
+.pin.power:hover,
+.pin.power.highlighted,
+.pin.ground:hover,
+.pin.ground.highlighted {
+  z-index: 15;
+}
+
+.pin.bidirectional.selected,
+.pin.power.selected,
+.pin.ground.selected {
+  z-index: 20;
 }
 
 .file-toolbar {
