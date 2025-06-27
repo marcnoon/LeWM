@@ -169,10 +169,18 @@ export class PinEditMode implements GraphMode {
     }
 
     if (event.key === 'Enter') {
+      console.log('PinEditMode: Enter key pressed', {
+        selectedPinsCount: this.selectedPins.size,
+        selectedPins: Array.from(this.selectedPins)
+      });
+      
       // Open pin layout editor if pins are selected
       if (this.selectedPins.size > 0) {
+        console.log('PinEditMode: Opening layout editor for selected pins');
         this.pinState.openLayoutEditor();
         return true;
+      } else {
+        console.log('PinEditMode: No pins selected, Enter key ignored');
       }
     }
 

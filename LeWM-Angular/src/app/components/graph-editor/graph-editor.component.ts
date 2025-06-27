@@ -236,29 +236,22 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    // Handle Enter key in pin edit mode - let the mode handle it via the PinStateService
+    // Handle Enter key in pin edit mode - open layout editor if pins are selected
     if (event.key === 'Enter' && this.currentMode?.name === 'pin-edit') {
+      console.log('GraphEditor: Enter key in pin-edit mode detected');
       // Skip if any dialog is open
       if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+        console.log('GraphEditor: Dialog is open, skipping Enter key handling');
         return;
       }
       // Let the mode handle the Enter key through PinStateService which has access to the actual selected pins
+      console.log('GraphEditor: Delegating Enter key to mode manager');
       if (this.modeManager.handleKeyDown(event)) {
+        console.log('GraphEditor: Mode manager handled Enter key successfully');
         event.preventDefault();
         return;
-      }
-    }
-
-    // Handle Enter key in pin mode - open layout editor if pins are selected
-    if (event.key === 'Enter' && this.currentMode?.name === 'pin') {
-      // Skip if any dialog is open
-      if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
-        return;
-      }
-      // Let the mode handle the Enter key through PinStateService which has access to the actual selected pins
-      if (this.modeManager.handleKeyDown(event)) {
-        event.preventDefault();
-        return;
+      } else {
+        console.log('GraphEditor: Mode manager did not handle Enter key');
       }
     }
     
