@@ -227,3 +227,27 @@
     filter: brightness(1.2);
   }
 }
+
+// Enhanced pin styling for Pin Edit Mode
+.pin-group {
+  .pin-circle {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  &:hover .pin-circle {
+    filter: drop-shadow(0 0 3px rgba(255, 107, 53, 0.5));
+  }
+}
+
+// Visual feedback for pin edit mode
+:host.pin-edit-mode {
+  .pin-group {
+    cursor: pointer;
+    
+    &:hover {
+      .pin-circle {
+        transform: scale(1.2);
+      }
+    }
+  }
+}

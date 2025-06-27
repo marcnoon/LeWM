@@ -74,6 +74,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   // Connection creation state
   connectingFrom: { nodeId: string; pinName: string } | null = null;
   
+  // Pin hover state for better selection targeting
+  hoveredPin: { nodeId: string; pinName: string } | null = null;
+  
   // Mode system
   private normalMode: NormalMode;
   private pinEditMode: PinEditMode;
@@ -1039,6 +1042,17 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     
     subscription.unsubscribe();
     return isSelected;
+  }
+
+  // Pin hover methods for better targeting
+  onPinHover(node: GraphNode, pin: any, isHovering: boolean): void {
+    if (this.currentMode?.name === 'pin-edit') {
+      this.hoveredPin = isHovering ? { nodeId: node.id, pinName: pin.name } : null;
+    }
+  }
+
+  isPinHovered(nodeId: string, pinName: string): boolean {
+    return this.hoveredPin?.nodeId === nodeId && this.hoveredPin?.pinName === pinName;
   }
 
   // Node name dialog methods
