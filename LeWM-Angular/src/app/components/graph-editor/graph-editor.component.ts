@@ -1099,8 +1099,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       
       if (this.hoveredPin) {
-        const currentNode = this.currentNodes.find(n => n.id === this.hoveredPin.nodeId);
-        const currentPin = currentNode?.pins?.find(p => p.name === this.hoveredPin.pinName);
+        const currentNode = this.currentNodes.find(n => n.id === this.hoveredPin!.nodeId);
+        const currentPin = currentNode?.pins?.find(p => p.name === this.hoveredPin!.pinName);
         if (currentNode && currentPin) {
           this.onPinHover(currentNode, currentPin, true);
         }
@@ -1149,8 +1149,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
     
-    if (closestPin) {
-      return { nodeId: closestPin.nodeId, pinName: closestPin.pinName };
+    if (closestPin !== null) {
+      const pin = closestPin as { nodeId: string; pinName: string; distance: number };
+      return { nodeId: pin.nodeId, pinName: pin.pinName };
     }
     
     return { nodeId: null, pinName: null };
