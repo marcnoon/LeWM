@@ -1035,6 +1035,61 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.hoveredPin?.nodeId === nodeId && this.hoveredPin?.pinName === pinName;
   }
 
+  // Enhanced pin visual feedback methods
+  getPinRadius(nodeId: string, pinName: string): number {
+    const isHovered = this.isPinHovered(nodeId, pinName) && this.currentMode?.name === 'pin-edit';
+    const isSelected = this.isPinSelectedLegacy(nodeId, pinName);
+    
+    if (isHovered) return 6;
+    if (isSelected) return 5;
+    return 4;
+  }
+
+  getPinFillColor(nodeId: string, pinName: string): string {
+    const isSelected = this.isPinSelectedLegacy(nodeId, pinName);
+    const isHovered = this.isPinHovered(nodeId, pinName) && this.currentMode?.name === 'pin-edit';
+    
+    if (isSelected) return '#ff6b35';
+    if (isHovered) return '#ff8c42';
+    return '#FF5722';
+  }
+
+  getPinStrokeColor(nodeId: string, pinName: string): string {
+    const isSelected = this.isPinSelectedLegacy(nodeId, pinName);
+    const isHovered = this.isPinHovered(nodeId, pinName) && this.currentMode?.name === 'pin-edit';
+    
+    if (isSelected) return '#e55a2b';
+    if (isHovered) return '#e57a32';
+    return '#333';
+  }
+
+  getPinStrokeWidth(nodeId: string, pinName: string): number {
+    const isSelected = this.isPinSelectedLegacy(nodeId, pinName);
+    const isHovered = this.isPinHovered(nodeId, pinName) && this.currentMode?.name === 'pin-edit';
+    
+    if (isSelected) return 2;
+    if (isHovered) return 1.5;
+    return 1;
+  }
+
+  getPinLabelColor(nodeId: string, pinName: string): string {
+    const isSelected = this.isPinSelectedLegacy(nodeId, pinName);
+    const isHovered = this.isPinHovered(nodeId, pinName) && this.currentMode?.name === 'pin-edit';
+    
+    if (isSelected) return '#ff6b35';
+    if (isHovered) return '#ff6b35';
+    return '#666';
+  }
+
+  getPinLabelWeight(nodeId: string, pinName: string): string {
+    const isSelected = this.isPinSelectedLegacy(nodeId, pinName);
+    const isHovered = this.isPinHovered(nodeId, pinName) && this.currentMode?.name === 'pin-edit';
+    
+    if (isSelected) return 'bold';
+    if (isHovered) return '500';
+    return 'normal';
+  }
+
   // Central reference area methods
   getCentralReferenceArea(): { x: number; y: number; width: number; height: number } {
     if (!this.svgCanvas?.nativeElement) {
@@ -1076,18 +1131,18 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     
     const { nodeId, pinName } = this.findClosestPinToMouse(event);
     
-    // Update hover state
+    // Update hover state with improved change detection
     const previousHover = this.hoveredPin;
-    if (nodeId && pinName) {
-      this.hoveredPin = { nodeId, pinName };
-    } else {
-      this.hoveredPin = null;
-    }
+    const newHover = nodeId && pinName ? { nodeId, pinName } : null;
     
-    // Trigger hover events if hover changed
-    if (previousHover?.nodeId !== this.hoveredPin?.nodeId || 
-        previousHover?.pinName !== this.hoveredPin?.pinName) {
+    // Only update if there's actually a change to reduce unnecessary updates
+    const hasChanged = previousHover?.nodeId !== newHover?.nodeId || 
+                      previousHover?.pinName !== newHover?.pinName;
+    
+    if (hasChanged) {
+      this.hoveredPin = newHover;
       
+      // Trigger hover events for previous pin
       if (previousHover) {
         const prevNode = this.currentNodes.find(n => n.id === previousHover.nodeId);
         const prevPin = prevNode?.pins?.find(p => p.name === previousHover.pinName);
@@ -1096,6 +1151,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       }
       
+      // Trigger hover events for new pin
       if (this.hoveredPin) {
         const currentNode = this.currentNodes.find(n => n.id === this.hoveredPin!.nodeId);
         const currentPin = currentNode?.pins?.find(p => p.name === this.hoveredPin!.pinName);
@@ -1103,6 +1159,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
           this.onPinHover(currentNode, currentPin, true);
         }
       }
+      
+      // Trigger change detection for visual updates
+      this.cdr.markForCheck();
     }
   }
 
@@ -1117,6 +1176,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         this.onPinHover(node, pin, false);
       }
       this.hoveredPin = null;
+      // Trigger change detection for visual updates
+      this.cdr.markForCheck();
     }
   }
 
@@ -1130,7 +1191,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     const mouseY = event.clientY - svgRect.top;
     
     let closestPin: { nodeId: string; pinName: string; distance: number } | null = null;
-    const maxDistance = 20; // Maximum distance to consider a pin "close enough"
+    const maxDistance = 15; // Reduced from 20px for more precise selection
     
     // Find the closest pin to the mouse position
     this.currentNodes.forEach(node => {
@@ -1138,7 +1199,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         node.pins.forEach(pin => {
           const pinX = node.x + pin.x;
           const pinY = node.y + pin.y;
-          const distance = Math.sqrt(Math.pow(mouseX - pinX, 2) + Math.pow(mouseY - pinY, 2));
+          const distance = Math.hypot(mouseX - pinX, mouseY - pinY); // Use Math.hypot for better precision
           
           if (distance <= maxDistance && (!closestPin || distance < closestPin.distance)) {
             closestPin = { nodeId: node.id, pinName: pin.name, distance };

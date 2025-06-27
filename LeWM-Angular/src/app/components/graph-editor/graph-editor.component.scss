@@ -247,7 +247,49 @@
     &:hover {
       .pin-circle {
         transform: scale(1.2);
+        filter: drop-shadow(0 0 4px rgba(255, 107, 53, 0.7));
       }
     }
+  }
+}
+
+// Enhanced pin hover effects
+.pin-circle {
+  transition: all 0.15s ease-in-out;
+  
+  &.hovered {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 4px rgba(255, 107, 53, 0.6));
+  }
+  
+  &.selected {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 5px rgba(255, 107, 53, 0.8));
+  }
+}
+
+// Pin hover background enhancements
+.pin-hover-background {
+  transition: all 0.15s ease-in-out;
+  border-radius: 6px;
+  opacity: 0;
+  
+  &.visible {
+    opacity: 0.12;
+  }
+}
+
+// Enhanced pin label feedback
+.pin-label {
+  transition: all 0.15s ease-in-out;
+  
+  &.hovered {
+    font-weight: 500;
+    filter: drop-shadow(0 0 2px rgba(255, 107, 53, 0.4));
+  }
+  
+  &.selected {
+    font-weight: bold;
+    filter: drop-shadow(0 0 3px rgba(255, 107, 53, 0.6));
   }
 }

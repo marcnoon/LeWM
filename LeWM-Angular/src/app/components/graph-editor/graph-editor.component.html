@@ -196,40 +196,46 @@
         <g *ngIf="node.pins" class="pins legacy-pins">
           <!-- Legacy pins for normal rendering -->
           <g *ngFor="let pin of node.pins" class="pin-group">
-            <!-- Pin hover background (only in pin edit mode) -->
-            <rect *ngIf="isPinHovered(node.id, pin.name) && currentMode?.name === 'pin-edit'"
-                  [attr.x]="node.x + pin.x - 15"
-                  [attr.y]="node.y + pin.y - 15"
-                  width="30"
-                  height="30"
+            <!-- Enhanced pin hover background (only in pin edit mode) -->
+            <rect *ngIf="currentMode?.name === 'pin-edit'"
+                  class="pin-hover-background"
+                  [class.visible]="isPinHovered(node.id, pin.name)"
+                  [attr.x]="node.x + pin.x - 12"
+                  [attr.y]="node.y + pin.y - 12"
+                  width="24"
+                  height="24"
                   fill="#ff6b35"
-                  fill-opacity="0.1"
-                  rx="4"
+                  fill-opacity="0.08"
+                  rx="6"
                   style="pointer-events: none;" />
             
-            <!-- Visual pin with dynamic styling -->
+            <!-- Enhanced visual pin with improved hover effects -->
             <circle *ngIf="!isPinSelectedInEnhancedMode(node.id, pin.name)"
                     [attr.cx]="node.x + pin.x"
                     [attr.cy]="node.y + pin.y"
-                    [attr.r]="isPinHovered(node.id, pin.name) ? '6' : '4'"
+                    [attr.r]="getPinRadius(node.id, pin.name)"
                     [attr.class]="getPinClass(node.id, pin.name)"
-                    [attr.fill]="isPinSelectedLegacy(node.id, pin.name) ? '#ff6b35' : '#FF5722'"
-                    [attr.stroke]="isPinSelectedLegacy(node.id, pin.name) ? '#ff6b35' : '#333'"
-                    [attr.stroke-width]="isPinSelectedLegacy(node.id, pin.name) ? '2' : '1'"
+                    [attr.fill]="getPinFillColor(node.id, pin.name)"
+                    [attr.stroke]="getPinStrokeColor(node.id, pin.name)"
+                    [attr.stroke-width]="getPinStrokeWidth(node.id, pin.name)"
                     [attr.data-node-id]="node.id"
                     [attr.data-pin-name]="pin.name"
                     class="pin-circle"
-                    style="pointer-events: none; transition: all 0.2s ease-in-out;" />
+                    [class.hovered]="isPinHovered(node.id, pin.name) && currentMode?.name === 'pin-edit'"
+                    [class.selected]="isPinSelectedLegacy(node.id, pin.name)"
+                    style="pointer-events: none;" />
             
-            <!-- Pin label -->
+            <!-- Enhanced pin label with improved hover feedback -->
             <text *ngIf="!isPinSelectedInEnhancedMode(node.id, pin.name)"
                   [attr.x]="node.x + pin.x + 10"
                   [attr.y]="node.y + pin.y + 3"
                   class="pin-label"
-                  [attr.fill]="isPinSelectedLegacy(node.id, pin.name) ? '#ff6b35' : (isPinHovered(node.id, pin.name) ? '#ff6b35' : '#666')"
-                  [attr.font-weight]="isPinSelectedLegacy(node.id, pin.name) ? 'bold' : 'normal'"
+                  [class.hovered]="isPinHovered(node.id, pin.name) && currentMode?.name === 'pin-edit'"
+                  [class.selected]="isPinSelectedLegacy(node.id, pin.name)"
+                  [attr.fill]="getPinLabelColor(node.id, pin.name)"
+                  [attr.font-weight]="getPinLabelWeight(node.id, pin.name)"
                   font-size="10"
-                  style="pointer-events: none; transition: fill 0.2s ease-in-out;">
+                  style="pointer-events: none; transition: all 0.15s ease-in-out;">
               {{ pin.name }}
             </text>
           </g>
