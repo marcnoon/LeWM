@@ -95,12 +95,13 @@
       <rect id="grid-rect" width="100%" height="100%" fill="url(#grid)" />
       
       <!-- Central pin reference rectangle - handles all pin interactions -->
-      <rect *ngIf="currentMode?.name === 'pin-edit'"
+      <rect *ngIf="currentMode?.name === 'pin-edit' || currentMode?.name === 'connection'"
             class="pin-reference-area"
             [attr.x]="getCentralReferenceArea().x"
             [attr.y]="getCentralReferenceArea().y"
             [attr.width]="getCentralReferenceArea().width"
             [attr.height]="getCentralReferenceArea().height"
+            [style.pointer-events]="currentMode?.name === 'connection' ? 'none' : 'auto'"
             fill="transparent"
             stroke="none"
             style="cursor: pointer;"
