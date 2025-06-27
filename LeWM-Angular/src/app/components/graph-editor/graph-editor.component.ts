@@ -1058,7 +1058,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onCentralReferenceMouseDown(event: MouseEvent): void {
-    if (this.currentMode?.name !== 'pin-edit') return;
+    if (this.currentMode?.name !== 'pin-edit' && this.currentMode?.name !== 'connection') return;
     
     const { nodeId, pinName } = this.findClosestPinToMouse(event);
     if (nodeId && pinName) {
@@ -1072,7 +1072,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onCentralReferenceMouseMove(event: MouseEvent): void {
-    if (this.currentMode?.name !== 'pin-edit') return;
+    if (this.currentMode?.name !== 'pin-edit' && this.currentMode?.name !== 'connection') return;
     
     const { nodeId, pinName } = this.findClosestPinToMouse(event);
     
@@ -1107,7 +1107,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onCentralReferenceMouseLeave(event: MouseEvent): void {
-    if (this.currentMode?.name !== 'pin-edit') return;
+    if (this.currentMode?.name !== 'pin-edit' && this.currentMode?.name !== 'connection') return;
     
     // Clear hover state when leaving the central reference area
     if (this.hoveredPin) {
