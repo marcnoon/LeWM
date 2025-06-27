@@ -170,10 +170,9 @@ export class PinEditMode implements GraphMode {
 
     if (event.key === 'Enter') {
       // Open pin layout editor if pins are selected
-      if (this.selectedPins.size > 0) {
-        this.pinState.openLayoutEditor();
-        return true;
-      }
+      // Use PinStateService as the source of truth for selected pins
+      this.pinState.openLayoutEditor();
+      return true;
     }
 
     if (event.key === 'Delete') {
