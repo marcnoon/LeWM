@@ -34,15 +34,15 @@ describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
       'activateMode', 
       'registerMode',
       'getAvailableModes',
-      'renderActiveOverlay'
+      'renderActiveOverlay',
+      'handleKeyDown'
     ], {
       activeMode$: { subscribe: jasmine.createSpy() }
     });
 
     // Create a mock PinEditMode
     mockPinEditMode = jasmine.createSpyObj('PinEditMode', ['activate', 'deactivate'], {
-      name: 'pin-edit',
-      selectedPins: new Set(['node1.pin1', 'node2.pin2'])
+      name: 'pin-edit'
     });
 
     // Set up the mode manager to return our mock pin edit mode
@@ -70,20 +70,25 @@ describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
     // Set up the component to be in pin-edit mode
     component.currentMode = mockPinEditMode as any;
     
+    // Set up the mode manager to handle the Enter key and return true (indicating it handled the event)
+    modeManagerService.handleKeyDown.and.returnValue(true);
+    
     // Create a keyboard event for Enter key
     const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' });
     
     // Call the handleKeyDown method
     component.handleKeyDown(enterEvent);
     
-    // Verify that the pin layout editor was opened
-    expect(pinStateService.openLayoutEditor).toHaveBeenCalled();
+    // Verify that the mode manager's handleKeyDown was called with the event
+    expect(modeManagerService.handleKeyDown).toHaveBeenCalledWith(enterEvent);
   });
 
   it('should not open pin layout editor when Enter is pressed in pin-edit mode with no selected pins', () => {
     // Set up the component to be in pin-edit mode but with no selected pins
-    mockPinEditMode.selectedPins = new Set();
     component.currentMode = mockPinEditMode as any;
+    
+    // Set up the mode manager to handle the Enter key and return false (indicating it didn't handle the event)
+    modeManagerService.handleKeyDown.and.returnValue(false);
     
     // Create a keyboard event for Enter key
     const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' });
@@ -91,11 +96,11 @@ describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
     // Call the handleKeyDown method
     component.handleKeyDown(enterEvent);
     
-    // Verify that the pin layout editor was NOT opened
-    expect(pinStateService.openLayoutEditor).not.toHaveBeenCalled();
+    // Verify that the mode manager's handleKeyDown was called
+    expect(modeManagerService.handleKeyDown).toHaveBeenCalledWith(enterEvent);
   });
 
-  it('should not open pin layout editor when Enter is pressed and a dialog is open', () => {
+  it('should not delegate to mode manager when Enter is pressed and a dialog is open', () => {
     // Set up the component to be in pin-edit mode with selected pins
     component.currentMode = mockPinEditMode as any;
     component.showPinLayoutEditor = true; // Dialog is open
@@ -106,8 +111,8 @@ describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
     // Call the handleKeyDown method
     component.handleKeyDown(enterEvent);
     
-    // Verify that the pin layout editor was NOT opened
-    expect(pinStateService.openLayoutEditor).not.toHaveBeenCalled();
+    // Verify that the mode manager's handleKeyDown was NOT called because dialog is open
+    expect(modeManagerService.handleKeyDown).not.toHaveBeenCalled();
   });
 
   it('should use mode manager for mode switching instead of direct mode references', () => {
