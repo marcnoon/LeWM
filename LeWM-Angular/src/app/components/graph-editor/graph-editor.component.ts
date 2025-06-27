@@ -1053,16 +1053,14 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
-    const centerX = svgRect.width / 2;
-    const centerY = svgRect.height / 2;
     
-    // Create a large rectangle covering most of the screen for pin reference
-    const width = Math.min(svgRect.width * 0.8, 800);
-    const height = Math.min(svgRect.height * 0.8, 600);
+    // Create a rectangle covering the entire workspace for pin reference
+    const width = svgRect.width;
+    const height = svgRect.height;
     
     this.centralReferenceArea = {
-      x: centerX - width / 2,
-      y: centerY - height / 2,
+      x: 0,
+      y: 0,
       width: width,
       height: height
     };

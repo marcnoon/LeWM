@@ -123,7 +123,7 @@ describe('GraphEditorComponent', () => {
       component.showPinLayoutEditor = false;
 
       // Mock the current mode to ensure mode switching logic is triggered
-      component.currentMode = component['normalMode'];
+      component.currentMode = { name: 'normal', displayName: 'Normal' } as any;
 
       // Create keyboard events for mode switching keys
       const eventF = new KeyboardEvent('keydown', { key: 'f' });
@@ -212,6 +212,76 @@ describe('GraphEditorComponent', () => {
       const nodeWithoutPins = { ...testNode };
       delete nodeWithoutPins.pins;
       expect(component['isPinNameDuplicate'](nodeWithoutPins, 'anyName')).toBe(false);
+    });
+  });
+
+  describe('Central Reference Area', () => {
+    it('should return entire workspace dimensions for central reference area', () => {
+      // Mock the SVG canvas element
+      const mockSvgElement = {
+        getBoundingClientRect: () => ({
+          width: 1000,
+          height: 800,
+          x: 0,
+          y: 0,
+          left: 0,
+          top: 0,
+          right: 1000,
+          bottom: 800
+        })
+      };
+
+      // Set up the mocked SVG canvas
+      component.svgCanvas = { nativeElement: mockSvgElement } as any;
+
+      // Call the method under test
+      const result = component.getCentralReferenceArea();
+
+      // Verify that the reference area covers the entire workspace
+      expect(result.x).toBe(0);
+      expect(result.y).toBe(0);
+      expect(result.width).toBe(1000); // Should be full width, not limited
+      expect(result.height).toBe(800); // Should be full height, not limited
+    });
+
+    it('should handle case when svgCanvas is not available', () => {
+      // Set svgCanvas to null
+      component.svgCanvas = null as any;
+
+      // Call the method under test
+      const result = component.getCentralReferenceArea();
+
+      // Should return default values
+      expect(result.x).toBe(0);
+      expect(result.y).toBe(0);
+      expect(result.width).toBe(0);
+      expect(result.height).toBe(0);
+    });
+
+    it('should use actual workspace dimensions regardless of size', () => {
+      // Mock a very large SVG canvas to test that we're not limited by previous constraints
+      const mockSvgElement = {
+        getBoundingClientRect: () => ({
+          width: 1920,
+          height: 1080,
+          x: 0,
+          y: 0,
+          left: 0,
+          top: 0,
+          right: 1920,
+          bottom: 1080
+        })
+      };
+
+      component.svgCanvas = { nativeElement: mockSvgElement } as any;
+
+      const result = component.getCentralReferenceArea();
+
+      // Should use the full dimensions without any size limitations
+      expect(result.width).toBe(1920);
+      expect(result.height).toBe(1080);
+      expect(result.x).toBe(0);
+      expect(result.y).toBe(0);
     });
   });
 
