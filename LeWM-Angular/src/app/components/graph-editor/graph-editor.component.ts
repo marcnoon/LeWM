@@ -248,6 +248,19 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
     }
+
+    // Handle Enter key in pin mode - open layout editor if pins are selected
+    if (event.key === 'Enter' && this.currentMode?.name === 'pin') {
+      // Skip if any dialog is open
+      if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+        return;
+      }
+      // Let the mode handle the Enter key through PinStateService which has access to the actual selected pins
+      if (this.modeManager.handleKeyDown(event)) {
+        event.preventDefault();
+        return;
+      }
+    }
     
     // Handle Enter key in normal mode for node name editing
     if (event.key === 'Enter' && this.currentMode?.name === 'normal') {
