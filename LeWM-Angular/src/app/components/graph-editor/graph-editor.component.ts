@@ -74,6 +74,12 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   // Connection creation state
   connectingFrom: { nodeId: string; pinName: string } | null = null;
   
+  // Pin hover state for better selection targeting
+  hoveredPin: { nodeId: string; pinName: string } | null = null;
+  
+  // Central reference area for pin interactions
+  private centralReferenceArea = { x: 0, y: 0, width: 0, height: 0 };
+  
   // Mode system
   private normalMode: NormalMode;
   private pinEditMode: PinEditMode;
@@ -1039,6 +1045,138 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     
     subscription.unsubscribe();
     return isSelected;
+  }
+
+  // Pin hover methods for better targeting
+  onPinHover(node: GraphNode, pin: any, isHovering: boolean): void {
+    if (this.currentMode?.name === 'pin-edit') {
+      this.hoveredPin = isHovering ? { nodeId: node.id, pinName: pin.name } : null;
+    }
+  }
+
+  isPinHovered(nodeId: string, pinName: string): boolean {
+    return this.hoveredPin?.nodeId === nodeId && this.hoveredPin?.pinName === pinName;
+  }
+
+  // Central reference area methods
+  getCentralReferenceArea(): { x: number; y: number; width: number; height: number } {
+    if (!this.svgCanvas?.nativeElement) {
+      return { x: 0, y: 0, width: 0, height: 0 };
+    }
+
+    const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
+    const centerX = svgRect.width / 2;
+    const centerY = svgRect.height / 2;
+    
+    // Create a large rectangle covering most of the screen for pin reference
+    const width = Math.min(svgRect.width * 0.8, 800);
+    const height = Math.min(svgRect.height * 0.8, 600);
+    
+    this.centralReferenceArea = {
+      x: centerX - width / 2,
+      y: centerY - height / 2,
+      width: width,
+      height: height
+    };
+    
+    return this.centralReferenceArea;
+  }
+
+  onCentralReferenceMouseDown(event: MouseEvent): void {
+    if (this.currentMode?.name !== 'pin-edit') return;
+    
+    const { nodeId, pinName } = this.findClosestPinToMouse(event);
+    if (nodeId && pinName) {
+      const node = this.currentNodes.find(n => n.id === nodeId);
+      const pin = node?.pins?.find(p => p.name === pinName);
+      
+      if (node && pin) {
+        this.onPinMouseDown(event, nodeId, pinName);
+      }
+    }
+  }
+
+  onCentralReferenceMouseMove(event: MouseEvent): void {
+    if (this.currentMode?.name !== 'pin-edit') return;
+    
+    const { nodeId, pinName } = this.findClosestPinToMouse(event);
+    
+    // Update hover state
+    const previousHover = this.hoveredPin;
+    if (nodeId && pinName) {
+      this.hoveredPin = { nodeId, pinName };
+    } else {
+      this.hoveredPin = null;
+    }
+    
+    // Trigger hover events if hover changed
+    if (previousHover?.nodeId !== this.hoveredPin?.nodeId || 
+        previousHover?.pinName !== this.hoveredPin?.pinName) {
+      
+      if (previousHover) {
+        const prevNode = this.currentNodes.find(n => n.id === previousHover.nodeId);
+        const prevPin = prevNode?.pins?.find(p => p.name === previousHover.pinName);
+        if (prevNode && prevPin) {
+          this.onPinHover(prevNode, prevPin, false);
+        }
+      }
+      
+      if (this.hoveredPin) {
+        const currentNode = this.currentNodes.find(n => n.id === this.hoveredPin.nodeId);
+        const currentPin = currentNode?.pins?.find(p => p.name === this.hoveredPin.pinName);
+        if (currentNode && currentPin) {
+          this.onPinHover(currentNode, currentPin, true);
+        }
+      }
+    }
+  }
+
+  onCentralReferenceMouseLeave(event: MouseEvent): void {
+    if (this.currentMode?.name !== 'pin-edit') return;
+    
+    // Clear hover state when leaving the central reference area
+    if (this.hoveredPin) {
+      const node = this.currentNodes.find(n => n.id === this.hoveredPin!.nodeId);
+      const pin = node?.pins?.find(p => p.name === this.hoveredPin!.pinName);
+      if (node && pin) {
+        this.onPinHover(node, pin, false);
+      }
+      this.hoveredPin = null;
+    }
+  }
+
+  private findClosestPinToMouse(event: MouseEvent): { nodeId: string; pinName: string } | { nodeId: null; pinName: null } {
+    if (!this.svgCanvas?.nativeElement) {
+      return { nodeId: null, pinName: null };
+    }
+
+    const svgRect = this.svgCanvas.nativeElement.getBoundingClientRect();
+    const mouseX = event.clientX - svgRect.left;
+    const mouseY = event.clientY - svgRect.top;
+    
+    let closestPin: { nodeId: string; pinName: string; distance: number } | null = null;
+    const maxDistance = 20; // Maximum distance to consider a pin "close enough"
+    
+    // Find the closest pin to the mouse position
+    this.currentNodes.forEach(node => {
+      if (node.pins) {
+        node.pins.forEach(pin => {
+          const pinX = node.x + pin.x;
+          const pinY = node.y + pin.y;
+          const distance = Math.sqrt(Math.pow(mouseX - pinX, 2) + Math.pow(mouseY - pinY, 2));
+          
+          if (distance <= maxDistance && (!closestPin || distance < closestPin.distance)) {
+            closestPin = { nodeId: node.id, pinName: pin.name, distance };
+          }
+        });
+      }
+    });
+    
+    if (closestPin) {
+      return { nodeId: closestPin.nodeId, pinName: closestPin.pinName };
+    }
+    
+    return { nodeId: null, pinName: null };
   }
 
   // Node name dialog methods
