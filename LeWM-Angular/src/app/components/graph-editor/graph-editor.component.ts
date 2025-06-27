@@ -81,9 +81,6 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   private centralReferenceArea = { x: 0, y: 0, width: 0, height: 0 };
   
   // Mode system
-  private normalMode: NormalMode;
-  private pinEditMode: PinEditMode;
-  private fileMode: FileMode;
   public currentMode: GraphMode;
   availableModes: GraphMode[] = [];
   private modeSubscription?: Subscription;
@@ -128,10 +125,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     private fileService: FileService,
     private cdr: ChangeDetectorRef
   ) {
-    this.normalMode = new NormalMode(this.graphState);
-    this.pinEditMode = new PinEditMode(this.graphState, this.pinState);
-    this.fileMode = new FileMode(this.graphState, this.pinState, this.fileService);
-    this.currentMode = this.normalMode;
+    // The mode manager will handle mode creation and management
+    // Initialize with a null mode - will be set during ngOnInit
+    this.currentMode = null as any;
   }
 
   ngOnInit(): void {
@@ -217,21 +213,21 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!event.ctrlKey && !event.metaKey && !event.altKey) {
       switch (event.key.toLowerCase()) {
         case 'n':
-          if (this.currentMode !== this.normalMode) {
+          if (this.currentMode?.name !== 'normal') {
             this.switchToNormalMode();
             event.preventDefault();
             return;
           }
           break;
         case 'p':
-          if (this.currentMode !== this.pinEditMode) {
+          if (this.currentMode?.name !== 'pin-edit') {
             this.switchToPinEditMode();
             event.preventDefault();
             return;
           }
           break;
         case 'f':
-          if (this.currentMode !== this.fileMode) {
+          if (this.currentMode?.name !== 'file') {
             this.switchToFileMode();
             event.preventDefault();
             return;
@@ -240,16 +236,27 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    // Handle Enter key in pin edit mode
+    // Handle Enter key in pin edit mode - let the mode handle it via the PinStateService
     if (event.key === 'Enter' && this.currentMode?.name === 'pin-edit') {
       // Skip if any dialog is open
       if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
         return;
       }
-      const pinEditMode = this.modeManager.getActiveMode() as any;
-      if (pinEditMode?.selectedPins?.size > 0) {
-        // Open pin layout editor through the pin state service
-        this.modeManager.openPinLayoutEditor();
+      // Let the mode handle the Enter key through PinStateService which has access to the actual selected pins
+      if (this.modeManager.handleKeyDown(event)) {
+        event.preventDefault();
+        return;
+      }
+    }
+
+    // Handle Enter key in pin mode - open layout editor if pins are selected
+    if (event.key === 'Enter' && this.currentMode?.name === 'pin') {
+      // Skip if any dialog is open
+      if (this.showNodeDialog || this.showNodeBatchDialog || this.showPinDialog || this.showConnectionDialog || this.showConnectionBulkDialog || this.showPinLayoutEditor) {
+        return;
+      }
+      // Let the mode handle the Enter key through PinStateService which has access to the actual selected pins
+      if (this.modeManager.handleKeyDown(event)) {
         event.preventDefault();
         return;
       }
@@ -566,10 +573,6 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     if (modeName === 'normal') {
       this.selectedNodes.clear();
     }
-    // Remove pin-edit overlays when exiting pin-edit mode
-    if (modeName !== 'pin-edit') {
-      this.clearOverlay();
-    }
     
     // Validate connection integrity when switching modes to clean up any orphaned connections
     this.validateConnectionIntegrity();
@@ -577,32 +580,17 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   switchToNormalMode(): void {
     console.log('Switching to Normal mode');
-    if (this.currentMode.isActive) {
-      this.currentMode.deactivate();
-    }
-    this.currentMode = this.normalMode;
-    this.normalMode.activate();
-    this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
+    this.modeManager.activateMode('normal');
   }
 
   switchToPinEditMode(): void {
     console.log('Switching to Pin Edit mode');
-    if (this.currentMode.isActive) {
-      this.currentMode.deactivate();
-    }
-    this.currentMode = this.pinEditMode;
-    this.pinEditMode.activate();
-    this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
+    this.modeManager.activateMode('pin-edit');
   }
 
   switchToFileMode(): void {
     console.log('Switching to File mode');
-    if (this.currentMode.isActive) {
-      this.currentMode.deactivate();
-    }
-    this.currentMode = this.fileMode;
-    this.fileMode.activate();
-    this.modeManager.renderActiveOverlay(this.svgCanvas.nativeElement);
+    this.modeManager.activateMode('file');
   }
   
   private validateConnectionIntegrity(): void {
@@ -1122,8 +1110,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       
       if (this.hoveredPin) {
-        const currentNode = this.currentNodes.find(n => n.id === this.hoveredPin.nodeId);
-        const currentPin = currentNode?.pins?.find(p => p.name === this.hoveredPin.pinName);
+        const currentNode = this.currentNodes.find(n => n.id === this.hoveredPin!.nodeId);
+        const currentPin = currentNode?.pins?.find(p => p.name === this.hoveredPin!.pinName);
         if (currentNode && currentPin) {
           this.onPinHover(currentNode, currentPin, true);
         }
@@ -1172,8 +1160,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
     
-    if (closestPin) {
-      return { nodeId: closestPin.nodeId, pinName: closestPin.pinName };
+    if (closestPin !== null) {
+      const pin = closestPin as { nodeId: string; pinName: string; distance: number };
+      return { nodeId: pin.nodeId, pinName: pin.pinName };
     }
     
     return { nodeId: null, pinName: null };
@@ -1224,19 +1213,31 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // File operations
   saveGraph(): void {
-    this.fileMode.save();
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    if (fileMode) {
+      fileMode.save();
+    }
   }
 
   saveGraphAs(): void {
-    this.fileMode.saveAs();
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    if (fileMode) {
+      fileMode.saveAs();
+    }
   }
 
   openGraph(): void {
-    this.fileMode.open();
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    if (fileMode) {
+      fileMode.open();
+    }
   }
 
   newGraph(): void {
-    this.fileMode.newGraph();
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    if (fileMode) {
+      fileMode.newGraph();
+    }
   }
 
   get currentFileName(): string | null {
