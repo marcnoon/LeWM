@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
 import { GraphEdge } from '../../models/graph-edge.model';
 import { ConnectionValue, ValueType, UnitType, AVAILABLE_UNITS, UNIT_DEFINITIONS } from '../../models/connection-value.model';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 export interface BulkEditData {
   connections: GraphEdge[];
@@ -14,7 +16,7 @@ export interface BulkEditData {
   };
   commonValues: {
     key: string;
-    value: any;
+    value: string | number | boolean;
     valueType: ValueType;
     unitType?: UnitType;
     unitSymbol?: string;
@@ -29,7 +31,8 @@ export interface BulkEditData {
 
 @Component({
   selector: 'app-connection-bulk-edit-dialog',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './connection-bulk-edit-dialog.component.html',
   styleUrl: './connection-bulk-edit-dialog.component.scss'
 })
@@ -107,7 +110,7 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
   private analyzeBulkEditData(): void {
     if (this.connections.length === 0) return;
 
-    const commonProperties: any = {};
+    const commonProperties: Partial<GraphEdge> = {};
     const valuesByKey = new Map<string, Map<string, { value: ConnectionValue; count: number }>>();
     const unitsByType = new Map<UnitType, Set<string>>();
 
@@ -138,7 +141,7 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
           }
           
           const keyValues = valuesByKey.get(value.key)!;
-          const valueKey = `${value.value}_${value.valueType}_${value.unitType || ''}_${value.unitSymbol || ''}`;
+          const valueKey = JSON.stringify(value.value);
           
           if (keyValues.has(valueKey)) {
             keyValues.get(valueKey)!.count++;
@@ -158,9 +161,16 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
     });
 
     // Extract common values (values that appear in multiple connections)
-    const commonValues: any[] = [];
+    const commonValues: {
+      key: string;
+      value: string | number | boolean;
+      valueType: ValueType;
+      unitType?: UnitType;
+      unitSymbol?: string;
+      count: number;
+    }[] = [];
     valuesByKey.forEach((values, key) => {
-      values.forEach((data, valueKey) => {
+      values.forEach((data) => {
         if (data.count > 1) {
           commonValues.push({
             ...data.value,
@@ -172,7 +182,11 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
     });
 
     // Extract compatible units
-    const compatibleUnits: any[] = [];
+    const compatibleUnits: {
+      unitType: UnitType;
+      keys: string[];
+      count: number;
+    }[] = [];
     unitsByType.forEach((keys, unitType) => {
       if (keys.size > 0) {
         compatibleUnits.push({
@@ -207,7 +221,7 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
     // First, collect all keys across all connections to detect duplicates
     const allKeysMap = this.collectAllKeys();
     
-    const updatedConnections: GraphEdge[] = this.connections.map((connection, connectionIndex) => {
+    const updatedConnections: GraphEdge[] = this.connections.map((connection) => {
       const updated = { ...connection };
 
       // Apply property changes
@@ -217,11 +231,11 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
       }
 
       if (this.bulkChanges.direction) {
-        updated.direction = this.bulkChanges.direction as any;
+        updated.direction = this.bulkChanges.direction as 'forward' | 'backward' | 'bidirectional';
       }
 
       if (this.bulkChanges.type) {
-        updated.type = this.bulkChanges.type as any;
+        updated.type = this.bulkChanges.type as 'signal' | 'power' | 'data' | 'control' | 'custom';
       }
 
       if (this.bulkChanges.color) {
@@ -233,7 +247,7 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
       }
 
       if (this.bulkChanges.strokeStyle) {
-        updated.strokeStyle = this.bulkChanges.strokeStyle as any;
+        updated.strokeStyle = this.bulkChanges.strokeStyle as 'solid' | 'dashed' | 'dotted';
       }
 
       // Apply key prefix and suffix to existing values (maintaining uniqueness within each connection)

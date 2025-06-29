@@ -1,11 +1,14 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-node-name-dialog',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="node-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
-      <div class="node-dialog" (click)="$event.stopPropagation()">
+    <div class="node-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick()" (keydown.enter)="onOverlayClick()" tabindex="0">
+      <div class="node-dialog" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" tabindex="0">
         <div class="node-dialog-header">
           <h4>Edit Node Properties</h4>
         </div>
@@ -42,8 +45,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
           <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         </div>
         <div class="node-dialog-footer">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="button" class="btn btn-ok" (click)="onOk()" [disabled]="!nodeName.trim()">OK</button>
+          <button type="button" class="btn btn-cancel" (click)="onCancel()" (keydown.enter)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-ok" (click)="onOk()" (keydown.enter)="onOk()" [disabled]="!nodeName.trim()">OK</button>
         </div>
       </div>
     </div>
@@ -165,9 +168,9 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class NodeNameDialogComponent {
   @Input() isVisible = false;
-  @Input() currentName: string = '';
-  @Input() currentValue: string = '';
-  @Input() currentUnit: string = '';
+  @Input() currentName = '';
+  @Input() currentValue = '';
+  @Input() currentUnit = '';
   @Output() propertiesChanged = new EventEmitter<{name: string, value: string, unit: string}>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -194,7 +197,7 @@ export class NodeNameDialogComponent {
     this.reset();
   }
 
-  onOverlayClick(event: MouseEvent): void {
+  onOverlayClick(): void {
     this.onCancel();
   }
 

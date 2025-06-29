@@ -1,13 +1,17 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef, NgZone, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { map, debounceTime } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { PinStateService } from '../../services/pin-state.service';
 import { GraphStateService } from '../../services/graph-state.service';
 import { Pin, PinPosition, PinTextStyle, PinModeState } from '../../interfaces/pin.interface';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { GraphNode } from '../../models/graph-node.model';
 
 @Component({
   selector: 'app-pin-layout-editor',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './pin-layout-editor.component.html',
   styleUrls: ['./pin-layout-editor.component.scss']
 })
@@ -15,22 +19,20 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
   visible = false;
   selectedPins: Pin[] = [];
   editingPins: Pin[] = [];
-  groupedPins: Map<string, Pin[]> = new Map();
+  groupedPins = new Map<string, Pin[]>();
   previewMode = false;
   activeTab: 'position' | 'text' | 'batch' = 'position';
   previewZoom = 1.0;
   previewOffset = { x: 0, y: 0 };
-  nodeInfoCache = new Map<string, any>();
+  nodeInfoCache = new Map<string, GraphNode>();
 
   private subscriptions: Subscription[] = [];
-  private regroupTimeout: any;
+  private regroupTimeout: number | undefined;
 
-  constructor(
-    private pinStateService: PinStateService,
-    private graphStateService: GraphStateService,
-    private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
-  ) {}
+  private pinStateService = inject(PinStateService);
+  private graphStateService = inject(GraphStateService);
+  private cdr = inject(ChangeDetectorRef);
+  private ngZone = inject(NgZone);
 
   ngOnInit(): void {
     // Subscribe to layout editor visibility
@@ -106,7 +108,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     console.log('Editor initialized with grouped pins:', Array.from(this.groupedPins.keys()));
   }
 
-  updatePinPosition(pinId: string, field: keyof PinPosition, value: any): void {
+  updatePinPosition(pinId: string, field: keyof PinPosition, value: string | number): void {
     console.log(`Updating pin ${pinId} field ${field} to value:`, value);
     
     // Apply grid snapping if enabled
@@ -114,7 +116,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
       const modeState = this.pinStateService.modeState$.pipe(map((state: PinModeState) => state));
       modeState.subscribe((state: PinModeState) => {
         if (state.gridSnap) {
-          value = this.snapToGrid(value);
+          value = this.snapToGrid(value as number);
         }
       }).unsubscribe();
     }
@@ -136,7 +138,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     this.deferredRegroupPins();
   }
 
-  updatePinTextStyle(pinId: string, field: keyof PinTextStyle, value: any): void {
+  updatePinTextStyle(pinId: string, field: keyof PinTextStyle, value: string | number | boolean): void {
     console.log(`Updating pin ${pinId} text style ${field} to:`, value);
     
     // Update local editing pins directly by index
@@ -209,8 +211,6 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     const nodePins = this.groupedPins.get(nodeId) || [];
     if (nodePins.length <= 1) return;
 
-    const firstPin = nodePins[0];
-    const side = firstPin.position.side;
     const spacing = 1 / (nodePins.length + 1);
     
     nodePins.forEach((pin, index) => {
@@ -309,7 +309,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  applyFontToAll(nodeId: string, fontProperty: keyof PinTextStyle, value: any): void {
+  applyFontToAll(nodeId: string, fontProperty: keyof PinTextStyle, value: string | number | boolean): void {
     const nodePins = this.groupedPins.get(nodeId) || [];
     nodePins.forEach(pin => {
       this.updatePinTextStyle(pin.id, fontProperty, value);
@@ -444,7 +444,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     this.activeTab = tab;
   }
 
-  getGroupedPinsArray(): Array<[string, Pin[]]> {
+  getGroupedPinsArray(): [string, Pin[]][] {
     return Array.from(this.groupedPins.entries());
   }
   
@@ -495,7 +495,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
   }
   
   // Grid snapping functionality
-  snapToGrid(value: number, gridSize: number = 5): number {
+  snapToGrid(value: number, gridSize = 5): number {
     return Math.round(value / gridSize) * gridSize;
   }
   
@@ -517,13 +517,15 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
   /**
    * Get the node information from GraphStateService with caching
    */
-  private getNodeInfo(nodeId: string): any {
+  private getNodeInfo(nodeId: string): GraphNode | null {
     if (!this.nodeInfoCache.has(nodeId)) {
       const nodes = this.graphStateService.getNodes();
       const node = nodes.find(n => n.id === nodeId);
-      this.nodeInfoCache.set(nodeId, node || null);
+      if (node) {
+        this.nodeInfoCache.set(nodeId, node);
+      }
     }
-    return this.nodeInfoCache.get(nodeId);
+    return this.nodeInfoCache.get(nodeId) || null;
   }
 
   /**
@@ -624,7 +626,7 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     }
 
     // Color coding based on node type
-    const colorMap: { [key: string]: string } = {
+    const colorMap: Record<string, string> = {
       'power': '#ff6b35',
       'ic': '#4a90e2',
       'resistor': '#8e44ad',
@@ -710,11 +712,6 @@ export class PinLayoutEditorComponent implements OnInit, OnDestroy {
     }
 
     // For legacy x,y positioned pins, calculate closest edge point
-    const nodeCenterX = nodePos.x + nodeSize.width / 2;
-    const nodeCenterY = nodePos.y + nodeSize.height / 2;
-    const dx = pinPos.x - nodeCenterX;
-    const dy = pinPos.y - nodeCenterY;
-
     // Clamp the connection point to the node edges
     let connectionX = pinPos.x;
     let connectionY = pinPos.y;

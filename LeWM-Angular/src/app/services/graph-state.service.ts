@@ -36,7 +36,9 @@ export class GraphStateService {
   readonly nodes$ = this._nodes.asObservable();
   readonly edges$ = this._edges.asObservable();
 
-  constructor() { }
+  constructor() {
+    //
+  }
 
   // Method to get the current snapshot of nodes
   getNodes(): GraphNode[] {
@@ -302,7 +304,7 @@ export class GraphStateService {
       
       // Check if both pins exist
       return this.pinExists(fromNodeId, fromPinName) && this.pinExists(toNodeId, toPinName);
-    } catch (error) {
+    } catch {
       // Invalid connection format
       return false;
     }

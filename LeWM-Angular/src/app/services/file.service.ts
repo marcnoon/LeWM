@@ -73,14 +73,15 @@ export class FileService {
     URL.revokeObjectURL(url);
   }
 
-  private validateGraphData(data: any): data is GraphData {
+  private validateGraphData(data: unknown): data is GraphData {
+    const graphData = data as GraphData;
     return (
-      data &&
-      typeof data.version === 'string' &&
-      data.metadata &&
-      Array.isArray(data.nodes) &&
-      Array.isArray(data.pins) &&
-      Array.isArray(data.connections)
+      graphData &&
+      typeof graphData.version === 'string' &&
+      graphData.metadata &&
+      Array.isArray(graphData.nodes) &&
+      Array.isArray(graphData.pins) &&
+      Array.isArray(graphData.connections)
     );
   }
 

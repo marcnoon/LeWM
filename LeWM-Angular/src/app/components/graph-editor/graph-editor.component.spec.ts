@@ -7,6 +7,7 @@ import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { FileService } from '../../services/file.service';
 import { GraphNode } from '../../models/graph-node.model';
+import { GraphMode } from 'src/app/interfaces/graph-mode.interface';
 
 describe('GraphEditorComponent', () => {
   let component: GraphEditorComponent;
@@ -123,7 +124,7 @@ describe('GraphEditorComponent', () => {
       component.showPinLayoutEditor = false;
 
       // Mock the current mode to ensure mode switching logic is triggered
-      component.currentMode = { name: 'normal', displayName: 'Normal' } as any;
+      component.currentMode = { name: 'normal', displayName: 'Normal' } as GraphMode;
 
       // Create keyboard events for mode switching keys
       const eventF = new KeyboardEvent('keydown', { key: 'f' });
@@ -144,7 +145,7 @@ describe('GraphEditorComponent', () => {
       spyOn(component, 'deleteSelectedNodes');
 
       // Set up for normal mode Enter key handling
-      component.currentMode = { name: 'normal' } as any;
+      component.currentMode = { name: 'normal' } as GraphMode;
       component.selectedNodes.add('test-node');
 
       // Test with node dialog open
@@ -161,7 +162,7 @@ describe('GraphEditorComponent', () => {
       spyOn(component, 'deleteSelectedNodes');
 
       // Set up for normal mode delete handling
-      component.currentMode = { name: 'normal' } as any;
+      component.currentMode = { name: 'normal' } as GraphMode;
       component.selectedNodes.add('test-node');
 
       // Test with node dialog open
@@ -232,7 +233,7 @@ describe('GraphEditorComponent', () => {
       };
 
       // Set up the mocked SVG canvas
-      component.svgCanvas = { nativeElement: mockSvgElement } as any;
+      component.svgCanvas = { nativeElement: mockSvgElement as SVGElement };
 
       // Call the method under test
       const result = component.getCentralReferenceArea();
@@ -246,7 +247,7 @@ describe('GraphEditorComponent', () => {
 
     it('should handle case when svgCanvas is not available', () => {
       // Set svgCanvas to null
-      component.svgCanvas = null as any;
+      component.svgCanvas = null;
 
       // Call the method under test
       const result = component.getCentralReferenceArea();
@@ -273,7 +274,7 @@ describe('GraphEditorComponent', () => {
         })
       };
 
-      component.svgCanvas = { nativeElement: mockSvgElement } as any;
+      component.svgCanvas = { nativeElement: mockSvgElement as SVGElement };
 
       const result = component.getCentralReferenceArea();
 
@@ -287,7 +288,7 @@ describe('GraphEditorComponent', () => {
 
   describe('Pin creation flow', () => {
     let testNode: GraphNode;
-    let mockPinDialog: any;
+    let mockPinDialog: { showError: jasmine.Spy, reset: jasmine.Spy };
 
     beforeEach(() => {
       testNode = {

@@ -9,19 +9,19 @@
         <div class="form-grid">
           <!-- Label Modifications -->
           <div class="form-group">
-            <label>Label Prefix:</label>
-            <input type="text" [(ngModel)]="bulkChanges.labelPrefix" placeholder="Add prefix to all labels">
+            <label for="labelPrefixInput">Label Prefix:</label>
+            <input id="labelPrefixInput" type="text" [(ngModel)]="bulkChanges.labelPrefix" placeholder="Add prefix to all labels">
           </div>
           
           <div class="form-group">
-            <label>Label Suffix:</label>
-            <input type="text" [(ngModel)]="bulkChanges.labelSuffix" placeholder="Add suffix to all labels">
+            <label for="labelSuffixInput">Label Suffix:</label>
+            <input id="labelSuffixInput" type="text" [(ngModel)]="bulkChanges.labelSuffix" placeholder="Add suffix to all labels">
           </div>
           
           <!-- Direction -->
           <div class="form-group">
-            <label>Direction:</label>
-            <select [(ngModel)]="bulkChanges.direction">
+            <label for="directionSelect">Direction:</label>
+            <select id="directionSelect" [(ngModel)]="bulkChanges.direction">
               <option *ngFor="let option of directionOptions" [value]="option.value">
                 {{ option.label }}
               </option>
@@ -31,8 +31,8 @@
           
           <!-- Type -->
           <div class="form-group">
-            <label>Type:</label>
-            <select [(ngModel)]="bulkChanges.type">
+            <label for="typeSelect">Type:</label>
+            <select id="typeSelect" [(ngModel)]="bulkChanges.type">
               <option *ngFor="let option of typeOptions" [value]="option.value">
                 {{ option.label }}
               </option>
@@ -42,22 +42,22 @@
           
           <!-- Color -->
           <div class="form-group">
-            <label>Color:</label>
-            <input type="color" [(ngModel)]="bulkChanges.color" placeholder="Connection color">
+            <label for="colorInput">Color:</label>
+            <input id="colorInput" type="color" [(ngModel)]="bulkChanges.color" placeholder="Connection color">
             <small>Currently: {{ bulkEditData?.commonProperties?.color || 'Mixed' }}</small>
           </div>
           
           <!-- Stroke Width -->
           <div class="form-group">
-            <label>Stroke Width:</label>
-            <input type="number" [(ngModel)]="bulkChanges.strokeWidth" min="1" max="10" step="1">
+            <label for="strokeWidthInput">Stroke Width:</label>
+            <input id="strokeWidthInput" type="number" [(ngModel)]="bulkChanges.strokeWidth" min="1" max="10" step="1">
             <small>Currently: {{ bulkEditData?.commonProperties?.strokeWidth || 'Mixed' }}</small>
           </div>
           
           <!-- Stroke Style -->
           <div class="form-group">
-            <label>Stroke Style:</label>
-            <select [(ngModel)]="bulkChanges.strokeStyle">
+            <label for="strokeStyleSelect">Stroke Style:</label>
+            <select id="strokeStyleSelect" [(ngModel)]="bulkChanges.strokeStyle">
               <option *ngFor="let option of strokeStyleOptions" [value]="option.value">
                 {{ option.label }}
               </option>
@@ -129,14 +129,14 @@
         </p>
         <div class="form-grid">
           <div class="form-group">
-            <label>Add Prefix to All Keys:</label>
-            <input type="text" [(ngModel)]="bulkChanges.keyPrefix" placeholder="e.g., 'signal_', 'power_'">
+            <label for="keyPrefixInput">Add Prefix to All Keys:</label>
+            <input id="keyPrefixInput" type="text" [(ngModel)]="bulkChanges.keyPrefix" placeholder="e.g., 'signal_', 'power_'">
             <small>Adds a prefix to all existing keys: "voltage" → "signal_voltage"</small>
           </div>
           
           <div class="form-group">
-            <label>Add Suffix to All Keys:</label>
-            <input type="text" [(ngModel)]="bulkChanges.keySuffix" placeholder="e.g., '_primary', '_backup'">
+            <label for="keySuffixInput">Add Suffix to All Keys:</label>
+            <input id="keySuffixInput" type="text" [(ngModel)]="bulkChanges.keySuffix" placeholder="e.g., '_primary', '_backup'">
             <small>Adds a suffix to all existing keys: "voltage" → "voltage_primary"</small>
           </div>
         </div>

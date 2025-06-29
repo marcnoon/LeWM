@@ -49,7 +49,6 @@ describe('GraphStateService', () => {
     // Add two distinct edges
     service.addEdge({ id: 'e1', from: 'n1.p1', to: 'n2.p2' } as GraphEdge);
     service.addEdge({ id: 'e2', from: 'n3.p3', to: 'n4.p4' } as GraphEdge);
-    const before: GraphEdge[] = service.getEdges();
     // Attempt to update e1's id to 'e2'
     service.updateEdge('e1', { id: 'e2', from: 'n1.p1', to: 'n2.p2' } as GraphEdge);
     const after: GraphEdge[] = service.getEdges();

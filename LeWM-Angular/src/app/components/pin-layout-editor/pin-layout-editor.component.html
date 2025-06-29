@@ -1,17 +1,17 @@
-<div class="layout-editor-overlay" *ngIf="visible" (click)="closeEditor()">
-  <div class="layout-editor" (click)="$event.stopPropagation()">
+<div class="layout-editor-overlay" *ngIf="visible" (click)="closeEditor()" (keydown.enter)="closeEditor()" tabindex="0">
+  <div class="layout-editor" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" tabindex="0">
     <div class="editor-header">
       <h2>Pin Layout Editor ({{ selectedPins.length }} pins)</h2>
       <div class="header-controls">
-        <label>
-          <input type="checkbox" [(ngModel)]="previewMode" (change)="togglePreviewMode()" />
+        <label for="livePreviewCheckbox">
+          <input id="livePreviewCheckbox" type="checkbox" [(ngModel)]="previewMode" (change)="togglePreviewMode()" />
           Live Preview
         </label>
-        <label>
-          <input type="checkbox" [checked]="gridSnapEnabled" (change)="toggleGridSnap()" />
+        <label for="gridSnapCheckbox">
+          <input id="gridSnapCheckbox" type="checkbox" [checked]="gridSnapEnabled" (change)="toggleGridSnap()" />
           Grid Snap
         </label>
-        <button class="close-btn" (click)="closeEditor()">×</button>
+        <button class="close-btn" (click)="closeEditor()" (keydown.enter)="closeEditor()">×</button>
       </div>
     </div>
 
@@ -19,19 +19,22 @@
       <button 
         class="tab-btn" 
         [class.active]="activeTab === 'position'"
-        (click)="setActiveTab('position')">
+        (click)="setActiveTab('position')"
+        (keydown.enter)="setActiveTab('position')">
         Position
       </button>
       <button 
         class="tab-btn" 
         [class.active]="activeTab === 'text'"
-        (click)="setActiveTab('text')">
+        (click)="setActiveTab('text')"
+        (keydown.enter)="setActiveTab('text')">
         Text Style
       </button>
       <button 
         class="tab-btn" 
         [class.active]="activeTab === 'batch'"
-        (click)="setActiveTab('batch')">
+        (click)="setActiveTab('batch')"
+        (keydown.enter)="setActiveTab('batch')">
         Batch Operations
       </button>
     </div>
@@ -72,19 +75,19 @@
                 <!-- Pin circle -->
                 <circle [attr.cx]="getAbsolutePinPosition(pin).x"
                         [attr.cy]="getAbsolutePinPosition(pin).y"
-                        [attr.r]="pin.pinStyle?.size || 4"
-                        [attr.fill]="pin.pinStyle?.color || '#ff6b35'"
+                        [attr.r]="pin.pinStyle.size || 4"
+                        [attr.fill]="pin.pinStyle.color || '#ff6b35'"
                         stroke="#333"
                         stroke-width="1"/>
                 
                 <!-- Pin text -->
-                <text [attr.x]="getAbsolutePinPosition(pin).x + (pin.textStyle?.offset?.x || 0)"
-                      [attr.y]="getAbsolutePinPosition(pin).y + (pin.textStyle?.offset?.y || 0)"
-                      [attr.text-anchor]="pin.textStyle?.alignment || 'middle'"
-                      [attr.dominant-baseline]="getVerticalAlignment(pin.textStyle?.verticalAlignment || 'middle')"
-                      [attr.fill]="pin.textStyle?.color || '#000'"
-                      [attr.font-family]="pin.textStyle?.fontFamily || 'Arial, sans-serif'"
-                      [attr.font-size]="pin.textStyle?.fontSize || 12"
+                <text [attr.x]="getAbsolutePinPosition(pin).x + (pin.textStyle.offset.x || 0)"
+                      [attr.y]="getAbsolutePinPosition(pin).y + (pin.textStyle.offset.y || 0)"
+                      [attr.text-anchor]="pin.textStyle.alignment || 'middle'"
+                      [attr.dominant-baseline]="getVerticalAlignment(pin.textStyle.verticalAlignment || 'middle')"
+                      [attr.fill]="pin.textStyle.color || '#000'"
+                      [attr.font-family]="pin.textStyle.fontFamily || 'Arial, sans-serif'"
+                      [attr.font-size]="pin.textStyle.fontSize || 12"
                       [attr.transform]="getPinTextTransform(pin)">
                   {{ pin.label || pin.id.split('.')[1] }}
                 </text>
@@ -117,13 +120,13 @@
         
         <!-- Preview Controls -->
         <div class="preview-controls">
-          <label>
-            <input type="range" min="0.5" max="3" step="0.1" 
+          <label for="zoomRange">
+            <input id="zoomRange" type="range" min="0.5" max="3" step="0.1" 
                    [value]="previewZoom" 
                    (input)="updatePreviewZoom(+$any($event.target).value)"/>
             Zoom: {{ previewZoom.toFixed(1) }}x
           </label>
-          <button (click)="resetPreviewView()" class="secondary-btn">Reset View</button>
+          <button (click)="resetPreviewView()" (keydown.enter)="resetPreviewView()" class="secondary-btn">Reset View</button>
         </div>
       </div>
 
@@ -135,9 +138,9 @@
           <div class="pin-control-group" *ngFor="let pin of group[1]; trackBy: trackByPinId">
             <h4>{{ pin.label || pin.id }}</h4>
             <div class="control-row">
-              <label>
+              <label [for]="'sideSelect-' + pin.id">
                 Side:
-                <select [value]="pin.position.side" 
+                <select [id]="'sideSelect-' + pin.id" [value]="pin.position.side" 
                         (change)="updatePinPosition(pin.id, 'side', $any($event.target).value)">
                   <option value="top">Top</option>
                   <option value="right">Right</option>
@@ -145,24 +148,24 @@
                   <option value="left">Left</option>
                 </select>
               </label>
-              <label>
+              <label [for]="'offsetInput-' + pin.id">
                 Offset:
-                <input type="number" 
+                <input [id]="'offsetInput-' + pin.id" type="number" 
                        min="0" max="1" step="0.01"
                        [value]="pin.position.offset"
                        (input)="updatePinPosition(pin.id, 'offset', +$any($event.target).value)" />
               </label>
             </div>
             <div class="control-row">
-              <label>
+              <label [for]="'xInput-' + pin.id">
                 X Position:
-                <input type="number" 
+                <input [id]="'xInput-' + pin.id" type="number" 
                        [value]="pin.position.x"
                        (input)="updatePinPosition(pin.id, 'x', +$any($event.target).value)" />
               </label>
-              <label>
+              <label [for]="'yInput-' + pin.id">
                 Y Position:
-                <input type="number" 
+                <input [id]="'yInput-' + pin.id" type="number" 
                        [value]="pin.position.y"
                        (input)="updatePinPosition(pin.id, 'y', +$any($event.target).value)" />
               </label>
@@ -175,9 +178,9 @@
           <div class="pin-control-group" *ngFor="let pin of group[1]; trackBy: trackByPinId">
             <h4>{{ pin.label || pin.id }}</h4>
             <div class="control-row">
-              <label>
+              <label [for]="'fontFamilySelect-' + pin.id">
                 Font Family:
-                <select [value]="pin.textStyle.fontFamily" 
+                <select [id]="'fontFamilySelect-' + pin.id" [value]="pin.textStyle.fontFamily" 
                         (change)="updatePinTextStyle(pin.id, 'fontFamily', $any($event.target).value)">
                   <option value="Arial, sans-serif">Arial</option>
                   <option value="'Times New Roman', serif">Times New Roman</option>
@@ -186,55 +189,55 @@
                   <option value="Georgia, serif">Georgia</option>
                 </select>
               </label>
-              <label>
+              <label [for]="'fontSizeInput-' + pin.id">
                 Font Size:
-                <input type="number" min="6" max="48"
+                <input [id]="'fontSizeInput-' + pin.id" type="number" min="6" max="48"
                        [value]="pin.textStyle.fontSize"
                        (input)="updatePinTextStyle(pin.id, 'fontSize', +$any($event.target).value)" />
               </label>
             </div>
             <div class="control-row">
-              <label>
+              <label [for]="'colorInput-' + pin.id">
                 Color:
-                <input type="color" 
+                <input [id]="'colorInput-' + pin.id" type="color" 
                        [value]="pin.textStyle.color"
                        (input)="updatePinTextStyle(pin.id, 'color', $any($event.target).value)" />
               </label>
-              <label>
+              <label [for]="'rotationRange-' + pin.id">
                 Rotation:
-                <input type="range" min="0" max="360"
+                <input [id]="'rotationRange-' + pin.id" type="range" min="0" max="360"
                        [value]="pin.textStyle.orientation"
                        (input)="updatePinTextStyle(pin.id, 'orientation', +$any($event.target).value)" />
                 <span>{{ pin.textStyle.orientation }}°</span>
               </label>
             </div>
             <div class="control-row">
-              <label>
+              <label [for]="'textOffsetX-' + pin.id">
                 Text Offset X:
-                <input type="number" step="0.5"
+                <input [id]="'textOffsetX-' + pin.id" type="number" step="0.5"
                        [value]="pin.textStyle.offset.x"
                        (input)="updatePinTextOffset(pin.id, 'x', +$any($event.target).value)" />
               </label>
-              <label>
+              <label [for]="'textOffsetY-' + pin.id">
                 Text Offset Y:
-                <input type="number" step="0.5"
+                <input [id]="'textOffsetY-' + pin.id" type="number" step="0.5"
                        [value]="pin.textStyle.offset.y"
                        (input)="updatePinTextOffset(pin.id, 'y', +$any($event.target).value)" />
               </label>
             </div>
             <div class="control-row">
-              <label>
+              <label [for]="'alignmentSelect-' + pin.id">
                 Alignment:
-                <select [value]="pin.textStyle.alignment" 
+                <select [id]="'alignmentSelect-' + pin.id" [value]="pin.textStyle.alignment" 
                         (change)="updatePinTextStyle(pin.id, 'alignment', $any($event.target).value)">
                   <option value="left">Left</option>
                   <option value="center">Center</option>
                   <option value="right">Right</option>
                 </select>
               </label>
-              <label>
+              <label [for]="'vAlignmentSelect-' + pin.id">
                 V-Align:
-                <select [value]="pin.textStyle.verticalAlignment" 
+                <select [id]="'vAlignmentSelect-' + pin.id" [value]="pin.textStyle.verticalAlignment" 
                         (change)="updatePinTextStyle(pin.id, 'verticalAlignment', $any($event.target).value)">
                   <option value="top">Top</option>
                   <option value="middle">Middle</option>
@@ -251,44 +254,44 @@
           <div class="batch-group">
             <h5>Side Alignment</h5>
             <div class="control-row">
-              <button (click)="alignPinsOnSide(group[0], 'top')">Move to Top</button>
-              <button (click)="alignPinsOnSide(group[0], 'right')">Move to Right</button>
-              <button (click)="alignPinsOnSide(group[0], 'bottom')">Move to Bottom</button>
-              <button (click)="alignPinsOnSide(group[0], 'left')">Move to Left</button>
+              <button (click)="alignPinsOnSide(group[0], 'top')" (keydown.enter)="alignPinsOnSide(group[0], 'top')">Move to Top</button>
+              <button (click)="alignPinsOnSide(group[0], 'right')" (keydown.enter)="alignPinsOnSide(group[0], 'right')">Move to Right</button>
+              <button (click)="alignPinsOnSide(group[0], 'bottom')" (keydown.enter)="alignPinsOnSide(group[0], 'bottom')">Move to Bottom</button>
+              <button (click)="alignPinsOnSide(group[0], 'left')" (keydown.enter)="alignPinsOnSide(group[0], 'left')">Move to Left</button>
             </div>
           </div>
           <div class="batch-group">
             <h5>Precision Alignment</h5>
             <div class="control-row">
-              <button (click)="alignLeft(group[0])">Align Left</button>
-              <button (click)="centerHorizontally(group[0])">Center H</button>
-              <button (click)="alignRight(group[0])">Align Right</button>
+              <button (click)="alignLeft(group[0])" (keydown.enter)="alignLeft(group[0])">Align Left</button>
+              <button (click)="centerHorizontally(group[0])" (keydown.enter)="centerHorizontally(group[0])">Center H</button>
+              <button (click)="alignRight(group[0])" (keydown.enter)="alignRight(group[0])">Align Right</button>
             </div>
             <div class="control-row">
-              <button (click)="alignTop(group[0])">Align Top</button>
-              <button (click)="centerVertically(group[0])">Center V</button>
-              <button (click)="alignBottom(group[0])">Align Bottom</button>
+              <button (click)="alignTop(group[0])" (keydown.enter)="alignTop(group[0])">Align Top</button>
+              <button (click)="centerVertically(group[0])" (keydown.enter)="centerVertically(group[0])">Center V</button>
+              <button (click)="alignBottom(group[0])" (keydown.enter)="alignBottom(group[0])">Align Bottom</button>
             </div>
           </div>
           <div class="batch-group">
             <h5>Distribution</h5>
             <div class="control-row">
-              <button (click)="distributeEvenly(group[0])">Distribute by Side</button>
-              <button (click)="distributeHorizontally(group[0])">Distribute H</button>
-              <button (click)="distributeVertically(group[0])">Distribute V</button>
+              <button (click)="distributeEvenly(group[0])" (keydown.enter)="distributeEvenly(group[0])">Distribute by Side</button>
+              <button (click)="distributeHorizontally(group[0])" (keydown.enter)="distributeHorizontally(group[0])">Distribute H</button>
+              <button (click)="distributeVertically(group[0])" (keydown.enter)="distributeVertically(group[0])">Distribute V</button>
             </div>
           </div>
           <div class="batch-group">
             <h5>Text Operations</h5>
             <div class="control-row">
-              <label>
+              <label [for]="'fontSizeAll-' + group[0]">
                 Apply Font Size to All:
-                <input type="number" min="6" max="48" value="12"
+                <input [id]="'fontSizeAll-' + group[0]" type="number" min="6" max="48" value="12"
                        (change)="applyFontToAll(group[0], 'fontSize', +$any($event.target).value)" />
               </label>
-              <label>
+              <label [for]="'colorAll-' + group[0]">
                 Apply Color to All:
-                <input type="color" value="#000000"
+                <input [id]="'colorAll-' + group[0]" type="color" value="#000000"
                        (change)="applyFontToAll(group[0], 'color', $any($event.target).value)" />
               </label>
             </div>
@@ -307,9 +310,9 @@
     </ng-template>
 
     <div class="editor-footer">
-      <button class="secondary-btn" (click)="resetChanges()">Reset</button>
-      <button class="secondary-btn" (click)="closeEditor()">Cancel</button>
-      <button class="primary-btn" (click)="applyChanges()">Apply Changes (Ctrl+Enter)</button>
+      <button class="secondary-btn" (click)="resetChanges()" (keydown.enter)="resetChanges()">Reset</button>
+      <button class="secondary-btn" (click)="closeEditor()" (keydown.enter)="closeEditor()">Cancel</button>
+      <button class="primary-btn" (click)="applyChanges()" (keydown.enter)="applyChanges()">Apply Changes (Ctrl+Enter)</button>
     </div>
   </div>
 </div>

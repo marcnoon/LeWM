@@ -1,5 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
 import { GraphNode } from '../../models/graph-node.model';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 export interface NodeBatchEditData {
   nodes: GraphNode[];
@@ -13,7 +15,8 @@ export interface NodeBatchEditData {
 
 @Component({
   selector: 'app-node-batch-edit-dialog',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './node-batch-edit-dialog.component.html',
   styleUrl: './node-batch-edit-dialog.component.scss'
 })
@@ -134,7 +137,7 @@ export class NodeBatchEditDialogComponent implements OnInit, OnChanges {
     this.cancelled.emit();
   }
 
-  onOverlayClick(event: MouseEvent): void {
+  onOverlayClick(): void {
     this.onCancel();
   }
 

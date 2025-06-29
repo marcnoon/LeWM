@@ -1,15 +1,40 @@
+import { Pin, PinTextStyle, PinStyle } from '../interfaces/pin.interface';
 import { GraphMode, PinEditState } from '../interfaces/graph-mode.interface';
 import { GraphNode } from '../models/graph-node.model';
 import { GraphStateService } from '../services/graph-state.service';
 import { PinStateService } from '../services/pin-state.service';
 import { DEFAULT_PIN_TEXT_STYLE, DEFAULT_PIN_STYLE } from '../interfaces/pin.interface';
 import { map } from 'rxjs/operators';
+import { GraphEditorComponent } from '../components/graph-editor/graph-editor.component';
+
+// Define a type for the legacy pin structure
+interface LegacyPin {
+  name: string;
+  x: number;
+  y: number;
+  type?: string;
+  pinNumber?: string;
+  signalName?: string;
+  pinSize?: number;
+  pinColor?: string;
+  showPinNumber?: boolean;
+  dataType?: string;
+  nodeId?: string;
+  label?: string;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  offset?: number;
+  textStyle?: PinTextStyle;
+  pinStyle?: PinStyle;
+  isInput?: boolean;
+  isOutput?: boolean;
+  pinType?: string;
+}
 
 export class PinEditMode implements GraphMode {
   name = 'pin-edit';
   displayName = 'Pin Edit';
   isActive = false;
-  selectedPins: Set<string> = new Set(); // track selected pins
+  selectedPins = new Set<string>(); // track selected pins
 
   // Pin edit state
   state: PinEditState = {
@@ -22,14 +47,14 @@ export class PinEditMode implements GraphMode {
   };
 
   // Reference to component for dialog
-  private componentRef: any = null;
+  private componentRef: GraphEditorComponent | null = null;
 
   constructor(
     private graphState: GraphStateService,
     private pinState: PinStateService
   ) {}
 
-  setComponentRef(component: any): void {
+  setComponentRef(component: GraphEditorComponent): void {
     this.componentRef = component;
   }
 
@@ -78,7 +103,7 @@ export class PinEditMode implements GraphMode {
     console.log('✅ Pin Edit mode deactivated with data consistency ensured');
   }
 
-  handleNodeClick(node: GraphNode, event: MouseEvent): boolean {
+  handleNodeClick(node: GraphNode): boolean {
     // In pin edit mode, clicking a node selects it for pin editing
     this.state.selectedNode = node;
     this.state.selectedSide = null; // Clear side selection
@@ -254,30 +279,34 @@ export class PinEditMode implements GraphMode {
     const margin = 5;
 
     switch (side) {
-      case 'top':
+      case 'top': {
         rect.setAttribute('x', (node.x - margin).toString());
         rect.setAttribute('y', (node.y - margin).toString());
         rect.setAttribute('width', (node.width + 2 * margin).toString());
         rect.setAttribute('height', margin.toString());
         break;
-      case 'right':
+      }
+      case 'right': {
         rect.setAttribute('x', (node.x + node.width).toString());
         rect.setAttribute('y', (node.y - margin).toString());
         rect.setAttribute('width', margin.toString());
         rect.setAttribute('height', (node.height + 2 * margin).toString());
         break;
-      case 'bottom':
+      }
+      case 'bottom': {
         rect.setAttribute('x', (node.x - margin).toString());
         rect.setAttribute('y', (node.y + node.height).toString());
         rect.setAttribute('width', (node.width + 2 * margin).toString());
         rect.setAttribute('height', margin.toString());
         break;
-      case 'left':
+      }
+      case 'left': {
         rect.setAttribute('x', (node.x - margin).toString());
         rect.setAttribute('y', (node.y - margin).toString());
         rect.setAttribute('width', margin.toString());
         rect.setAttribute('height', (node.height + 2 * margin).toString());
         break;
+      }
     }
 
     return rect;
@@ -285,7 +314,6 @@ export class PinEditMode implements GraphMode {
 
   private renderPinPlacementPreview(overlay: SVGGElement, node: GraphNode, side: string): void {
     // Show where pins can be placed on the selected side
-    const pinCount = this.getPinCountOnSide(node, side);
     const maxPins = this.getMaxPinsForSide(node, side);
 
     // Show placement indicators
@@ -364,18 +392,20 @@ export class PinEditMode implements GraphMode {
 
     switch (side) {
       case 'top':
-      case 'bottom':
+      case 'bottom': {
         const xStep = (node.width - 2 * margin) / (total - 1);
         const x = node.x + margin + (index * xStep);
         const y = side === 'top' ? node.y : node.y + node.height;
         return { x, y };
+      }
 
       case 'left':
-      case 'right':
+      case 'right': {
         const yStep = (node.height - 2 * margin) / (total - 1);
         const yPos = node.y + margin + (index * yStep);
         const xPos = side === 'left' ? node.x : node.x + node.width;
         return { x: xPos, y: yPos };
+      }
 
       default:
         return { x: node.x, y: node.y };
@@ -399,13 +429,6 @@ export class PinEditMode implements GraphMode {
     this.graphState.updateNode(node.id, updatedNode);
 
     console.log(`Removed pin ${pinName} from node ${node.id}`);
-  }
-
-  private getPinCountOnSide(node: GraphNode, side: string): number {
-    if (!node.pins) return 0;
-
-    // This is a simplified count - in reality we'd check pin positions
-    return Math.floor(node.pins.length / 4);
   }
 
   private getMaxPinsForSide(node: GraphNode, side: string): number {
@@ -445,7 +468,7 @@ export class PinEditMode implements GraphMode {
     if (this.componentRef) this.componentRef.renderActiveOverlay(this.componentRef.svgCanvas.nativeElement);
   }
 
-  private syncPinToPinStateServiceIfNeeded(pin: any): void {
+  private syncPinToPinStateServiceIfNeeded(pin: LegacyPin): void {
     const pinId = `${pin.nodeId}.${pin.name}`;
     
     // Check if pin already exists in PinStateService
@@ -464,11 +487,11 @@ export class PinEditMode implements GraphMode {
     }).unsubscribe();
   }
 
-  private syncPinToPinStateService(pin: any): void {
+  private syncPinToPinStateService(pin: LegacyPin): void {
     // Convert the graph pin to PinStateService format
-    const pinForService = {
+    const pinForService: Pin = {
       id: `${pin.nodeId}.${pin.name}`, // Use nodeId.pinName format
-      nodeId: pin.nodeId,
+      nodeId: pin.nodeId || '',
       label: pin.name || pin.label || '',
       position: {
         x: pin.x || 0,
@@ -480,7 +503,7 @@ export class PinEditMode implements GraphMode {
       pinStyle: pin.pinStyle || { ...DEFAULT_PIN_STYLE },
       isInput: pin.isInput || false,
       isOutput: pin.isOutput || false,
-      pinType: pin.pinType || 'input',
+      pinType: (pin.pinType as any) || 'input',
       pinNumber: pin.pinNumber || '',
       signalName: pin.signalName || '',
       pinSize: pin.pinSize || 4,
@@ -497,9 +520,9 @@ export class PinEditMode implements GraphMode {
     const allPins = this.getAllPins();
 
     if (allPins.length > 0) {
-      const pinsForService = allPins.map(pin => ({
+      const pinsForService: Pin[] = allPins.map(pin => ({
         id: `${pin.nodeId}.${pin.name}`, // Use nodeId.pinName format to match selection
-        nodeId: pin.nodeId,
+        nodeId: pin.nodeId || '',
         label: pin.name || pin.label || '',
         position: {
           // Preserve original x,y coordinates from the legacy system
@@ -513,7 +536,7 @@ export class PinEditMode implements GraphMode {
         pinStyle: pin.pinStyle || { ...DEFAULT_PIN_STYLE },
         isInput: pin.isInput || false,
         isOutput: pin.isOutput || false,
-        pinType: pin.pinType || 'input',
+        pinType: (pin.pinType as any) || 'input',
         pinNumber: pin.pinNumber || '',
         signalName: pin.signalName || '',
         pinSize: pin.pinSize || 4,
@@ -522,23 +545,22 @@ export class PinEditMode implements GraphMode {
       }));
 
       console.log('Syncing', pinsForService.length, 'pins to PinStateService with original positions preserved');
-      console.log('Pin positions:', pinsForService.map(p => ({ id: p.id, x: p.position.x, y: p.position.y })));
       this.pinState.importPins(pinsForService);
     }
   }
 
-  private getAllPins(): any[] {
+  private getAllPins(): LegacyPin[] {
     // Get all pins from GraphStateService
     const nodes = this.graphState.getNodes();
-    const allPins: any[] = [];
+    const allPins: LegacyPin[] = [];
 
     nodes.forEach(node => {
       if (node.pins) {
-        node.pins.forEach((pin: any) => {
+        node.pins.forEach((pin: LegacyPin) => {
           allPins.push({
             ...pin,
             nodeId: node.id,
-            name: pin.name || pin.label // Ensure we have the pin name
+            name: pin.name || pin.label || '' // Ensure we have the pin name
           });
         });
       }

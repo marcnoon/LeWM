@@ -1,5 +1,5 @@
-<div *ngIf="isVisible" class="dialog-overlay" (click)="onOverlayClick($event)">
-  <div class="dialog" (click)="$event.stopPropagation()">
+<div *ngIf="isVisible" class="dialog-overlay" (click)="onOverlayClick()" (keydown.enter)="onOverlayClick()" tabindex="0">
+  <div class="dialog" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" tabindex="0">
     <h3>Batch Edit Nodes ({{ nodes.length }} selected)</h3>
     
     <div class="dialog-content">
@@ -8,19 +8,21 @@
         <h4>Node Names</h4>
         <div class="form-grid">
           <div class="form-group">
-            <label>Base Name:</label>
+            <label for="baseNameInput">Base Name:</label>
             <input 
+              id="baseNameInput"
               type="text" 
               [(ngModel)]="bulkChanges.baseName" 
               (keydown)="onKeyDown($event)"
               placeholder="Enter base name (e.g., 'R' for R1, R2, R3...)"
               class="form-input"
-              autofocus>
+             >
           </div>
           
           <div class="form-group checkbox-group">
-            <label>
+            <label for="autoNumberingCheckbox">
               <input 
+                id="autoNumberingCheckbox"
                 type="checkbox" 
                 [(ngModel)]="bulkChanges.applyAutoNumbering">
               Auto-number names (R1, R2, R3...)
@@ -38,8 +40,9 @@
         <h4>Properties</h4>
         <div class="form-grid">
           <div class="form-group">
-            <label>Value:</label>
+            <label for="valueInput">Value:</label>
             <input 
+              id="valueInput"
               type="text" 
               [(ngModel)]="bulkChanges.value" 
               (keydown)="onKeyDown($event)"
@@ -52,8 +55,9 @@
           </div>
           
           <div class="form-group">
-            <label>Unit:</label>
+            <label for="unitInput">Unit:</label>
             <input 
+              id="unitInput"
               type="text" 
               [(ngModel)]="bulkChanges.unit" 
               (keydown)="onKeyDown($event)"

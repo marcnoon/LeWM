@@ -1,3 +1,4 @@
+import { GraphEditorComponent } from '../components/graph-editor/graph-editor.component';
 import { GraphMode } from '../interfaces/graph-mode.interface';
 import { GraphNode } from '../models/graph-node.model';
 import { GraphEdge } from '../models/graph-edge.model';
@@ -15,7 +16,7 @@ export class ConnectionMode implements GraphMode {
   name = 'connection';
   displayName = 'Connection';
   isActive = false;
-  selectedPins: Set<string> = new Set(); // Connection mode doesn't select pins
+  selectedPins = new Set<string>(); // Connection mode doesn't select pins
   
   state: ConnectionModeState = {
     selectedConnections: new Set(),
@@ -26,11 +27,11 @@ export class ConnectionMode implements GraphMode {
   };
   
   // Reference to component for dialog
-  private componentRef: any = null;
+  private componentRef: GraphEditorComponent | null = null;
   
   constructor(private graphState: GraphStateService) {}
   
-  setComponentRef(component: any): void {
+  setComponentRef(component: GraphEditorComponent): void {
     this.componentRef = component;
   }
   
@@ -61,7 +62,7 @@ export class ConnectionMode implements GraphMode {
     this.selectedPins.clear();
   }
   
-  handleNodeClick(node: GraphNode, event: MouseEvent): boolean {
+  handleNodeClick(): boolean {
     // In connection mode, clicking a node clears connection selection
     this.clearConnectionSelections();
     return false; // Let other handlers process

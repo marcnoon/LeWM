@@ -1,11 +1,14 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-pin-name-dialog',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="pin-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
-      <div class="pin-dialog" (click)="$event.stopPropagation()">
+    <div class="pin-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick()" (keydown.enter)="onOverlayClick()" tabindex="0">
+      <div class="pin-dialog" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" tabindex="0">
         <div class="pin-dialog-header">
           <h4>Add Pin to {{ side }} side</h4>
         </div>
@@ -23,8 +26,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
           <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         </div>
         <div class="pin-dialog-footer">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="button" class="btn btn-ok" (click)="onOk()" [disabled]="!pinName.trim()">OK</button>
+          <button type="button" class="btn btn-cancel" (click)="onCancel()" (keydown.enter)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-ok" (click)="onOk()" (keydown.enter)="onOk()" [disabled]="!pinName.trim()">OK</button>
         </div>
       </div>
     </div>
@@ -141,7 +144,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class PinNameDialogComponent {
   @Input() isVisible = false;
-  @Input() side: string = '';
+  @Input() side = '';
   @Output() pinCreated = new EventEmitter<string>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -162,7 +165,7 @@ export class PinNameDialogComponent {
     this.reset();
   }
 
-  onOverlayClick(event: MouseEvent): void {
+  onOverlayClick(): void {
     this.onCancel();
   }
 

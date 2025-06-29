@@ -1,13 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { LayoutStateService } from './services/layout-state.service';
 import { FeatureGraphService } from './services/feature-graph.service';
 import { ModeManagerService } from './services/mode-manager.service';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { GraphEditorComponent } from './components/graph-editor/graph-editor.component';
+import { HandleComponent } from './components/handle/handle';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  standalone: false,
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    GraphEditorComponent,
+    HandleComponent
+  ],
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
@@ -22,11 +32,11 @@ export class AppComponent {
   // Observable for resize state
   isResizing$: Observable<boolean>;
 
-  constructor(
-    private layoutStateService: LayoutStateService,
-    private featureGraphService: FeatureGraphService,
-    private modeManagerService: ModeManagerService
-  ) {
+  private layoutStateService = inject(LayoutStateService);
+  private featureGraphService = inject(FeatureGraphService);
+  private modeManagerService = inject(ModeManagerService);
+
+  constructor() {
     this.isResizing$ = this.layoutStateService.isResizing$;
     
     // Demonstrate feature flag system is working
@@ -48,8 +58,8 @@ export class AppComponent {
     this.resizeStartHeight = this.headerHeight;
   }
 
-  onHeaderResize(deltaY: number): void {
-    const newHeight = this.resizeStartHeight + deltaY;
+  onHeaderResize(): void {
+    const newHeight = this.resizeStartHeight;
     
     // Clamp the height between min and max values
     this.headerHeight = Math.max(

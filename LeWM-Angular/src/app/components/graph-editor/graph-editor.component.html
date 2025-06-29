@@ -4,6 +4,7 @@
     <div class="node-buttons">
       <button *ngFor="let node of availableNodes" 
               (click)="addNode(node.type)"
+              (keydown.enter)="addNode(node.type)"
               class="node-btn">
         + {{ node.label }}
       </button>
@@ -14,7 +15,8 @@
       <div class="mode-controls">
         <button *ngFor="let mode of availableModes" 
                 (click)="switchMode(mode.name)"
-                [class.active]="currentMode?.name === mode.name"
+                (keydown.enter)="switchMode(mode.name)"
+                [class.active]="currentMode.name === mode.name"
                 class="mode-btn">
           {{ mode.displayName }}
         </button>
@@ -22,13 +24,13 @@
       
       <!-- Mode Buttons -->
       <div class="mode-buttons">
-        <button (click)="switchToNormalMode()" [class.active]="currentModeName === 'normal'">
+        <button (click)="switchToNormalMode()" (keydown.enter)="switchToNormalMode()" [class.active]="currentModeName === 'normal'">
           Normal (N)
         </button>
-        <button (click)="switchToPinEditMode()" [class.active]="currentModeName === 'pin-edit'">
+        <button (click)="switchToPinEditMode()" (keydown.enter)="switchToPinEditMode()" [class.active]="currentModeName === 'pin-edit'">
           Pin Edit (P)
         </button>
-        <button (click)="switchToFileMode()" [class.active]="currentModeName === 'file'">
+        <button (click)="switchToFileMode()" (keydown.enter)="switchToFileMode()" [class.active]="currentModeName === 'file'">
           File (F)
         </button>
       </div>
@@ -36,16 +38,16 @@
       <!-- File Mode Toolbar -->
       <div class="file-toolbar" *ngIf="currentModeName === 'file'">
         <h3>File Operations</h3>
-        <button (click)="saveGraph()" title="Save graph (Ctrl+S)">
+        <button (click)="saveGraph()" (keydown.enter)="saveGraph()" title="Save graph (Ctrl+S)">
           <i class="icon-save"></i> Save
         </button>
-        <button (click)="saveGraphAs()" title="Save as... (Ctrl+Shift+S)">
+        <button (click)="saveGraphAs()" (keydown.enter)="saveGraphAs()" title="Save as... (Ctrl+Shift+S)">
           <i class="icon-save-as"></i> Save As...
         </button>
-        <button (click)="openGraph()" title="Open graph (Ctrl+O)">
+        <button (click)="openGraph()" (keydown.enter)="openGraph()" title="Open graph (Ctrl+O)">
           <i class="icon-open"></i> Open...
         </button>
-        <button (click)="newGraph()" title="New graph (Ctrl+N)">
+        <button (click)="newGraph()" (keydown.enter)="newGraph()" title="New graph (Ctrl+N)">
           <i class="icon-new"></i> New
         </button>
         <div class="file-info" *ngIf="currentFileName">
@@ -54,11 +56,11 @@
       </div>
 
       <h4>Controls</h4>
-      <button (click)="clearConnections()" class="clear-btn">
+      <button (click)="clearConnections()" (keydown.enter)="clearConnections()" class="clear-btn">
         Clear Edges
       </button>
       <div class="info">
-        <p>Mode: {{ currentMode?.displayName || 'None' }}</p>
+        <p>Mode: {{ currentMode.displayName || 'None' }}</p>
         <p>Selected: {{ selectedNodes.size }}</p>
         <small *ngIf="currentMode?.name === 'normal'">Click to select • Ctrl+Click for multi-select • Delete to remove • P for Pin Mode</small>
         <small *ngIf="currentMode?.name === 'pin-edit'">Click node to select • Click edges to add pins • Click pins to select/delete • Ctrl+Click pins for multi-select • Esc to exit</small>
@@ -67,7 +69,7 @@
       <!-- Pin Edit Mode Actions -->
       <div *ngIf="currentMode?.name === 'pin-edit' && (modeManager.getActiveMode()?.selectedPins?.size || 0) > 0" class="controls">
         <h4>Pin Actions</h4>
-        <button (click)="deleteSelectedPins()" class="clear-btn">
+        <button (click)="deleteSelectedPins()" (keydown.enter)="deleteSelectedPins()" class="clear-btn">
           Delete Selected Pins ({{ modeManager.getActiveMode()?.selectedPins?.size || 0 }})
         </button>
       </div>
@@ -75,7 +77,7 @@
   </div>
   
   <!-- Resize handle -->
-  <app-handle (resize)="onResize($event)" (resizeStart)="onResizeStart()" (resizeEnd)="onResizeEnd()"></app-handle>
+  <app-handle (positionChange)="onResize($event)" (positionChangeStart)="onResizeStart()" (positionChangeEnd)="onResizeEnd()"></app-handle>
   
   <div class="canvas-container">
     <svg #svgCanvas 
@@ -84,7 +86,7 @@
          height="100%"
          (mousedown)="onSvgMouseDown($event)"
          (mousemove)="onMouseMove($event)"
-         (mouseup)="onMouseUp($event)">
+         (mouseup)="onMouseUp()">
       
       <!-- Grid pattern (can be moved to a shared SVG defs component later) -->
       <defs>
@@ -106,7 +108,7 @@
             style="cursor: pointer;"
             (mousedown)="onCentralReferenceMouseDown($event)"
             (mousemove)="onCentralReferenceMouseMove($event)"
-            (mouseleave)="onCentralReferenceMouseLeave($event)" />
+            (mouseleave)="onCentralReferenceMouseLeave()" />
       
       <!-- Connection Lines -->
       <g *ngFor="let edge of edges$ | async" class="connection-line">
@@ -335,7 +337,7 @@
 
   <!-- Pin Mode Toolbar (visible when in Pin Edit Mode) -->
   <app-pin-mode-toolbar
-    [visible]="currentMode?.name === 'pin-edit'">
+    [visible]="currentMode.name === 'pin-edit'">
   </app-pin-mode-toolbar>
 
   <!-- Pin Layout Editor (modal component) -->

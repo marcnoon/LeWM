@@ -1,3 +1,4 @@
+import { PinTextStyle, PinStyle } from '../interfaces/pin.interface';
 import { TestBed } from '@angular/core/testing';
 import { PinSyncService } from './pin-sync.service';
 import { PinStateService } from './pin-state.service';
@@ -56,8 +57,8 @@ describe('PinSyncService', () => {
       label: 'TEST_PIN',
       position: { x: 10, y: 20, side: 'left' as const, offset: 0 },
       pinType: 'bidirectional' as const,
-      textStyle: {} as any,
-      pinStyle: {} as any,
+      textStyle: {} as PinTextStyle,
+      pinStyle: {} as PinStyle,
       isInput: true,
       isOutput: true,
       pinNumber: '',

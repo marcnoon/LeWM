@@ -1,17 +1,19 @@
-import { Component, Input, Output, EventEmitter, HostListener, HostBinding, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, HostBinding, OnDestroy, inject } from '@angular/core';
 import { LayoutStateService } from '../../services/layout-state.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-handle',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './handle.html',
   styleUrl: './handle.scss'
 })
 export class HandleComponent implements OnDestroy {
   @Input() orientation: 'horizontal' | 'vertical' = 'vertical';
-  @Output() resize = new EventEmitter<number>();
-  @Output() resizeStart = new EventEmitter<void>();
-  @Output() resizeEnd = new EventEmitter<void>();
+  @Output() positionChange = new EventEmitter<number>();
+  @Output() positionChangeStart = new EventEmitter<void>();
+  @Output() positionChangeEnd = new EventEmitter<void>();
 
   @HostBinding('class.horizontal') get isHorizontal() { return this.orientation === 'horizontal'; }
   @HostBinding('class.vertical') get isVertical() { return this.orientation === 'vertical'; }
@@ -24,7 +26,7 @@ export class HandleComponent implements OnDestroy {
   private resizeMoveHandler = (event: MouseEvent) => this.onResizeMove(event);
   private resizeEndHandler = () => this.onResizeEnd();
 
-  constructor(private layoutStateService: LayoutStateService) {}
+  private layoutStateService = inject(LayoutStateService);
 
   @HostListener('mousedown', ['$event'])
   onResizeStart(event: MouseEvent): void {
@@ -39,7 +41,7 @@ export class HandleComponent implements OnDestroy {
     this.layoutStateService.setResizing(true);
     
     // Emit resize start event to parent
-    this.resizeStart.emit();
+    this.positionChangeStart.emit();
     
     // Add global listeners for mouse move and up
     document.addEventListener('mousemove', this.resizeMoveHandler);
@@ -55,7 +57,7 @@ export class HandleComponent implements OnDestroy {
       : event.clientX - this.resizeStartX;
     
     // Emit the delta to the parent component
-    this.resize.emit(delta);
+    this.positionChange.emit(delta);
   }
 
   private onResizeEnd(): void {
@@ -71,7 +73,7 @@ export class HandleComponent implements OnDestroy {
     document.removeEventListener('mouseup', this.resizeEndHandler);
     
     // Emit resize end event to parent
-    this.resizeEnd.emit();
+    this.positionChangeEnd.emit();
   }
 
   ngOnDestroy(): void {
