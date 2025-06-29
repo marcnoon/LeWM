@@ -1,11 +1,15 @@
-import { Component, OnInit, OnDestroy, OnChanges, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, Input, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { PinStateService } from '../../services/pin-state.service';
 import { Pin, PinSubMode } from '../../interfaces/pin.interface';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { PinLayoutEditorComponent } from '../pin-layout-editor/pin-layout-editor.component';
 
 @Component({
   selector: 'app-pin-mode-toolbar',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, PinLayoutEditorComponent],
   templateUrl: './pin-mode-toolbar.component.html',
   styleUrls: ['./pin-mode-toolbar.component.scss']
 })
@@ -20,7 +24,7 @@ export class PinModeToolbarComponent implements OnInit, OnDestroy, OnChanges {
 
   private subscriptions: Subscription[] = [];
 
-  constructor(private pinState: PinStateService) {}
+  private pinState = inject(PinStateService);
 
   ngOnInit(): void {
     // Subscribe to selected pins
@@ -78,8 +82,8 @@ export class PinModeToolbarComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  updateTextStyle(property: string, event: any): void {
-    const value = event.target.value;
+  updateTextStyle(property: string, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
     if (this.selectedPins.length > 0) {
       this.selectedPins.forEach(pin => {
         this.pinState.updatePinTextStyle(pin.id, { [property]: value });
@@ -87,8 +91,9 @@ export class PinModeToolbarComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  updatePinProperty(property: string, event: any): void {
-    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+  updatePinProperty(property: string, event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
     if (this.selectedPins.length > 0) {
       this.selectedPins.forEach(pin => {
         this.pinState.updatePin(pin.id, { [property]: value });
@@ -147,8 +152,8 @@ export class PinModeToolbarComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
 
-  updateGridSize(event: any): void {
-    this.gridSize = parseInt(event.target.value);
+  updateGridSize(event: Event): void {
+    this.gridSize = parseInt((event.target as HTMLInputElement).value);
   }
 
   snapToGrid(): void {

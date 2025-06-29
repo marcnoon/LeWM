@@ -1,3 +1,5 @@
+import { GraphNode } from '../models/graph-node.model';
+
 export interface PinPosition {
   x: number;
   y: number;
@@ -44,6 +46,7 @@ export interface Pin {
   pinSize: number;
   pinColor: string;
   showPinNumber: boolean;
+  node?: GraphNode;
 }
 
 export type PinSubMode = 'layout' | 'text' | 'properties';
@@ -78,3 +81,13 @@ export const DEFAULT_PIN_STYLE: PinStyle = {
   borderWidth: 1,
   borderColor: '#2E7D32'
 };
+
+export interface LegacyPin {
+  name: string;
+  x: number;
+  y: number;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  offset?: number;
+  type?: 'input' | 'output' | 'bidirectional' | 'power' | 'ground';
+  style?: PinStyle;
+}

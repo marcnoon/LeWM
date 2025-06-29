@@ -1,5 +1,5 @@
-import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
-import { Observable, Subscription, combineLatest } from 'rxjs';
+import { Component, ElementRef, HostListener, ViewChild, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, inject } from '@angular/core';
+import { Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { GraphNode } from '../../models/graph-node.model';
 import { GraphEdge } from '../../models/graph-edge.model';
@@ -14,6 +14,16 @@ import { NormalMode } from '../../modes/normal.mode';
 import { PinEditMode } from '../../modes/pin-edit.mode';
 import { ConnectionMode } from '../../modes/connection.mode';
 import { FileMode } from '../../modes/file.mode';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ConnectionPropertiesDialogComponent } from '../connection-properties-dialog/connection-properties-dialog.component';
+import { ConnectionBulkEditDialogComponent } from '../connection-bulk-edit-dialog/connection-bulk-edit-dialog.component';
+import { NodeNameDialogComponent } from '../node-name-dialog/node-name-dialog.component';
+import { NodeBatchEditDialogComponent } from '../node-batch-edit-dialog/node-batch-edit-dialog.component';
+import { PinNameDialogComponent } from '../pin-name-dialog/pin-name-dialog.component';
+import { PinLayoutEditorComponent } from '../pin-layout-editor/pin-layout-editor.component';
+import { HandleComponent } from '../handle/handle';
+import { PinModeToolbarComponent } from '../pin-mode-toolbar/pin-mode-toolbar.component';
 
 interface AvailableNode {
   type: string;
@@ -29,15 +39,34 @@ interface SelectionBox {
   endY: number;
 }
 
+// Define a type for the legacy pin structure found in graph-node.model.ts
+interface LegacyPin {
+  x: number;
+  y: number;
+  name: string;
+}
+
 @Component({
   selector: 'app-graph-editor',
-  standalone: false,
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ConnectionPropertiesDialogComponent,
+    ConnectionBulkEditDialogComponent,
+    NodeNameDialogComponent,
+    NodeBatchEditDialogComponent,
+    PinNameDialogComponent,
+    PinLayoutEditorComponent,
+    HandleComponent,
+    PinModeToolbarComponent
+  ],
   templateUrl: './graph-editor.component.html',
   styleUrl: './graph-editor.component.scss'
 })
 export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('svgCanvas', { static: true }) svgCanvas!: ElementRef<SVGElement>;
-  @ViewChild('pinDialog', { static: false }) pinDialog: any;
+  @ViewChild('pinDialog', { static: false }) pinDialog!: PinNameDialogComponent;
 
   // Expose the nodes and edges observables directly to the template
   nodes$!: Observable<GraphNode[]>;
@@ -69,7 +98,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   dragOffset = { x: 0, y: 0 };
   selectionBox: SelectionBox | null = null;
   isCtrlPressed = false;
-  initialPositions: { [key: string]: { x: number, y: number } } = {};
+  initialPositions: Record<string, { x: number, y: number }> = {};
   
   // Connection creation state
   connectingFrom: { nodeId: string; pinName: string } | null = null;
@@ -81,7 +110,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   private centralReferenceArea = { x: 0, y: 0, width: 0, height: 0 };
   
   // Mode system
-  public currentMode: GraphMode;
+  public currentMode!: GraphMode;
   availableModes: GraphMode[] = [];
   private modeSubscription?: Subscription;
   
@@ -117,17 +146,16 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
 
   Math = Math;
 
-  constructor(
-    private graphState: GraphStateService,
-    public modeManager: ModeManagerService,
-    private pinState: PinStateService,
-    private pinSync: PinSyncService,
-    private fileService: FileService,
-    private cdr: ChangeDetectorRef
-  ) {
+  private graphState = inject(GraphStateService);
+  public modeManager = inject(ModeManagerService);
+  private pinState = inject(PinStateService);
+  private pinSync = inject(PinSyncService);
+  private fileService = inject(FileService);
+  private cdr = inject(ChangeDetectorRef);
+
+  constructor() {
     // The mode manager will handle mode creation and management
     // Initialize with a null mode - will be set during ngOnInit
-    this.currentMode = null as any;
   }
 
   ngOnInit(): void {
@@ -491,7 +519,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  onMouseUp(event?: MouseEvent): void {
+  onMouseUp(): void {
     this.dragging = false;
     this.selectionBox = null;
     this.initialPositions = {};
@@ -648,7 +676,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     // Calculate position based on side and existing pins
     const position = this.calculateOptimalPinPosition(updatedNode, side);
     
-    const newPin = {
+    const newPin: LegacyPin = {
       x: Math.round(position.x),
       y: Math.round(position.y),
       name: pinName
@@ -667,7 +695,6 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   private calculateOptimalPinPosition(node: GraphNode, side: string): { x: number; y: number } {
     const existingPins = node.pins || [];
-    const sideId = ['top', 'right', 'bottom', 'left'].indexOf(side);
     
     // Count pins on this side (simplified - assumes pins are distributed evenly)
     const pinsOnSide = Math.floor(existingPins.length / 4) + 1;
@@ -727,7 +754,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   showConnectionBulkEditDialog(connectionIds: string[]): void {
     const connections = connectionIds.map(id => 
       this.currentEdges.find(e => e.id === id)
-    ).filter(conn => conn !== undefined) as GraphEdge[];
+    ).filter((conn): conn is GraphEdge => conn !== undefined);
     
     if (connections.length > 0) {
       this.selectedConnectionsForBulkEdit = connections;
@@ -811,7 +838,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Bridge method: Handle legacy pin clicks and sync to enhanced system
-  onPinClick(node: GraphNode, pin: any, event: MouseEvent): void {
+  onPinClick(node: GraphNode, pin: LegacyPin, event: MouseEvent): void {
     if (this.currentMode?.name !== 'pin-edit') return;
     
     const pinId = `${node.id}.${pin.name}`;
@@ -828,7 +855,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Helper method to sync a legacy pin to the enhanced system
-  private syncLegacyPinToEnhanced(nodeId: string, legacyPin: any): void {
+  private syncLegacyPinToEnhanced(nodeId: string, legacyPin: LegacyPin): void {
     this.pinSync.syncLegacyToEnhanced(nodeId, legacyPin);
   }
   
@@ -960,9 +987,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   // Check if a pin is selected (for styling)
   isPinSelected(pin: Pin): boolean {
-    const currentState = this.pinState.modeState$.pipe(map(state => state));
     // This is a simplified check - in practice, you might want to use a more reactive approach
-    return false; // Will be handled by the pin selection logic
+    return pin.isSelected || false;
   }
 
   // Bridge method: Check if a legacy pin is selected (for template styling)
@@ -1025,9 +1051,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Pin hover methods for better targeting
-  onPinHover(node: GraphNode, pin: any, isHovering: boolean): void {
+  onPinHover(node: GraphNode, pinName: string, isHovering: boolean): void {
     if (this.currentMode?.name === 'pin-edit') {
-      this.hoveredPin = isHovering ? { nodeId: node.id, pinName: pin.name } : null;
+      this.hoveredPin = isHovering ? { nodeId: node.id, pinName: pinName } : null;
     }
   }
 
@@ -1063,9 +1089,8 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     const { nodeId, pinName } = this.findClosestPinToMouse(event);
     if (nodeId && pinName) {
       const node = this.currentNodes.find(n => n.id === nodeId);
-      const pin = node?.pins?.find(p => p.name === pinName);
       
-      if (node && pin) {
+      if (node) {
         this.onPinMouseDown(event, nodeId, pinName);
       }
     }
@@ -1090,31 +1115,31 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       
       if (previousHover) {
         const prevNode = this.currentNodes.find(n => n.id === previousHover.nodeId);
-        const prevPin = prevNode?.pins?.find(p => p.name === previousHover.pinName);
-        if (prevNode && prevPin) {
-          this.onPinHover(prevNode, prevPin, false);
+        const prevPinName = previousHover.pinName;
+        if (prevNode && prevPinName) {
+          this.onPinHover(prevNode, prevPinName, false);
         }
       }
       
       if (this.hoveredPin) {
         const currentNode = this.currentNodes.find(n => n.id === this.hoveredPin!.nodeId);
-        const currentPin = currentNode?.pins?.find(p => p.name === this.hoveredPin!.pinName);
-        if (currentNode && currentPin) {
-          this.onPinHover(currentNode, currentPin, true);
+        const currentPinName = this.hoveredPin!.pinName;
+        if (currentNode && currentPinName) {
+          this.onPinHover(currentNode, currentPinName, true);
         }
       }
     }
   }
 
-  onCentralReferenceMouseLeave(event: MouseEvent): void {
+  onCentralReferenceMouseLeave(): void {
     if (this.currentMode?.name !== 'pin-edit' && this.currentMode?.name !== 'connection') return;
     
     // Clear hover state when leaving the central reference area
     if (this.hoveredPin) {
       const node = this.currentNodes.find(n => n.id === this.hoveredPin!.nodeId);
-      const pin = node?.pins?.find(p => p.name === this.hoveredPin!.pinName);
-      if (node && pin) {
-        this.onPinHover(node, pin, false);
+      const pinName = this.hoveredPin!.pinName;
+      if (node && pinName) {
+        this.onPinHover(node, pinName, false);
       }
       this.hoveredPin = null;
     }
@@ -1148,8 +1173,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     });
     
     if (closestPin !== null) {
-      const pin = closestPin as { nodeId: string; pinName: string; distance: number };
-      return { nodeId: pin.nodeId, pinName: pin.pinName };
+      return { nodeId: (closestPin as any).nodeId, pinName: (closestPin as any).pinName };
     }
     
     return { nodeId: null, pinName: null };
@@ -1200,28 +1224,28 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // File operations
   saveGraph(): void {
-    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as FileMode;
     if (fileMode) {
       fileMode.save();
     }
   }
 
   saveGraphAs(): void {
-    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as FileMode;
     if (fileMode) {
       fileMode.saveAs();
     }
   }
 
   openGraph(): void {
-    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as FileMode;
     if (fileMode) {
       fileMode.open();
     }
   }
 
   newGraph(): void {
-    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as any;
+    const fileMode = this.modeManager.getAvailableModes().find(mode => mode.name === 'file') as FileMode;
     if (fileMode) {
       fileMode.newGraph();
     }
@@ -1253,5 +1277,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onResizeEnd(): void {
     // Handle can be implemented if needed for cleanup
+  }
+
+  renderActiveOverlay(nativeElement: SVGElement) {
+    this.modeManager.renderActiveOverlay(nativeElement);
   }
 }

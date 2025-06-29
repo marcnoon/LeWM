@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 import { GraphMode } from '../interfaces/graph-mode.interface';
 import { GraphNode } from '../models/graph-node.model';
 import { PinStateService } from './pin-state.service';
@@ -14,10 +14,8 @@ export class ModeManagerService {
   
   readonly activeMode$ = this._activeMode.asObservable();
   
-  constructor(
-    private pinState: PinStateService,
-    private featureGraphService: FeatureGraphService
-  ) {}
+  private pinState = inject(PinStateService);
+  private featureGraphService = inject(FeatureGraphService);
   
   /**
    * Registers a mode with the manager

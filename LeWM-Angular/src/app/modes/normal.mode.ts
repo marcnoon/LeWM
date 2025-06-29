@@ -1,12 +1,11 @@
 import { GraphMode } from '../interfaces/graph-mode.interface';
-import { GraphNode } from '../models/graph-node.model';
 import { GraphStateService } from '../services/graph-state.service';
 
 export class NormalMode implements GraphMode {
   name = 'normal';
   displayName = 'Normal';
   isActive = false;
-  selectedPins: Set<string> = new Set(); // Normal mode doesn't select pins
+  selectedPins = new Set<string>(); // Normal mode doesn't select pins
   
   constructor(private graphState: GraphStateService) {}
   
@@ -20,25 +19,25 @@ export class NormalMode implements GraphMode {
     this.selectedPins.clear();
   }
   
-  handleNodeClick(node: GraphNode, event: MouseEvent): boolean {
+  handleNodeClick(): boolean {
     // In normal mode, this handles node selection and dragging
     // Return false to let the component handle it with existing logic
     return false;
   }
   
-  handlePinClick(node: GraphNode, pin: { x: number; y: number; name: string }, event: MouseEvent): boolean {
+  handlePinClick(): boolean {
     // In normal mode, this handles connection creation
     // Return false to let the component handle it with existing logic
     return false;
   }
   
-  handleCanvasClick(event: MouseEvent): boolean {
+  handleCanvasClick(): boolean {
     // In normal mode, this handles selection clearing and selection box
     // Return false to let the component handle it with existing logic
     return false;
   }
   
-  handleMouseMove(event: MouseEvent): boolean {
+  handleMouseMove(): boolean {
     // Normal mode doesn't handle mouse move specially
     return false;
   }
@@ -59,7 +58,7 @@ export class NormalMode implements GraphMode {
     return false;
   }
   
-  renderOverlay(canvas: SVGElement): void {
+  renderOverlay(): void {
     // Normal mode doesn't render any overlay
   }
   

@@ -20,7 +20,7 @@ export interface UnitDefinition {
 
 export interface ConnectionValue {
   key: string; // Always a string identifier
-  value: any; // Can be any type
+  value: string | number | boolean; // Can be any type
   valueType: ValueType;
   unitType?: UnitType;
   unitSymbol?: string; // e.g., "V", "A", "Ω", "m/s"

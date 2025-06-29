@@ -1,8 +1,12 @@
+import { GraphEditorComponent } from '../components/graph-editor/graph-editor.component';
 import { GraphMode } from '../interfaces/graph-mode.interface';
 import { GraphStateService } from '../services/graph-state.service';
 import { PinStateService } from '../services/pin-state.service';
 import { FileService } from '../services/file.service';
-import { DEFAULT_PIN_TEXT_STYLE } from '../interfaces/pin.interface';
+import { DEFAULT_PIN_TEXT_STYLE, LegacyPin, Pin } from '../interfaces/pin.interface';
+import { GraphNode } from '../models/graph-node.model';
+import { GraphEdge, ConnectionType } from '../models/graph-edge.model';
+
 
 export interface GraphData {
   version: string;
@@ -12,18 +16,18 @@ export interface GraphData {
     name: string;
     description?: string;
   };
-  nodes: any[];
-  pins: any[];
-  connections: any[];
+  nodes: GraphNode[];
+  pins: Pin[];
+  connections: GraphEdge[];
 }
 
 export class FileMode implements GraphMode {
   name = 'file';
   displayName = 'File';
   isActive = false;
-  selectedPins: Set<string> = new Set();
+  selectedPins = new Set<string>();
   
-  private componentRef: any = null;
+  private componentRef: GraphEditorComponent | null = null;
 
   constructor(
     private graphState: GraphStateService,
@@ -31,7 +35,7 @@ export class FileMode implements GraphMode {
     private fileService: FileService
   ) {}
 
-  setComponentRef(component: any): void {
+  setComponentRef(component: GraphEditorComponent): void {
     this.componentRef = component;
   }
 
@@ -45,20 +49,20 @@ export class FileMode implements GraphMode {
     // Hide file toolbar if implemented
   }
 
-  handleNodeClick(node: any, event: MouseEvent): boolean {
+  handleNodeClick(): boolean {
     // In file mode, clicking nodes selects them for export
     return false;
   }
 
-  handlePinClick(node: any, pin: any, event: MouseEvent): boolean {
+  handlePinClick(): boolean {
     return false;
   }
 
-  handleCanvasClick(event: MouseEvent): boolean {
+  handleCanvasClick(): boolean {
     return false;
   }
 
-  handleMouseMove(event: MouseEvent): boolean {
+  handleMouseMove(): boolean {
     return false;
   }
 
@@ -86,7 +90,7 @@ export class FileMode implements GraphMode {
     return false;
   }
 
-  renderOverlay(canvas: SVGElement): void {
+  renderOverlay(): void {
     // No overlay needed for file mode
   }
 
@@ -142,33 +146,25 @@ export class FileMode implements GraphMode {
         description: ''
       },
       nodes: nodes.map(node => ({
-        id: node.id,
-        type: node.type || 'basic',
-        label: node.label,
-        position: { x: node.x, y: node.y },
-        size: { width: node.width, height: node.height },
+        ...node,
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height,
         style: {}
       })),
       pins: pins.map(pin => ({
-        id: pin.id,
-        nodeId: pin.nodeId,
-        name: pin.name || pin.label,
-        position: pin.position,
-        type: pin.pinType || 'input',
-        style: pin.pinStyle || {}
+        ...pin,
+        label: pin.label,
+        pinType: pin.pinType,
+        pinStyle: pin.pinStyle
       })),
-      connections: connections.map((conn: any) => ({
-        id: conn.id,
-        source: {
-          nodeId: conn.source.nodeId,
-          pinId: conn.source.pinId
-        },
-        target: {
-          nodeId: conn.target.nodeId,
-          pinId: conn.target.pinId
-        },
-        type: conn.type || 'bezier',
-        style: conn.style || {}
+      connections: connections.map((conn: GraphEdge) => ({
+        ...conn,
+        from: conn.from,
+        to: conn.to,
+        type: 'bezier' as ConnectionType,
+        style: {}
       }))
     };
   }
@@ -183,13 +179,13 @@ export class FileMode implements GraphMode {
     // Import in order: nodes -> pins -> connections
     
     // 1. Import nodes
-    data.nodes.forEach(node => {
+    data.nodes.forEach((node: GraphNode) => {
       this.graphState.addNode({
         id: node.id,
-        x: node.position.x,
-        y: node.position.y,
-        width: node.size.width,
-        height: node.size.height,
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height,
         label: node.label,
         type: node.type,
         pins: [] // Pins will be added separately
@@ -197,7 +193,7 @@ export class FileMode implements GraphMode {
     });
 
     // 2. Import pins
-    data.pins.forEach(pin => {
+    data.pins.forEach((pin: Pin) => {
       // Add pin to node
       const nodes = this.graphState.getNodes();
       const node = nodes.find(n => n.id === pin.nodeId);
@@ -205,7 +201,7 @@ export class FileMode implements GraphMode {
         const updatedNode = {
           ...node,
           pins: [...(node.pins || []), {
-            name: pin.name,
+            name: pin.label,
             x: pin.position.x || 0,
             y: pin.position.y || 0,
             side: pin.position.side,
@@ -219,13 +215,13 @@ export class FileMode implements GraphMode {
           ...pin,
           id: pin.id,
           nodeId: pin.nodeId,
-          label: pin.name,
+          label: pin.label,
           position: pin.position,
-          pinType: pin.type,
-          pinStyle: pin.style,
+          pinType: pin.pinType,
+          pinStyle: pin.pinStyle,
           textStyle: { ...DEFAULT_PIN_TEXT_STYLE },
-          isInput: pin.type === 'input' || pin.type === 'bidirectional',
-          isOutput: pin.type === 'output' || pin.type === 'bidirectional',
+          isInput: pin.pinType === 'input' || pin.pinType === 'bidirectional',
+          isOutput: pin.pinType === 'output' || pin.pinType === 'bidirectional',
           pinNumber: '',
           signalName: '',
           pinSize: 4,
@@ -236,41 +232,52 @@ export class FileMode implements GraphMode {
     });
 
     // 3. Import connections
-    data.connections.forEach(conn => {
+    data.connections.forEach((conn: GraphEdge) => {
       // Use GraphStateService to add edge
-      const sourcePinName = conn.source.pinId.split('.')[1];
-      const targetPinName = conn.target.pinId.split('.')[1];
-      
       this.graphState.addEdge({
         id: conn.id,
-        from: `${conn.source.nodeId}.${sourcePinName}`,
-        to: `${conn.target.nodeId}.${targetPinName}`
+        from: conn.from,
+        to: conn.to
       });
     });
 
     console.log(`Imported graph: ${data.nodes.length} nodes, ${data.pins.length} pins, ${data.connections.length} connections`);
   }
 
-  private getAllPins(): any[] {
+  private getAllPins(): Pin[] {
     // Get pins from nodes in GraphStateService
     const nodes = this.graphState.getNodes();
-    const pins: any[] = [];
+    const pins: Pin[] = [];
 
     nodes.forEach(node => {
       if (node.pins) {
-        node.pins.forEach((pin: any) => {
+        node.pins.forEach((pin: LegacyPin) => {
           pins.push({
             id: `${node.id}.${pin.name}`,
             nodeId: node.id,
-            name: pin.name,
+            label: pin.name,
             position: {
-              side: pin.side || 'left',
-              offset: pin.offset || 0.5,
+              side: 'left',
+              offset: 0.5,
               x: pin.x,
               y: pin.y
             },
-            pinType: pin.type || 'input',
-            pinStyle: pin.style || {}
+            pinType: 'input',
+            pinStyle: {
+              size: 8,
+              color: '#000000',
+              shape: 'circle',
+              borderWidth: 1,
+              borderColor: '#000000'
+            },
+            textStyle: DEFAULT_PIN_TEXT_STYLE,
+            isInput: true,
+            isOutput: false,
+            pinNumber: '',
+            signalName: '',
+            pinSize: 4,
+            pinColor: '#000000',
+            showPinNumber: false
           });
         });
       }
@@ -279,25 +286,17 @@ export class FileMode implements GraphMode {
     return pins;
   }
 
-  private getConnections(): any[] {
+  private getConnections(): GraphEdge[] {
     const edges = this.graphState.getEdges();
     return edges.map(edge => {
       // Parse the from and to strings to extract node and pin info
-      const [sourceNodeId, sourcePinName] = edge.from.split('.');
-      const [targetNodeId, targetPinName] = edge.to.split('.');
       
       return {
+        ...edge,
         id: edge.id,
-        source: {
-          nodeId: sourceNodeId,
-          pinId: edge.from
-        },
-        target: {
-          nodeId: targetNodeId,
-          pinId: edge.to
-        },
-        type: 'bezier',
-        style: {}
+        from: edge.from,
+        to: edge.to,
+        type: 'bezier' as ConnectionType
       };
     });
   }

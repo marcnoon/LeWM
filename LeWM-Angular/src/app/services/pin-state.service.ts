@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Pin, PinModeState, PinSubMode, PinPosition, PinTextStyle, PinStyle, DEFAULT_PIN_TEXT_STYLE, DEFAULT_PIN_STYLE } from '../interfaces/pin.interface';
+import { GraphStateService } from './graph-state.service';
+import { LegacyPin } from '../interfaces/pin.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +39,7 @@ export class PinStateService {
     })
   );
 
-  addPin(nodeId: string, position: PinPosition, label: string = ''): string {
+  addPin(nodeId: string, position: PinPosition, label = ''): string {
     const id = `pin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const pin: Pin = {
       id,
@@ -117,7 +119,7 @@ export class PinStateService {
     }
   }
 
-  selectPin(pinId: string, multiSelect: boolean = false): void {
+  selectPin(pinId: string, multiSelect = false): void {
     console.log('selectPin called with:', pinId, 'multiSelect:', multiSelect);
     console.log('Current pins in store:', Array.from(this.pinsSubject.value.keys()));
     
@@ -280,7 +282,7 @@ export class PinStateService {
   }
 
   // Bridge method: Import a legacy pin to the enhanced system
-  importLegacyPin(nodeId: string, legacyPin: any): void {
+  importLegacyPin(nodeId: string, legacyPin: LegacyPin): void {
     const pinId = `${nodeId}.${legacyPin.name}`;
     
     // Check if pin already exists
@@ -305,13 +307,12 @@ export class PinStateService {
       isInput: true,
       isOutput: true,
       isSelected: false,
-      pinType: legacyPin.type || 'bidirectional',
-      pinNumber: legacyPin.pinNumber || '',
-      signalName: legacyPin.signalName || legacyPin.name,
-      pinSize: legacyPin.pinSize || 8,
-      pinColor: legacyPin.pinColor || '#4CAF50',
-      showPinNumber: legacyPin.showPinNumber || false,
-      dataType: legacyPin.dataType
+      pinType: 'bidirectional',
+      pinNumber: '',
+      signalName: legacyPin.name,
+      pinSize: 8,
+      pinColor: '#4CAF50',
+      showPinNumber: false,
     };
 
     console.log(`Importing legacy pin ${pinId} to enhanced system`);
@@ -319,7 +320,7 @@ export class PinStateService {
   }
 
   // Helper method to detect which side of the node a pin is on
-  private detectPinSide(pin: any): 'top' | 'right' | 'bottom' | 'left' {
+  private detectPinSide(pin: LegacyPin): 'top' | 'right' | 'bottom' | 'left' {
     // Simple detection based on position - this could be made more sophisticated
     const x = pin.x || 0;
     const y = pin.y || 0;
@@ -429,7 +430,7 @@ export class PinStateService {
    * Validates that pin data is consistent between PinStateService and legacy system
    * @param graphStateService Reference to GraphStateService for validation
    */
-  validatePinConsistency(graphStateService: any): { inconsistencies: string[]; isValid: boolean } {
+  validatePinConsistency(graphStateService: GraphStateService): { inconsistencies: string[]; isValid: boolean } {
     const inconsistencies: string[] = [];
     const currentPins = this.pinsSubject.value;
     const nodes = graphStateService.getNodes();
@@ -439,10 +440,10 @@ export class PinStateService {
     // Check each pin in PinStateService against legacy system
     Array.from(currentPins.values()).forEach(pin => {
       const [nodeId, pinName] = pin.id.split('.');
-      const node = nodes.find((n: any) => n.id === nodeId);
+      const node = nodes.find((n) => n.id === nodeId);
       
       if (node && node.pins) {
-        const legacyPin = node.pins.find((p: any) => p.name === pinName);
+        const legacyPin = node.pins.find((p) => p.name === pinName);
         if (legacyPin) {
           // Check position consistency
           if (legacyPin.x !== pin.position.x || legacyPin.y !== pin.position.y) {
@@ -474,7 +475,7 @@ export class PinStateService {
   private saveEnhancedPinProperties(): void {
     try {
       const currentPins = this.pinsSubject.value;
-      const enhancedPinData: { [pinId: string]: any } = {};
+      const enhancedPinData: Record<string, Partial<Pin>> = {};
       
       // Extract enhanced properties for each pin
       Array.from(currentPins.values()).forEach(pin => {
@@ -503,7 +504,7 @@ export class PinStateService {
   /**
    * Load enhanced pin properties from localStorage
    */
-  private loadEnhancedPinProperties(): { [pinId: string]: any } {
+  private loadEnhancedPinProperties(): Record<string, Partial<Pin>> {
     try {
       const saved = localStorage.getItem('lewm-enhanced-pin-properties');
       if (saved) {

@@ -1,16 +1,30 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { PinStateService } from './pin-state.service';
 import { GraphStateService } from './graph-state.service';
 import { Pin, DEFAULT_PIN_TEXT_STYLE, DEFAULT_PIN_STYLE } from '../interfaces/pin.interface';
+
+// Define a type for the legacy pin structure
+interface LegacyPin {
+  name: string;
+  x: number;
+  y: number;
+  type?: string;
+  pinNumber?: string;
+  signalName?: string;
+  pinSize?: number;
+  pinColor?: string;
+  showPinNumber?: boolean;
+  dataType?: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class PinSyncService {
-  constructor(
-    private pinStateService: PinStateService,
-    private graphStateService: GraphStateService
-  ) {
+  private pinStateService = inject(PinStateService);
+  private graphStateService = inject(GraphStateService);
+
+  constructor() {
     this.initializeSync();
   }
 
@@ -27,7 +41,7 @@ export class PinSyncService {
     });
   }
 
-  syncLegacyToEnhanced(nodeId: string, legacyPin: any): void {
+  syncLegacyToEnhanced(nodeId: string, legacyPin: LegacyPin): void {
     const pinId = `${nodeId}.${legacyPin.name}`;
     
     // Check if already exists in enhanced system
@@ -56,7 +70,7 @@ export class PinSyncService {
         side: this.detectSide(nodeId, legacyPin),
         offset: 0
       },
-      pinType: legacyPin.type || 'bidirectional',
+      pinType: (legacyPin.type as Pin['pinType']) || 'bidirectional',
       textStyle: { ...DEFAULT_PIN_TEXT_STYLE },
       pinStyle: { ...DEFAULT_PIN_STYLE },
       isInput: true,
@@ -73,7 +87,7 @@ export class PinSyncService {
     this.pinStateService.importPin(enhancedPin);
   }
 
-  private detectSide(nodeId: string, pin: any): 'top' | 'right' | 'bottom' | 'left' {
+  private detectSide(nodeId: string, pin: { x: number, y: number }): 'top' | 'right' | 'bottom' | 'left' {
     const node = this.graphStateService.getNodes().find(n => n.id === nodeId);
     if (!node) return 'left';
 

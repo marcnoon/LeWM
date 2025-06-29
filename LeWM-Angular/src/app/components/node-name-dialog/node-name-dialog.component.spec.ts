@@ -133,7 +133,7 @@ describe('NodeNameDialogComponent', () => {
       focus: jasmine.createSpy('focus'),
       select: jasmine.createSpy('select')
     };
-    spyOn(document, 'getElementById').and.returnValue(mockInput as any);
+    spyOn(document, 'getElementById').and.returnValue(mockInput as unknown as HTMLElement);
 
     // Simulate input change when dialog is visible
     component.currentName = 'Node A';
@@ -176,7 +176,7 @@ describe('NodeNameDialogComponent', () => {
       focus: jasmine.createSpy('focus'),
       select: jasmine.createSpy('select')
     };
-    spyOn(document, 'getElementById').and.returnValue(mockInput as any);
+    spyOn(document, 'getElementById').and.returnValue(mockInput as unknown as HTMLElement);
 
     component.show('Test Node', 'Test Value', 'Test Unit');
     

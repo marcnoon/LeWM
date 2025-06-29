@@ -1,16 +1,19 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { GraphEdge, ConnectionDirection, ConnectionType } from '../../models/graph-edge.model';
+import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
+import { GraphEdge } from '../../models/graph-edge.model';
 import { ConnectionValue, ValueType, UnitType, UNIT_DEFINITIONS } from '../../models/connection-value.model';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-connection-properties-dialog',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="connection-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
-      <div class="connection-dialog" (click)="$event.stopPropagation()">
+    <div class="connection-dialog-overlay" *ngIf="isVisible" (click)="onOverlayClick()" (keydown.enter)="onOverlayClick()" tabindex="0">
+      <div class="connection-dialog" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" tabindex="0">
         <div class="connection-dialog-header">
           <h4>Connection Properties</h4>
-          <button class="close-btn" (click)="onCancel()">&times;</button>
+          <button class="close-btn" (click)="onCancel()" (keydown.enter)="onCancel()">&times;</button>
         </div>
         
         <div class="connection-dialog-body">
@@ -103,26 +106,28 @@ import { ConnectionValue, ValueType, UnitType, UNIT_DEFINITIONS } from '../../mo
               <div *ngFor="let value of connectionData.values; let i = index" class="value-item">
                 <div class="value-row">
                   <div class="form-group">
-                    <label>Key:</label>
+                    <label [for]="'key-' + i">Key:</label>
                     <input 
-                      type="text" 
+                      type="text"
+                      [id]="'key-' + i"
                       [(ngModel)]="value.key" 
                       placeholder="Property name..."
                       class="form-control">
                   </div>
                   
                   <div class="form-group">
-                    <label>Value:</label>
+                    <label [for]="'value-' + i">Value:</label>
                     <input 
                       [type]="getInputType(value.valueType)"
+                      [id]="'value-' + i"
                       [(ngModel)]="value.value" 
                       placeholder="Value..."
                       class="form-control">
                   </div>
                   
                   <div class="form-group">
-                    <label>Type:</label>
-                    <select [(ngModel)]="value.valueType" class="form-control" (change)="onValueTypeChange(value)">
+                    <label [for]="'value-type-' + i">Type:</label>
+                    <select [id]="'value-type-' + i" [(ngModel)]="value.valueType" class="form-control" (change)="onValueTypeChange(value)">
                       <option value="string">String</option>
                       <option value="number">Number</option>
                       <option value="decimal">Decimal</option>
@@ -133,8 +138,8 @@ import { ConnectionValue, ValueType, UnitType, UNIT_DEFINITIONS } from '../../mo
                   </div>
                   
                   <div class="form-group" *ngIf="value.valueType !== 'string' && value.valueType !== 'boolean'">
-                    <label>Unit Type:</label>
-                    <select [(ngModel)]="value.unitType" class="form-control" (change)="onUnitTypeChange(value)">
+                    <label [for]="'unit-type-' + i">Unit Type:</label>
+                    <select [id]="'unit-type-' + i" [(ngModel)]="value.unitType" class="form-control" (change)="onUnitTypeChange(value)">
                       <option value="none">No Unit</option>
                       <option value="voltage">Voltage</option>
                       <option value="current">Current</option>
@@ -152,32 +157,34 @@ import { ConnectionValue, ValueType, UnitType, UNIT_DEFINITIONS } from '../../mo
                   </div>
                   
                   <div class="form-group" *ngIf="value.unitType && value.unitType !== 'none'">
-                    <label>Unit:</label>
-                    <select [(ngModel)]="value.unitSymbol" class="form-control">
+                    <label [for]="'unit-symbol-' + i">Unit:</label>
+                    <select [id]="'unit-symbol-' + i" [(ngModel)]="value.unitSymbol" class="form-control">
                       <option *ngFor="let unit of getUnitsForType(value.unitType)" [value]="unit.symbol">
                         {{ unit.symbol }} ({{ unit.name }})
                       </option>
                     </select>
                   </div>
                   
-                  <button type="button" class="remove-value-btn" (click)="removeValue(i)" title="Remove value">
+                  <button type="button" class="remove-value-btn" (click)="removeValue(i)" (keydown.enter)="removeValue(i)" title="Remove value">
                     &times;
                   </button>
                 </div>
                 
                 <div class="form-group" *ngIf="value.valueType === 'calculated'">
-                  <label>Formula:</label>
+                  <label [for]="'formula-' + i">Formula:</label>
                   <input 
-                    type="text" 
+                    type="text"
+                    [id]="'formula-' + i"
                     [(ngModel)]="value.calculationFormula" 
                     placeholder="e.g., voltage * current"
                     class="form-control">
                 </div>
                 
                 <div class="form-group" *ngIf="value.description !== undefined">
-                  <label>Description:</label>
+                  <label [for]="'description-' + i">Description:</label>
                   <input 
-                    type="text" 
+                    type="text"
+                    [id]="'description-' + i"
                     [(ngModel)]="value.description" 
                     placeholder="Description..."
                     class="form-control">
@@ -185,15 +192,15 @@ import { ConnectionValue, ValueType, UnitType, UNIT_DEFINITIONS } from '../../mo
               </div>
             </div>
             
-            <button type="button" class="add-value-btn" (click)="addValue()">
+            <button type="button" class="add-value-btn" (click)="addValue()" (keydown.enter)="addValue()">
               + Add Value
             </button>
           </div>
         </div>
         
         <div class="connection-dialog-footer">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="button" class="btn btn-ok" (click)="onSave()">Save Changes</button>
+          <button type="button" class="btn btn-cancel" (click)="onCancel()" (keydown.enter)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-ok" (click)="onSave()" (keydown.enter)="onSave()">Save Changes</button>
         </div>
       </div>
     </div>
@@ -407,7 +414,7 @@ import { ConnectionValue, ValueType, UnitType, UNIT_DEFINITIONS } from '../../mo
     }
   `]
 })
-export class ConnectionPropertiesDialogComponent {
+export class ConnectionPropertiesDialogComponent implements OnChanges {
   @Input() isVisible = false;
   @Input() connection: GraphEdge | null = null;
   @Output() connectionUpdated = new EventEmitter<GraphEdge>();
@@ -457,7 +464,7 @@ export class ConnectionPropertiesDialogComponent {
     this.reset();
   }
 
-  onOverlayClick(event: MouseEvent): void {
+  onOverlayClick(): void {
     this.onCancel();
   }
 
@@ -540,10 +547,6 @@ export class ConnectionPropertiesDialogComponent {
     if (!unitType || unitType === 'none') return [];
     return UNIT_DEFINITIONS[unitType] || [];
   }
-
-  show(connection: GraphEdge): void {
-    this.connection = connection;
-    this.isVisible = true;
-    this.ngOnChanges();
-  }
 }
+
+  

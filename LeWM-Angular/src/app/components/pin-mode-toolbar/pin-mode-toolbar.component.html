@@ -5,19 +5,22 @@
       <button 
         class="mode-btn" 
         [class.active]="subMode === 'layout'"
-        (click)="setSubMode('layout')">
+        (click)="setSubMode('layout')"
+        (keydown.enter)="setSubMode('layout')">
         Layout (L)
       </button>
       <button 
         class="mode-btn" 
         [class.active]="subMode === 'text'"
-        (click)="setSubMode('text')">
+        (click)="setSubMode('text')"
+        (keydown.enter)="setSubMode('text')">
         Text (T)
       </button>
       <button 
         class="mode-btn" 
         [class.active]="subMode === 'properties'"
-        (click)="setSubMode('properties')">
+        (click)="setSubMode('properties')"
+        (keydown.enter)="setSubMode('properties')">
         Properties (R)
       </button>
     </div>
@@ -25,15 +28,17 @@
 
   <div class="toolbar-section">
     <h4>Options</h4>
-    <label>
+    <label for="gridSnapCheckbox">
       <input 
+        id="gridSnapCheckbox"
         type="checkbox" 
         [checked]="gridSnap"
         (change)="toggleGridSnap()" />
       Grid Snap
     </label>
-    <label>
+    <label for="showGuidesCheckbox">
       <input 
+        id="showGuidesCheckbox"
         type="checkbox" 
         [checked]="showGuides"
         (change)="toggleGuides()" />
@@ -46,24 +51,26 @@
     <div class="selection-info">
       <small>Press Enter to open Layout Editor</small>
     </div>
-    <button class="layout-editor-btn" (click)="openLayoutEditor()">
+    <button class="layout-editor-btn" (click)="openLayoutEditor()" (keydown.enter)="openLayoutEditor()">
       Layout Editor (Enter)
     </button>
     
     <div class="text-controls" *ngIf="subMode === 'text' && selectedPins.length > 0">
       <div class="control-group">
-        <label>
+        <label for="fontSizeInput">
           Font Size:
           <input 
+            id="fontSizeInput"
             type="number" 
             min="8" 
             max="24" 
             [value]="selectedPins[0].textStyle.fontSize || 12"
             (change)="updateTextStyle('fontSize', $event)" />
         </label>
-        <label>
+        <label for="colorInput">
           Color:
           <input 
+            id="colorInput"
             type="color" 
             [value]="selectedPins[0].textStyle.color || '#000000'"
             (change)="updateTextStyle('color', $event)" />
@@ -71,18 +78,18 @@
       </div>
       
       <div class="control-group">
-        <label>
+        <label for="fontWeightSelect">
           Font Weight:
-          <select [value]="selectedPins[0].textStyle.fontWeight || 'normal'" 
+          <select id="fontWeightSelect" [value]="selectedPins[0].textStyle.fontWeight || 'normal'" 
                   (change)="updateTextStyle('fontWeight', $event)">
             <option value="normal">Normal</option>
             <option value="bold">Bold</option>
             <option value="lighter">Light</option>
           </select>
         </label>
-        <label>
+        <label for="textAlignSelect">
           Text Align:
-          <select [value]="selectedPins[0].textStyle.textAlign || 'left'" 
+          <select id="textAlignSelect" [value]="selectedPins[0].textStyle.textAlign || 'left'" 
                   (change)="updateTextStyle('textAlign', $event)">
             <option value="left">Left</option>
             <option value="center">Center</option>
@@ -92,9 +99,10 @@
       </div>
       
       <div class="control-group">
-        <label>
+        <label for="rotationRange">
           Rotation:
           <input 
+            id="rotationRange"
             type="range" 
             min="0" 
             max="360" 
@@ -105,15 +113,17 @@
       </div>
       
       <div class="control-group">
-        <label>
+        <label for="backgroundColorInput">
           Background:
           <input 
+            id="backgroundColorInput"
             type="color" 
             [value]="selectedPins[0].textStyle.backgroundColor || '#ffffff'"
             (change)="updateTextStyle('backgroundColor', $event)" />
         </label>
-        <label>
+        <label for="showBackgroundCheckbox">
           <input 
+            id="showBackgroundCheckbox"
             type="checkbox" 
             [checked]="selectedPins[0].textStyle.showBackground || false"
             (change)="updateTextStyle('showBackground', $event)" />
@@ -126,44 +136,45 @@
       <div class="alignment-tools">
         <h5>Alignment</h5>
         <div class="button-grid">
-          <button class="align-btn" (click)="alignPins('left')" title="Align Left">⬅</button>
-          <button class="align-btn" (click)="alignPins('center-h')" title="Center Horizontal">↔</button>
-          <button class="align-btn" (click)="alignPins('right')" title="Align Right">➡</button>
-          <button class="align-btn" (click)="alignPins('top')" title="Align Top">⬆</button>
-          <button class="align-btn" (click)="alignPins('center-v')" title="Center Vertical">↕</button>
-          <button class="align-btn" (click)="alignPins('bottom')" title="Align Bottom">⬇</button>
+          <button class="align-btn" (click)="alignPins('left')" (keydown.enter)="alignPins('left')" title="Align Left">⬅</button>
+          <button class="align-btn" (click)="alignPins('center-h')" (keydown.enter)="alignPins('center-h')" title="Center Horizontal">↔</button>
+          <button class="align-btn" (click)="alignPins('right')" (keydown.enter)="alignPins('right')" title="Align Right">➡</button>
+          <button class="align-btn" (click)="alignPins('top')" (keydown.enter)="alignPins('top')" title="Align Top">⬆</button>
+          <button class="align-btn" (click)="alignPins('center-v')" (keydown.enter)="alignPins('center-v')" title="Center Vertical">↕</button>
+          <button class="align-btn" (click)="alignPins('bottom')" (keydown.enter)="alignPins('bottom')" title="Align Bottom">⬇</button>
         </div>
       </div>
       
       <div class="distribution-tools">
         <h5>Distribution</h5>
         <div class="button-grid">
-          <button class="dist-btn" (click)="distributePins('horizontal')" title="Distribute Horizontally">⬌</button>
-          <button class="dist-btn" (click)="distributePins('vertical')" title="Distribute Vertically">⬍</button>
+          <button class="dist-btn" (click)="distributePins('horizontal')" (keydown.enter)="distributePins('horizontal')" title="Distribute Horizontally">⬌</button>
+          <button class="dist-btn" (click)="distributePins('vertical')" (keydown.enter)="distributePins('vertical')" title="Distribute Vertically">⬍</button>
         </div>
       </div>
       
       <div class="spacing-tools">
         <h5>Spacing</h5>
-        <label>
+        <label for="gridSizeInput">
           Grid Size:
           <input 
+            id="gridSizeInput"
             type="number" 
             min="5" 
             max="50" 
             [value]="gridSize || 10"
             (change)="updateGridSize($event)" />
         </label>
-        <button class="snap-btn" (click)="snapToGrid()">Snap to Grid</button>
+        <button class="snap-btn" (click)="snapToGrid()" (keydown.enter)="snapToGrid()">Snap to Grid</button>
       </div>
     </div>
 
     <div class="properties-controls" *ngIf="subMode === 'properties' && selectedPins.length > 0">
       <div class="pin-properties">
         <h5>Pin Properties</h5>
-        <label>
+        <label for="pinTypeSelect">
           Pin Type:
-          <select [value]="selectedPins[0].pinType || 'input'" 
+          <select id="pinTypeSelect" [value]="selectedPins[0].pinType || 'input'" 
                   (change)="updatePinProperty('pinType', $event)">
             <option value="input">Input</option>
             <option value="output">Output</option>
@@ -173,18 +184,20 @@
           </select>
         </label>
         
-        <label>
+        <label for="pinNumberInput">
           Pin Number:
           <input 
+            id="pinNumberInput"
             type="text" 
             [value]="selectedPins[0].pinNumber || ''"
             (change)="updatePinProperty('pinNumber', $event)"
             placeholder="e.g., 1, A1, VCC" />
         </label>
         
-        <label>
+        <label for="signalNameInput">
           Signal Name:
           <input 
+            id="signalNameInput"
             type="text" 
             [value]="selectedPins[0].signalName || ''"
             (change)="updatePinProperty('signalName', $event)"
@@ -194,9 +207,10 @@
       
       <div class="visual-properties">
         <h5>Visual Properties</h5>
-        <label>
+        <label for="pinSizeRange">
           Pin Size:
           <input 
+            id="pinSizeRange"
             type="range" 
             min="2" 
             max="10" 
@@ -205,16 +219,18 @@
           <span>{{ selectedPins[0].pinSize || 4 }}px</span>
         </label>
         
-        <label>
+        <label for="pinColorInput">
           Pin Color:
           <input 
+            id="pinColorInput"
             type="color" 
             [value]="selectedPins[0].pinColor || '#000000'"
             (change)="updatePinProperty('pinColor', $event)" />
         </label>
         
-        <label>
+        <label for="showPinNumberCheckbox">
           <input 
+            id="showPinNumberCheckbox"
             type="checkbox" 
             [checked]="selectedPins[0].showPinNumber || false"
             (change)="updatePinProperty('showPinNumber', $event)" />

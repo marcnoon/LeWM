@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { FeatureGraph, FeatureGraphNode } from '../interfaces/feature-graph.interface';
+import { FeatureGraph } from '../interfaces/feature-graph.interface';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -11,7 +11,7 @@ export class FeatureGraphService {
   private featureGraph: FeatureGraph | null = null;
   private readonly featuresLoaded$ = new BehaviorSubject<boolean>(false);
 
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   /**
    * Loads the feature graph based on the current environment configuration
