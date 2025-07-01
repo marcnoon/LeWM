@@ -5,7 +5,9 @@ import { PinStateService } from '../services/pin-state.service';
 import { FileService } from '../services/file.service';
 import { FileMode, GraphData } from '../modes/file.mode';
 import { GraphEdge } from '../models/graph-edge.model';
-import { of } from 'rxjs';
+
+// TODO: re-add `of` when mocking observables in future test cases
+// import { of } from 'rxjs';
 
 describe('FileMode Integration Tests', () => {
   let component: GraphEditorComponent;

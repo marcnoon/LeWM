@@ -5,7 +5,9 @@ import { PinStateService } from '../services/pin-state.service';
 import { FileService } from '../services/file.service';
 import { GraphEdge } from '../models/graph-edge.model';
 import { GraphNode } from '../models/graph-node.model';
-import { Pin, DEFAULT_PIN_TEXT_STYLE } from '../interfaces/pin.interface';
+
+// TODO: add tests for pin import/export
+// import { Pin, DEFAULT_PIN_TEXT_STYLE } from '../interfaces/pin.interface';
 
 describe('FileMode', () => {
   let fileMode: FileMode;

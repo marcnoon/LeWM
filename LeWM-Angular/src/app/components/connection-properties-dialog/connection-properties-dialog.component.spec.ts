@@ -46,9 +46,10 @@ describe('ConnectionPropertiesDialogComponent', () => {
     // Act
     component.onSave();
 
-    // Assert
+    // Assert undirected connection
     expect(emittedConnection).toBeDefined();
-    expect(emittedConnection!.hasOwnProperty('direction')).toBeFalse();
+    // Did the object emittedConnection include a property named direction - should be false because undirected
+    expect(Object.prototype.hasOwnProperty.call(emittedConnection, 'direction')).toBeFalse();
   });
 
   it('should keep direction property when saving with a defined direction', () => {
