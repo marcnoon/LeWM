@@ -335,4 +335,126 @@ describe('FileMode', () => {
       }));
     });
   });
+
+  describe('Real Integration Test', () => {
+    it('should verify import/export round-trip preserves all connection metadata', () => {
+      // This test uses real services to ensure no properties are lost
+      const realGraphState = new GraphStateService();
+      const realPinState = new PinStateService();
+      const realFileMode = new FileMode(realGraphState, realPinState, mockFileService);
+
+      const testGraphData: GraphData = {
+        version: '1.0',
+        metadata: {
+          created: '2024-01-01T00:00:00.000Z',
+          modified: '2024-01-01T00:00:00.000Z',
+          name: 'Integration Test Graph'
+        },
+        nodes: [
+          {
+            id: 'mic1',
+            type: 'component',
+            x: 100,
+            y: 250,
+            width: 40,
+            height: 40,
+            label: 'MIC1',
+            pins: [{ x: 40, y: 20, name: 'OUT' }]
+          },
+          {
+            id: 'r1',
+            type: 'resistor',
+            x: 180,
+            y: 270,
+            width: 60,
+            height: 20,
+            label: '10kΩ',
+            pins: [{ x: 0, y: 10, name: 'A' }]
+          }
+        ],
+        pins: [
+          {
+            id: 'mic1.OUT',
+            nodeId: 'mic1',
+            label: 'OUT',
+            position: { side: 'right', offset: 0.5, x: 40, y: 20 },
+            pinType: 'output',
+            pinStyle: { size: 8, color: '#000000', shape: 'circle', borderWidth: 1, borderColor: '#000000' },
+            textStyle: DEFAULT_PIN_TEXT_STYLE,
+            isInput: false,
+            isOutput: true,
+            pinNumber: '',
+            signalName: '',
+            pinSize: 4,
+            pinColor: '#000000',
+            showPinNumber: false
+          },
+          {
+            id: 'r1.A',
+            nodeId: 'r1',
+            label: 'A',
+            position: { side: 'left', offset: 0.5, x: 0, y: 10 },
+            pinType: 'input',
+            pinStyle: { size: 8, color: '#000000', shape: 'circle', borderWidth: 1, borderColor: '#000000' },
+            textStyle: DEFAULT_PIN_TEXT_STYLE,
+            isInput: true,
+            isOutput: false,
+            pinNumber: '',
+            signalName: '',
+            pinSize: 4,
+            pinColor: '#000000',
+            showPinNumber: false
+          }
+        ],
+        connections: [
+          {
+            id: 'conn_4',
+            from: 'mic1.OUT',
+            to: 'r1.A',
+            type: 'signal',
+            direction: 'forward',
+            color: '#FF5722',
+            strokeWidth: 3,
+            strokeStyle: 'solid',
+            label: 'Audio Signal',
+            description: 'Test connection with direction',
+            tags: ['audio', 'test']
+          }
+        ]
+      };
+
+      // Import the data
+      realFileMode.importGraphData(testGraphData);
+
+      // Verify connection was properly imported with all properties
+      const importedEdges = realGraphState.getEdges();
+      expect(importedEdges).toHaveSize(1);
+      
+      const importedConnection = importedEdges[0];
+      expect(importedConnection.id).toBe('conn_4');
+      expect(importedConnection.from).toBe('mic1.OUT');
+      expect(importedConnection.to).toBe('r1.A');
+      expect(importedConnection.type).toBe('signal');
+      expect(importedConnection.direction).toBe('forward');
+      expect(importedConnection.color).toBe('#FF5722');
+      expect(importedConnection.strokeWidth).toBe(3);
+      expect(importedConnection.strokeStyle).toBe('solid');
+      expect(importedConnection.label).toBe('Audio Signal');
+      expect(importedConnection.description).toBe('Test connection with direction');
+      expect(importedConnection.tags).toEqual(['audio', 'test']);
+
+      // Export back and verify all properties are preserved
+      const exportedData = realFileMode.exportGraphData();
+      expect(exportedData.connections).toHaveSize(1);
+      
+      const exportedConnection = exportedData.connections[0];
+      expect(exportedConnection.direction).toBe('forward');
+      expect(exportedConnection.color).toBe('#FF5722');
+      expect(exportedConnection.strokeWidth).toBe(3);
+      expect(exportedConnection.strokeStyle).toBe('solid');
+      expect(exportedConnection.label).toBe('Audio Signal');
+      expect(exportedConnection.description).toBe('Test connection with direction');
+      expect(exportedConnection.tags).toEqual(['audio', 'test']);
+    });
+  });
 });
