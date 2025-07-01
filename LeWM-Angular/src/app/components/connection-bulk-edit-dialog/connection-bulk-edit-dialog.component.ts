@@ -65,7 +65,8 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
     { value: '', label: 'Keep Current' },
     { value: 'forward', label: 'Forward →' },
     { value: 'backward', label: 'Backward ←' },
-    { value: 'bidirectional', label: 'Bidirectional ↔' }
+    { value: 'bidirectional', label: 'Bidirectional ↔' },
+    { value: 'clear', label: 'Clear Direction' }
   ];
   
   typeOptions = [
@@ -231,7 +232,11 @@ export class ConnectionBulkEditDialogComponent implements OnInit, OnChanges {
       }
 
       if (this.bulkChanges.direction) {
-        updated.direction = this.bulkChanges.direction as 'forward' | 'backward' | 'bidirectional';
+        if (this.bulkChanges.direction === 'clear') {
+          delete updated.direction;
+        } else {
+          updated.direction = this.bulkChanges.direction as 'forward' | 'backward' | 'bidirectional';
+        }
       }
 
       if (this.bulkChanges.type) {

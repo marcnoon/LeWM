@@ -45,6 +45,7 @@ import { FormsModule } from '@angular/forms';
             <div class="form-group">
               <label for="connectionDirection">Direction:</label>
               <select id="connectionDirection" [(ngModel)]="connectionData.direction" class="form-control">
+                <option [ngValue]="undefined">(No Direction)</option>
                 <option value="forward">Forward (→)</option>
                 <option value="backward">Backward (←)</option>
                 <option value="bidirectional">Bidirectional (↔)</option>
@@ -439,7 +440,6 @@ export class ConnectionPropertiesDialogComponent implements OnChanges {
       from: '',
       to: '',
       label: '',
-      direction: 'forward',
       type: 'signal',
       color: '#2196F3',
       strokeWidth: 2,
@@ -451,10 +451,17 @@ export class ConnectionPropertiesDialogComponent implements OnChanges {
 
   onSave(): void {
     if (this.connectionData) {
-      this.connectionUpdated.emit({
+      const updatedConnection = {
         ...this.connectionData,
         updatedAt: new Date()
-      });
+      };
+      
+      // Remove direction property if it's undefined (no direction selected)
+      if (!updatedConnection.direction) {
+        delete updatedConnection.direction;
+      }
+      
+      this.connectionUpdated.emit(updatedConnection);
       this.reset();
     }
   }
