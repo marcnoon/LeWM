@@ -233,12 +233,8 @@ export class FileMode implements GraphMode {
 
     // 3. Import connections
     data.connections.forEach((conn: GraphEdge) => {
-      // Use GraphStateService to add edge
-      this.graphState.addEdge({
-        id: conn.id,
-        from: conn.from,
-        to: conn.to
-      });
+      // Use GraphStateService to add edge with all properties preserved
+      this.graphState.addEdge(conn);
     });
 
     console.log(`Imported graph: ${data.nodes.length} nodes, ${data.pins.length} pins, ${data.connections.length} connections`);
