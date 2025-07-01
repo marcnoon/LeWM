@@ -7,7 +7,7 @@ import { PinSyncService } from '../../services/pin-sync.service';
 import { FileService } from '../../services/file.service';
 import { ChangeDetectorRef } from '@angular/core';
 import { PinEditMode } from '../../modes/pin-edit.mode';
-import { GraphMode } from 'src/app/interfaces/graph-mode.interface';
+import { GraphMode } from '../../interfaces/graph-mode.interface';
 
 describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
   let component: GraphEditorComponent;

@@ -48,7 +48,7 @@ describe('ConnectionPropertiesDialogComponent', () => {
 
     // Assert
     expect(emittedConnection).toBeDefined();
-    expect(emittedConnection!.hasOwnProperty('direction')).toBeFalse();
+    expect(Object.prototype.hasOwnProperty.call(emittedConnection!, 'direction')).toBeFalse();
   });
 
   it('should keep direction property when saving with a defined direction', () => {

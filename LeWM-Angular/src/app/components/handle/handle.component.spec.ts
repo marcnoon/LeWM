@@ -24,18 +24,18 @@ describe('HandleComponent', () => {
   });
 
   it('should have resize output event', () => {
-    expect(component.resize).toBeDefined();
-    expect(component.resize.emit).toBeDefined();
+    expect(component.positionChange).toBeDefined();
+    expect(component.positionChange.emit).toBeDefined();
   });
 
   it('should have resizeStart output event', () => {
-    expect(component.resizeStart).toBeDefined();
-    expect(component.resizeStart.emit).toBeDefined();
+    expect(component.positionChangeStart).toBeDefined();
+    expect(component.positionChangeStart.emit).toBeDefined();
   });
 
   it('should have resizeEnd output event', () => {
-    expect(component.resizeEnd).toBeDefined();
-    expect(component.resizeEnd.emit).toBeDefined();
+    expect(component.positionChangeEnd).toBeDefined();
+    expect(component.positionChangeEnd.emit).toBeDefined();
   });
 
   it('should not be resizing initially', () => {
@@ -43,13 +43,13 @@ describe('HandleComponent', () => {
   });
 
   it('should emit resizeStart when mousedown occurs', () => {
-    spyOn(component.resizeStart, 'emit');
+    spyOn(component.positionChangeStart, 'emit');
     spyOn(layoutStateService, 'setResizing');
     const event = new MouseEvent('mousedown', { clientX: 100 });
     
     component.onResizeStart(event);
     
-    expect(component.resizeStart.emit).toHaveBeenCalled();
+    expect(component.positionChangeStart.emit).toHaveBeenCalled();
     expect(component.resizing).toBe(true);
     expect(layoutStateService.setResizing).toHaveBeenCalledWith(true);
   });
@@ -93,7 +93,7 @@ describe('HandleComponent', () => {
   });
 
   it('should emit deltaX for vertical orientation', () => {
-    spyOn(component.resize, 'emit');
+    spyOn(component.positionChange, 'emit');
     component.orientation = 'vertical';
     
     // Start resize
@@ -104,11 +104,11 @@ describe('HandleComponent', () => {
     const moveEvent = new MouseEvent('mousemove', { clientX: 120, clientY: 110 });
     document.dispatchEvent(moveEvent);
     
-    expect(component.resize.emit).toHaveBeenCalledWith(20); // deltaX = 120 - 100
+    expect(component.positionChange.emit).toHaveBeenCalledWith(20); // deltaX = 120 - 100
   });
 
   it('should emit deltaY for horizontal orientation', () => {
-    spyOn(component.resize, 'emit');
+    spyOn(component.positionChange, 'emit');
     component.orientation = 'horizontal';
     
     // Start resize
@@ -119,11 +119,11 @@ describe('HandleComponent', () => {
     const moveEvent = new MouseEvent('mousemove', { clientX: 120, clientY: 110 });
     document.dispatchEvent(moveEvent);
     
-    expect(component.resize.emit).toHaveBeenCalledWith(10); // deltaY = 110 - 100
+    expect(component.positionChange.emit).toHaveBeenCalledWith(10); // deltaY = 110 - 100
   });
 
   it('should clear global resize state on resize end', () => {
-    spyOn(component.resizeEnd, 'emit');
+    spyOn(component.positionChangeEnd, 'emit');
     spyOn(layoutStateService, 'setResizing');
     const startEvent = new MouseEvent('mousedown', { clientX: 100 });
     
@@ -136,6 +136,6 @@ describe('HandleComponent', () => {
     document.dispatchEvent(endEvent);
     
     expect(layoutStateService.setResizing).toHaveBeenCalledWith(false);
-    expect(component.resizeEnd.emit).toHaveBeenCalled();
+    expect(component.positionChangeEnd.emit).toHaveBeenCalled();
   });
 });
