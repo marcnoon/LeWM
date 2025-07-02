@@ -9,7 +9,7 @@ describe('HandleComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [HandleComponent],
+      imports: [HandleComponent],
       providers: [LayoutStateService]
     }).compileComponents();
 

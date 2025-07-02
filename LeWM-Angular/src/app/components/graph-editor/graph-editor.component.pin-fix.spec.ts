@@ -47,7 +47,7 @@ describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
     modeManagerSpy.getActiveMode.and.returnValue(mockPinEditMode);
 
     await TestBed.configureTestingModule({
-      declarations: [GraphEditorComponent],
+      imports: [GraphEditorComponent],
       providers: [
         { provide: GraphStateService, useValue: jasmine.createSpyObj('GraphStateService', ['nodes', 'edges']) },
         { provide: ModeManagerService, useValue: modeManagerSpy },

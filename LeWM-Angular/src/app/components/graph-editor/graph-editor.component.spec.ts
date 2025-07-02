@@ -15,7 +15,7 @@ describe('GraphEditorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [GraphEditorComponent],
+      imports: [GraphEditorComponent],
       providers: [
         GraphStateService,
         ModeManagerService,

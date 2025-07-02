@@ -9,8 +9,7 @@ describe('NodeNameDialogComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [NodeNameDialogComponent],
-      imports: [FormsModule]
+      imports: [NodeNameDialogComponent, FormsModule]
     });
     fixture = TestBed.createComponent(NodeNameDialogComponent);
     component = fixture.componentInstance;

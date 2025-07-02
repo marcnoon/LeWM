@@ -18,7 +18,7 @@ describe('FileMode Integration Tests', () => {
     const fileServiceSpy = jasmine.createSpyObj('FileService', ['openGraph', 'saveGraph']);
 
     await TestBed.configureTestingModule({
-      declarations: [GraphEditorComponent],
+      imports: [GraphEditorComponent],
       providers: [
         GraphStateService,
         PinStateService,
