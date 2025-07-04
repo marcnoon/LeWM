@@ -1,6 +1,137 @@
-# LeWMAngular
+# LeWM-Angular — A Type-Safe Visual Graph Editor
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.3.
+**A visual-first, graph-aware Angular application with type-safe feature flags and modular architecture.**
+
+LeWM-Angular is a sophisticated node-pin-connection editor built with Angular, designed for developers who value type safety, clean architecture, and extensible design patterns. Create interactive graphs, manage complex connections, and leverage advanced editing modes—all while maintaining strict TypeScript standards and comprehensive test coverage.
+
+## Why LeWM?
+
+### 🔒 **Type-Safe Architecture**
+- **Zero `any` usage** in production code—strict TypeScript throughout
+- **Comprehensive interfaces** for all data structures (pins, connections, nodes)
+- **Type-safe feature flags** with compile-time validation
+- **Enhanced developer experience** with full IntelliSense support
+
+### 🎯 **Visual Node-Pin-Connection Editor**
+- **Interactive graph editing** with drag-and-drop functionality
+- **Advanced pin management** with precise positioning and distribution
+- **Connection properties** with metadata, types, and visual customization
+- **Multiple editing modes** for different workflows (Standard, Pin Edit, Connection Mode)
+
+### 🚀 **Feature Flags with User Entitlements**
+- **Hierarchical feature system** with graph-based dependencies
+- **Environment-specific configurations** (dev, prod, qa)
+- **Tier-based feature access** (public, standard, pro)
+- **Angular-native structural directives** like `*appFeatureFlag`
+- **Runtime feature detection** with graceful fallbacks
+
+### 🛠️ **Clean & Modular Architecture**
+- **Lint-clean codebase** with consistent coding standards
+- **91 passing tests** with comprehensive coverage
+- **Successful builds** with optimized production bundles
+- **Mode-based composition** for extensible functionality
+- **Service-oriented design** with dependency injection
+
+## 🚀 Quick Start
+
+Clone and run the project locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/marcnoon/LeWM.git
+cd LeWM/LeWM-Angular
+
+# Install dependencies
+npm install
+
+# Start development server
+ng serve
+
+# Open your browser to http://localhost:4200/
+```
+
+**Build & Test:**
+```bash
+# Run tests
+npm test
+
+# Lint code
+npm run lint
+
+# Build for production
+npm run build
+```
+
+## 🚩 Feature Flags System
+
+LeWM-Angular implements a sophisticated, **type-safe feature flag system** that enables dynamic control of application features across different environments and user tiers.
+
+### Key Features:
+- **📊 Graph-based Dependencies**: Features can depend on other features with circular dependency detection
+- **🔒 Type-Safe Configuration**: Strongly typed feature definitions with compile-time validation
+- **🎯 Hierarchical Organization**: Dot-notation naming for logical feature grouping
+- **🌍 Environment-Specific**: Different feature sets for dev, qa, and production
+- **💎 Tier-Based Access**: Support for public, standard, and pro feature tiers
+- **🔄 Runtime Management**: Dynamic feature enabling/disabling with dependency validation
+
+### Usage Example:
+
+```typescript
+// Component usage
+constructor(private featureService: FeatureGraphService) {}
+
+ngOnInit() {
+  if (this.featureService.isFeatureEnabled('advanced-editing')) {
+    this.initializeAdvancedFeatures();
+  }
+}
+```
+
+```html
+<!-- Template usage with structural directive -->
+<div *appFeatureFlag="'advanced-editing'">
+  <advanced-editor></advanced-editor>
+</div>
+```
+
+📖 **[Full Feature Flags Documentation](docs/feature-flags.md)**
+
+## 📦 Type Safety Guarantee
+
+> **🎯 Commitment to Type Safety**
+> 
+> LeWM-Angular maintains **strict TypeScript standards** throughout the codebase:
+> - No `any` types in production code
+> - Comprehensive interface definitions for all data structures
+> - Type-safe feature flag system with compile-time validation
+> - Enhanced maintainability and productivity with AI-assisted development tools
+> 
+> This ensures **reliable refactoring**, **confident deployments**, and **excellent developer experience**.
+
+## 📖 Documentation & Resources
+
+### 📚 **Core Documentation**
+- **[Feature Flags System](docs/feature-flags.md)** - Complete guide to the type-safe feature flag system
+- **[Linting Strategy & Build](linting-strategy-and-build.md)** - Architecture overview and development practices
+- **[Feature Flag Setup](FEATURE_FLAG_SETUP.md)** - Implementation details and setup guide
+
+### 🗺️ **Development Roadmap**
+- **✅ Phase 1**: Type-safe architecture with feature flags system
+- **✅ Phase 2**: Advanced pin editing and connection management
+- **🔄 Phase 3**: Layout mode with auto-arrangement algorithms
+- **📋 Phase 4**: Advanced routing and domain-specific modes
+- **🔮 Future**: Plugin system and custom mode API
+
+### 🤝 **Contributing**
+This project maintains high standards for code quality:
+- All code must pass linting (`npm run lint`)
+- Tests must pass (`npm test`)
+- Builds must succeed (`npm run build`)
+- Follow existing TypeScript patterns and avoid `any` usage
+
+---
+
+## 🛠️ Technical Reference
 
 ## Development server
 
