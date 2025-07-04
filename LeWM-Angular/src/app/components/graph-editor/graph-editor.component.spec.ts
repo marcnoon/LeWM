@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, EventEmitter } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { GraphEditorComponent } from './graph-editor.component';
 import { GraphStateService } from '../../services/graph-state.service';
@@ -15,7 +16,7 @@ describe('GraphEditorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GraphEditorComponent],
+      imports: [GraphEditorComponent, HttpClientTestingModule],
       providers: [
         GraphStateService,
         ModeManagerService,
