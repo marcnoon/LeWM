@@ -31,6 +31,36 @@ describe('GraphEditorComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => {
+    // Service State Cleanup
+    // Reset all services to clean state
+    const graphStateService = TestBed.inject(GraphStateService);
+    graphStateService.resetToDefaults();
+    
+    // Component State Cleanup
+    // Destroy component fixture
+    if (fixture) {
+      fixture.destroy();
+    }
+    
+    // Clear SVG elements and arrow markers
+    document.querySelectorAll('svg').forEach(svg => {
+      svg.querySelectorAll('line, path, polyline, #arrowhead, #arrowhead-start, defs marker').forEach(el => el.remove());
+    });
+    
+    // Clear any test-specific DOM elements
+    document.querySelectorAll('[data-test], [data-node-id], [data-pin-id]').forEach(el => el.remove());
+    
+    // Clear localStorage test data
+    localStorage.removeItem('lewm-graph-nodes');
+    localStorage.removeItem('lewm-enhanced-pin-properties');
+    
+    // Reset any global state
+    delete (window as any).testGlobals;
+    delete (window as any).arrowMarkerCache;
+    delete (window as any).connectionRenderState;
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
