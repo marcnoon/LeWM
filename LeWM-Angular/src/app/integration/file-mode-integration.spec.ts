@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { GraphEditorComponent } from '../components/graph-editor/graph-editor.component';
 import { GraphStateService } from '../services/graph-state.service';
 import { PinStateService } from '../services/pin-state.service';
@@ -18,7 +19,7 @@ describe('FileMode Integration Tests', () => {
     const fileServiceSpy = jasmine.createSpyObj('FileService', ['openGraph', 'saveGraph']);
 
     await TestBed.configureTestingModule({
-      imports: [GraphEditorComponent],
+      imports: [GraphEditorComponent, HttpClientTestingModule],
       providers: [
         GraphStateService,
         PinStateService,

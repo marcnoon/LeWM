@@ -13,6 +13,9 @@ describe('PinSyncService', () => {
     const pinStateSpy = jasmine.createSpyObj('PinStateService', ['getPin', 'importPin', 'updatePinPosition']);
     const graphStateSpy = jasmine.createSpyObj('GraphStateService', ['getNodes', 'updateNode']);
 
+    // Configure mock to return empty array by default for getNodes
+    graphStateSpy.getNodes.and.returnValue([]);
+
     TestBed.configureTestingModule({
       providers: [
         PinSyncService,

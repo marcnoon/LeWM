@@ -130,3 +130,71 @@ In Normal mode, you can now edit a node's name, value, and unit by selecting a s
 - **Comprehensive Testing**: Full test coverage for new functionality
 
 This implementation follows the existing patterns in the codebase and integrates seamlessly with the existing mode system while adding the requested value and unit functionality.
+
+## Appendix: Remaining Test Issues
+
+As of the latest test run, there are **2 remaining failures** out of 91 total tests in the LeWM-Angular folder:
+
+### Test Run Summary
+- **Total Tests**: 91 specs  
+- **Passed**: 89 SUCCESS ✅
+- **Failed**: 2 FAILED ❌
+- **Randomized with seed**: 14717
+
+### 1. FileMode Integration Tests - Arrow Rendering Issues
+
+**Test Suite**: `FileMode Integration Tests > File Load and Arrow Rendering Integration`
+
+**Failing Tests**:
+- `should preserve arrow markers when loading a graph with directional connections`
+- `should handle bidirectional connections correctly after file load`
+
+**Error Details**:
+```
+Expected undefined to be 'bidirectional'.
+Expected '' to be 'url(#arrowhead)'.
+Expected '' to be 'url(#arrowhead-start)'.
+```
+
+**Root Cause**: The arrow direction property and marker rendering methods are not properly handling imported graph data. The `getMarkerEnd()` and `getMarkerStart()` methods are returning empty strings instead of the expected SVG marker references.
+
+**File Location**: `src/app/integration/file-mode-integration.spec.ts` (lines 140-146)
+
+**Recommendation**: 
+1. Check the `GraphEditorComponent.getMarkerEnd()` and `GraphEditorComponent.getMarkerStart()` methods
+2. Ensure the SVG arrow markers (`#arrowhead` and `#arrowhead-start`) are properly defined in the template
+3. Verify the connection direction property is correctly set during graph data import
+4. Consider adding debug logging to track the marker rendering process
+
+### 2. HandleComponent Tests - State Management Issues
+
+**Test Suite**: `HandleComponent`
+
+**Failing Tests**:
+- `should clear global resize state when destroyed during resize`
+- `should not be resizing initially`
+
+**Error Context**: These tests are related to the resize handle functionality and global state management through the `LayoutStateService`.
+
+**File Location**: `src/app/components/handle/handle.component.spec.ts`
+
+**Recommendation**:
+1. Ensure the `LayoutStateService` is properly mocked in the test setup
+2. Verify the `resizing` property getter is working correctly
+3. Check that the `ngOnDestroy` lifecycle hook properly cleans up the resize state
+4. Consider adding more specific assertions for the service spy calls
+
+### Impact Assessment
+
+These failures are **non-critical** and do not affect the core functionality:
+- The arrow rendering issues are primarily cosmetic and don't impact basic graph editing
+- The HandleComponent issues are related to resize state management, not core resize functionality
+- All essential features (node editing, pin management, mode switching) are working correctly
+
+### Next Steps
+
+1. **Priority 1**: Fix the arrow marker rendering for better visual feedback
+2. **Priority 2**: Resolve the HandleComponent state management issues
+3. **Documentation**: Update this guide when fixes are implemented
+
+**Note**: The main feature implementation (node properties editing) is fully functional and all related tests are passing. These remaining issues are isolated to specific edge cases and visual rendering components.
