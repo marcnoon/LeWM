@@ -10,6 +10,8 @@ A flexible, graph-based object and connection system built on SOLID principles a
 
 LeWM (Level With Me) is a foundational graph visualization and manipulation system that provides core functionality for creating, connecting, and manipulating graphical objects. It's designed to be framework-agnostic and extensible through composition.
 
+Note:  I don't own this, as it was created to be stolen by anyone.  Feel free to steal to your heart's content.
+
 **Current Status**: 
 - **React Prototype**: Sophisticated graph editor with advanced routing algorithms, group selection, and real-time connection management
 - **Angular Implementation**: Full SOLID-principle implementation with mode-based architecture and strict separation of responsibilities
