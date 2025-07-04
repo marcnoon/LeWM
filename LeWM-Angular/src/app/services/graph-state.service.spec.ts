@@ -11,6 +11,19 @@ describe('GraphStateService', () => {
     service = TestBed.inject(GraphStateService);
   });
 
+  afterEach(() => {
+    // Service State Cleanup
+    // Reset GraphStateService to default state
+    service.resetToDefaults();
+    
+    // Clear localStorage test data
+    localStorage.removeItem('lewm-graph-nodes');
+    localStorage.removeItem('lewm-enhanced-pin-properties');
+    
+    // Reset any global state
+    delete (window as any).testGlobals;
+  });
+
   it('should be created', () => {
     expect(service).toBeTruthy();
   });

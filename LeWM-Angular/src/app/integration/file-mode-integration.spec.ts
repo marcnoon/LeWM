@@ -34,6 +34,44 @@ describe('FileMode Integration Tests', () => {
     fileMode = new FileMode(graphStateService, TestBed.inject(PinStateService), mockFileService);
   });
 
+  afterEach(() => {
+    // Connection Level Cleanup (Primary focus for arrow marker issues)
+    // Clear ALL SVG connection elements and arrow markers
+    document.querySelectorAll('svg').forEach(svg => {
+      // Remove connection lines
+      svg.querySelectorAll('line, path, polyline').forEach(el => el.remove());
+      
+      // Remove arrow marker definitions
+      svg.querySelectorAll('#arrowhead, #arrowhead-start, defs marker').forEach(el => el.remove());
+      
+      // Clear SVG workspace completely
+      const workspace = svg.querySelector('.workspace, .canvas');
+      if (workspace) workspace.innerHTML = '';
+    });
+    
+    // Service State Cleanup
+    // Reset GraphStateService to clean state
+    graphStateService.resetToDefaults();
+    
+    // Component State Cleanup
+    // Destroy component fixture
+    if (fixture) {
+      fixture.destroy();
+    }
+    
+    // Clear any test-specific DOM elements
+    document.querySelectorAll('[data-test], [data-node-id], [data-pin-id]').forEach(el => el.remove());
+    
+    // Clear localStorage test data
+    localStorage.removeItem('lewm-graph-nodes');
+    localStorage.removeItem('lewm-enhanced-pin-properties');
+    
+    // Reset any global state
+    delete (window as any).arrowMarkerCache;
+    delete (window as any).connectionRenderState;
+    delete (window as any).testGlobals;
+  });
+
   describe('File Load and Arrow Rendering Integration', () => {
     it('should preserve arrow markers when loading a graph with directional connections', async () => {
       // Arrange: Create test graph data with directional connection

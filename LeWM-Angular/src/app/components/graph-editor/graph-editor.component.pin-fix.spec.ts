@@ -63,6 +63,17 @@ describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
     modeManagerService = TestBed.inject(ModeManagerService) as jasmine.SpyObj<ModeManagerService>;
   });
 
+  afterEach(() => {
+    // Component State Cleanup
+    // Destroy component fixture
+    if (fixture) {
+      fixture.destroy();
+    }
+    
+    // Reset any global state
+    delete (window as any).testGlobals;
+  });
+
   it('should open pin layout editor when Enter is pressed in pin-edit mode with selected pins', () => {
     // Set up the component to be in pin-edit mode
     component.currentMode = mockPinEditMode as unknown as GraphMode;

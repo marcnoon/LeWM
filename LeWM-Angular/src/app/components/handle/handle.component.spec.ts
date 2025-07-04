@@ -19,6 +19,30 @@ describe('HandleComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => {
+    // Service State Cleanup
+    // Reset LayoutStateService resizing state
+    layoutStateService.setResizing(false);
+    
+    // Component State Cleanup
+    // Destroy component fixture
+    if (fixture) {
+      fixture.destroy();
+    }
+    
+    // Remove any event listeners that might be left
+    // Note: Component has bound event handlers that we should clean up
+    document.removeEventListener('mousemove', (component as any).resizeMoveHandler);
+    document.removeEventListener('mouseup', (component as any).resizeEndHandler);
+    
+    // Clear any test-specific DOM elements
+    document.querySelectorAll('[data-test], .handle').forEach(el => el.remove());
+    
+    // Reset any global state
+    delete (window as any).testGlobals;
+    delete (window as any).resizeState;
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
