@@ -124,24 +124,19 @@ describe('NodeNameDialogComponent', () => {
     expect(component.isVisible).toBe(false);
   });
 
-  it('should focus input when currentName changes and dialog is visible', (done) => {
-    // Set up the component to be visible
-    component.isVisible = true;
-    fixture.detectChanges();
-
-    // Spy on the private focusInput method indirectly by spying on document.getElementById
+  it('should focus input when dialog is shown', (done) => {
+    // Spy on the getElementById method before calling show
     const mockInput = {
       focus: jasmine.createSpy('focus'),
       select: jasmine.createSpy('select')
     };
     spyOn(document, 'getElementById').and.returnValue(mockInput as unknown as HTMLElement);
 
-    // Simulate input change when dialog is visible
-    component.currentName = 'Node A';
-    // Manually set the nodeName to simulate the update
-    component.nodeName = component.currentName;
+    // Call show() which triggers the focus behavior
+    component.show('Node A');
+    fixture.detectChanges();
 
-    // Wait for the setTimeout in focusInput to execute
+    // Wait for the setTimeout in show method to execute
     setTimeout(() => {
       expect(document.getElementById).toHaveBeenCalledWith('nodeName');
       expect(mockInput.focus).toHaveBeenCalled();
@@ -150,22 +145,23 @@ describe('NodeNameDialogComponent', () => {
     }, 150);
   });
 
-  it('should not focus input when currentName changes and dialog is not visible', (done) => {
-    // Set up the component to be not visible
-    component.isVisible = false;
+  it('should handle case where DOM element is not found', (done) => {
+    // Set up the component to be visible
+    component.isVisible = true;
     fixture.detectChanges();
 
-    // Spy on document.getElementById to ensure it's not called
-    spyOn(document, 'getElementById');
+    // Spy on document.getElementById to return null (element not found)
+    spyOn(document, 'getElementById').and.returnValue(null);
 
-    // Simulate input change when dialog is not visible
-    component.currentName = 'Node A';
-    // Manually set the nodeName to simulate the update
-    component.nodeName = component.currentName;
+    // Call show() which should handle the null case gracefully
+    component.show('Node A');
 
-    // Wait a bit to ensure no focus attempt was made
+    // Wait for the setTimeout to execute
     setTimeout(() => {
-      expect(document.getElementById).not.toHaveBeenCalled();
+      expect(document.getElementById).toHaveBeenCalledWith('nodeName');
+      // Should not throw an error when element is not found
+      expect(component.isVisible).toBe(true);
+      expect(component.nodeName).toBe('Node A');
       done();
     }, 150);
   });
