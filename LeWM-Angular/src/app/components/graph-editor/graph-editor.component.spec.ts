@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, EventEmitter } from '@angular/core';
 
 import { GraphEditorComponent } from './graph-editor.component';
 import { GraphStateService } from '../../services/graph-state.service';
@@ -7,7 +7,7 @@ import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { FileService } from '../../services/file.service';
 import { GraphNode } from '../../models/graph-node.model';
-import { GraphMode } from 'src/app/interfaces/graph-mode.interface';
+import { GraphMode } from '../../interfaces/graph-mode.interface';
 
 describe('GraphEditorComponent', () => {
   let component: GraphEditorComponent;
@@ -15,7 +15,7 @@ describe('GraphEditorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [GraphEditorComponent],
+      imports: [GraphEditorComponent],
       providers: [
         GraphStateService,
         ModeManagerService,
@@ -247,7 +247,7 @@ describe('GraphEditorComponent', () => {
 
     it('should handle case when svgCanvas is not available', () => {
       // Set svgCanvas to null
-      component.svgCanvas = null;
+      component.svgCanvas = null as any;
 
       // Call the method under test
       const result = component.getCentralReferenceArea();
@@ -288,7 +288,7 @@ describe('GraphEditorComponent', () => {
 
   describe('Pin creation flow', () => {
     let testNode: GraphNode;
-    let mockPinDialog: { showError: jasmine.Spy, reset: jasmine.Spy };
+    let mockPinDialog: any;
 
     beforeEach(() => {
       testNode = {
@@ -306,8 +306,19 @@ describe('GraphEditorComponent', () => {
 
       // Mock the pin dialog
       mockPinDialog = {
+        isVisible: false,
+        side: '',
+        pinCreated: new EventEmitter<string>(),
+        cancelled: new EventEmitter<void>(),
+        pinName: '',
+        errorMessage: '',
         showError: jasmine.createSpy('showError'),
-        reset: jasmine.createSpy('reset')
+        reset: jasmine.createSpy('reset'),
+        onOk: jasmine.createSpy('onOk'),
+        onCancel: jasmine.createSpy('onCancel'),
+        onOverlayClick: jasmine.createSpy('onOverlayClick'),
+        onKeyDown: jasmine.createSpy('onKeyDown'),
+        clearError: jasmine.createSpy('clearError')
       };
       component.pinDialog = mockPinDialog;
       component.pendingPinNode = testNode;

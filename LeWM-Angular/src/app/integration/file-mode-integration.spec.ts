@@ -5,7 +5,7 @@ import { PinStateService } from '../services/pin-state.service';
 import { FileService } from '../services/file.service';
 import { FileMode, GraphData } from '../modes/file.mode';
 import { GraphEdge } from '../models/graph-edge.model';
-import { of } from 'rxjs';
+
 
 describe('FileMode Integration Tests', () => {
   let component: GraphEditorComponent;
@@ -18,7 +18,7 @@ describe('FileMode Integration Tests', () => {
     const fileServiceSpy = jasmine.createSpyObj('FileService', ['openGraph', 'saveGraph']);
 
     await TestBed.configureTestingModule({
-      declarations: [GraphEditorComponent],
+      imports: [GraphEditorComponent],
       providers: [
         GraphStateService,
         PinStateService,

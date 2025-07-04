@@ -10,8 +10,7 @@ describe('NodeBatchEditDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [NodeBatchEditDialogComponent],
-      imports: [FormsModule]
+      imports: [NodeBatchEditDialogComponent, FormsModule]
     })
     .compileComponents();
 
