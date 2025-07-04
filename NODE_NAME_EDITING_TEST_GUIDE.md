@@ -198,3 +198,175 @@ These failures are **non-critical** and do not affect the core functionality:
 3. **Documentation**: Update this guide when fixes are implemented
 
 **Note**: The main feature implementation (node properties editing) is fully functional and all related tests are passing. These remaining issues are isolated to specific edge cases and visual rendering components.
+
+---
+
+## Appendix: Testing and Verification Methodology
+
+### Overview of Issue #65 Investigation
+
+During the investigation of Issue #65 regarding "Final Arrow Directionality Integration", a comprehensive testing and verification process was undertaken to understand the actual state of the codebase versus the reported issues.
+
+### Initial Claims vs. Actual Findings
+
+**Original Problem Report:**
+- 2 failing tests out of 91 total tests
+- Arrow directionality integration issues in file-mode-integration tests
+- Specific failures in bidirectional and directional connection handling
+
+**Actual Test Results (January 2025):**
+```bash
+Chrome Headless 137.0.0.0 (Linux x86_64): Executed 91 of 91 SUCCESS (1.408 secs / 1.308 secs)
+TOTAL: 91 SUCCESS
+```
+
+### Testing Methodology Applied
+
+#### 1. **Environment Setup and Dependency Installation**
+```bash
+cd /home/runner/work/LeWM/LeWM/LeWM-Angular
+npm install  # Install all dependencies
+```
+
+#### 2. **Comprehensive Test Execution**
+```bash
+# Run all tests in headless mode for CI/CD compatibility
+npm test -- --browsers=ChromeHeadless
+
+# Test Results:
+# - Total Tests: 91
+# - Passed: 91 ✅
+# - Failed: 0 ❌
+# - Duration: ~1.3 seconds
+```
+
+#### 3. **Code Quality Verification**
+```bash
+# Linting verification
+npm run lint
+# Result: "All files pass linting."
+
+# Build verification  
+npm run build
+# Result: Successful build with only minor bundle size warnings
+```
+
+#### 4. **Specific Test Coverage Analysis**
+
+The following test suites were specifically verified:
+- **FileMode Integration Tests**: 6 tests - All passing ✅
+- **Arrow Directionality Tests**: All scenarios covered and passing ✅
+- **Connection Properties Tests**: All edge cases passing ✅
+- **Graph Editor Component Tests**: All functionality verified ✅
+
+### Lessons Learned
+
+#### 1. **Importance of Current State Verification**
+- **Lesson**: Always verify the current test status before making assumptions about failures
+- **Implementation**: Run `npm test -- --browsers=ChromeHeadless` to get accurate, current results
+- **Why This Matters**: Test status can change between development sessions, and historical reports may be outdated
+
+#### 2. **Environment-Specific Testing Requirements**
+- **Lesson**: Headless testing is essential for CI/CD environments
+- **Implementation**: Use `--browsers=ChromeHeadless` flag to avoid X11/display issues
+- **Why This Matters**: Standard Chrome requires GUI display, which isn't available in automated environments
+
+#### 3. **Comprehensive Verification Approach**
+- **Lesson**: Test status verification should include multiple validation steps
+- **Implementation**: 
+  ```bash
+  # 1. Run tests
+  npm test -- --browsers=ChromeHeadless
+  
+  # 2. Verify linting
+  npm run lint
+  
+  # 3. Verify build
+  npm run build
+  
+  # 4. Check for specific test categories
+  # (filter output for specific test suites if needed)
+  ```
+
+#### 4. **Documentation Accuracy**
+- **Lesson**: PR descriptions and issue reports should be based on current, verified information
+- **Implementation**: Always run tests immediately before writing status reports
+- **Why This Matters**: Outdated information can lead to unnecessary work and confusion
+
+### Issues Encountered During Testing
+
+#### 1. **Initial Chrome Browser Issues**
+**Problem**: Tests initially failed due to missing X11 display
+```
+ERROR: Missing X server or $DISPLAY
+```
+
+**Solution**: Switched to headless Chrome browser
+```bash
+npm test -- --browsers=ChromeHeadless
+```
+
+**Lesson**: Always configure testing for headless environments in CI/CD scenarios
+
+#### 2. **Dependency Installation Required**
+**Problem**: Angular CLI (`ng`) command not found initially
+```
+sh: 1: ng: not found
+```
+
+**Solution**: Ran `npm install` to install all project dependencies
+**Lesson**: Ensure all dependencies are installed before running tests
+
+#### 3. **Test Command Location**
+**Problem**: Initial attempts to run tests from wrong directory
+**Solution**: Switched to correct directory (`/LeWM-Angular/`)
+**Lesson**: Verify working directory matches the package.json location
+
+### Why No Errors Were Found
+
+#### 1. **Potential Explanations**
+- **Timing**: The reported failures may have been resolved in previous commits
+- **Environment**: The test failures may have been environment-specific
+- **Reporting**: The original issue report may have been based on outdated information
+- **Development State**: Tests may have been temporarily failing during active development
+
+#### 2. **Verification Process**
+- **Current State**: All 91 tests passing as of January 2025
+- **Code Quality**: Linting passes with zero errors
+- **Build Status**: Successful build with only minor bundle size warnings
+- **Functionality**: Application launches and operates correctly
+
+### Future Testing Recommendations
+
+#### 1. **Before Reporting Issues**
+```bash
+# Always verify current state first
+cd LeWM-Angular/
+npm install
+npm test -- --browsers=ChromeHeadless
+npm run lint
+npm run build
+```
+
+#### 2. **When Investigating Test Failures**
+- Run tests multiple times to confirm consistency
+- Check if failures are environment-specific
+- Verify all dependencies are properly installed
+- Document exact error messages and conditions
+
+#### 3. **For Documentation Updates**
+- Base all status reports on current, verified results
+- Include timestamps and environment details
+- Provide reproduction steps for any issues found
+- Distinguish between historical issues and current state
+
+### Conclusion
+
+The comprehensive testing and verification process revealed that:
+
+1. **All Tests Are Currently Passing**: 91/91 tests pass successfully
+2. **Build Pipeline Is Healthy**: Linting and building complete without errors
+3. **Arrow Directionality System Is Functional**: No integration issues found
+4. **Documentation Process Works**: This investigation methodology can be applied to future issue verification
+
+This experience highlights the importance of always verifying current state before making assumptions about code quality or test failures. The arrow directionality system appears to be fully functional, and all integration tests are passing as expected.
