@@ -8,6 +8,7 @@ import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { PinSyncService } from '../../services/pin-sync.service';
 import { FileService } from '../../services/file.service';
+import { FeatureGraphService } from '../../services/feature-graph.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { Pin } from '../../interfaces/pin.interface';
 import { NormalMode } from '../../modes/normal.mode';
@@ -151,6 +152,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   private pinState = inject(PinStateService);
   private pinSync = inject(PinSyncService);
   private fileService = inject(FileService);
+  private featureService = inject(FeatureGraphService);
   private cdr = inject(ChangeDetectorRef);
 
   constructor() {
@@ -351,6 +353,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   addNode(type: string): void {
+    if (!this.featureService.isFeatureEnabled('graph.node')) {
+      console.warn('graph.node feature is disabled');
+      return;
+    }
     const template = this.availableNodes.find(c => c.type === type);
     if (!template) return;
 

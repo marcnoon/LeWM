@@ -91,6 +91,12 @@ src/assets/features/
       "name": "advanced-features",
       "enabled": false,
       "dependencies": ["basic-graph-editing"]
+    },
+    {
+      "id": "graph-node",
+      "name": "graph.node",
+      "enabled": true,
+      "dependencies": ["basic-graph-editing"]
     }
   ]
 }
