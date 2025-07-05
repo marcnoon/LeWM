@@ -1,0 +1,1 @@
+Be sure to update code in LeWM-Angular folder as it contains the main angular app that we are focusing development on.  Only work on the react prototype if specifically requested to do so.
