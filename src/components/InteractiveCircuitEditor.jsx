@@ -30,7 +30,7 @@ const InteractiveCircuitEditor = () => {
 
   const [selectedComponents, setSelectedComponents] = useState(new Set());
   const [dragging, setDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [selectionBox, setSelectionBox] = useState(null);
   const [isCtrlPressed, setIsCtrlPressed] = useState(false);
   const [initialPositions, setInitialPositions] = useState({});
@@ -452,27 +452,25 @@ const InteractiveCircuitEditor = () => {
           return newSet;
         });
       } else {
-        // Regular click - select only this component or start dragging
-        if (!selectedComponents.has(compId)) {
-          setSelectedComponents(new Set([compId]));
-        }
-        
+        // Determine final selection for dragging
+        const finalSelection = selectedComponents.has(compId)
+          ? selectedComponents
+          : new Set([compId]);
+        setSelectedComponents(finalSelection);
+
         // Start dragging
         setDragging(true);
-        
+
         // Store initial positions of all selected components
         const positions = {};
         components.forEach(c => {
-          if (selectedComponents.has(c.id) || c.id === compId) {
+          if (finalSelection.has(c.id)) {
             positions[c.id] = { x: c.x, y: c.y };
           }
         });
         setInitialPositions(positions);
-        
-        setDragOffset({
-          x: mouseX - comp.x,
-          y: mouseY - comp.y
-        });
+
+        setDragStart({ x: mouseX, y: mouseY });
       }
     } else if (!isCtrlPressed) {
       // Click on empty space without Ctrl - clear selection
@@ -503,16 +501,16 @@ const InteractiveCircuitEditor = () => {
       setSelectedComponents(newSelection);
     } else if (dragging && selectedComponents.size > 0) {
       // Move all selected components
-      const deltaX = mouseX - dragOffset.x;
-      const deltaY = mouseY - dragOffset.y;
+      const deltaX = mouseX - dragStart.x;
+      const deltaY = mouseY - dragStart.y;
 
       setComponents(prev => prev.map(comp => {
         if (selectedComponents.has(comp.id)) {
           const initial = initialPositions[comp.id];
           return {
             ...comp,
-            x: Math.max(0, initial.x + (deltaX - initialPositions[Array.from(selectedComponents)[0]].x)),
-            y: Math.max(0, initial.y + (deltaY - initialPositions[Array.from(selectedComponents)[0]].y))
+            x: Math.max(0, initial.x + deltaX),
+            y: Math.max(0, initial.y + deltaY)
           };
         }
         return comp;
@@ -678,9 +676,9 @@ const InteractiveCircuitEditor = () => {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget || e.target.id === 'grid-rect') {
-              handleMouseDown(e, null);
-            }
+      if (e.target === e.currentTarget || e.target.id === 'grid-rect') {
+        handleMouseDown(e, null);
+      }
           }}
         >
           <defs>
