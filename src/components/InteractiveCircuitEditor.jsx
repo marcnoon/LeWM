@@ -504,13 +504,31 @@ const InteractiveCircuitEditor = () => {
       const deltaX = mouseX - dragStart.x;
       const deltaY = mouseY - dragStart.y;
 
+      // Calculate the movement limits for the entire group to maintain relative positions
+      let minAllowedDeltaX = deltaX;
+      let minAllowedDeltaY = deltaY;
+      
+      // Check constraints for all selected components
+      selectedComponents.forEach(compId => {
+        const initial = initialPositions[compId];
+        if (initial) {
+          // Constrain deltaX to prevent going below x = 0
+          const maxNegativeDeltaX = -initial.x;
+          minAllowedDeltaX = Math.max(minAllowedDeltaX, maxNegativeDeltaX);
+          
+          // Constrain deltaY to prevent going below y = 0  
+          const maxNegativeDeltaY = -initial.y;
+          minAllowedDeltaY = Math.max(minAllowedDeltaY, maxNegativeDeltaY);
+        }
+      });
+
       setComponents(prev => prev.map(comp => {
         if (selectedComponents.has(comp.id)) {
           const initial = initialPositions[comp.id];
           return {
             ...comp,
-            x: Math.max(0, initial.x + deltaX),
-            y: Math.max(0, initial.y + deltaY)
+            x: initial.x + minAllowedDeltaX,
+            y: initial.y + minAllowedDeltaY
           };
         }
         return comp;
