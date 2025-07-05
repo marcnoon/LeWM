@@ -491,7 +491,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     } else if (this.dragging && this.selectedNodes.size > 0) {
-      // Move all selected nodes
+      // Move all selected nodes with group-aware boundary constraints
       const deltaX = mouseX - this.dragOffset.x;
       const deltaY = mouseY - this.dragOffset.y;
 
@@ -503,14 +503,32 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         const offsetX = deltaX - initialFirst.x;
         const offsetY = deltaY - initialFirst.y;
 
-        // Create updates map for the service
+        // Calculate the movement limits for the entire group to maintain relative positions
+        let minAllowedOffsetX = offsetX;
+        let minAllowedOffsetY = offsetY;
+        
+        // Check constraints for all selected nodes
+        this.selectedNodes.forEach(nodeId => {
+          const initial = this.initialPositions[nodeId];
+          if (initial) {
+            // Constrain offsetX to prevent going below x = 0
+            const maxNegativeOffsetX = -initial.x;
+            minAllowedOffsetX = Math.max(minAllowedOffsetX, maxNegativeOffsetX);
+            
+            // Constrain offsetY to prevent going below y = 0  
+            const maxNegativeOffsetY = -initial.y;
+            minAllowedOffsetY = Math.max(minAllowedOffsetY, maxNegativeOffsetY);
+          }
+        });
+
+        // Create updates map for the service - apply same constrained offset to ALL selected nodes
         const updates = new Map<string, { x: number; y: number }>();
         this.selectedNodes.forEach(nodeId => {
           const initial = this.initialPositions[nodeId];
           if (initial) {
             updates.set(nodeId, {
-              x: Math.max(0, initial.x + offsetX),
-              y: Math.max(0, initial.y + offsetY)
+              x: initial.x + minAllowedOffsetX,  // ✅ Group-constrained movement
+              y: initial.y + minAllowedOffsetY   // ✅ Group-constrained movement
             });
           }
         });
