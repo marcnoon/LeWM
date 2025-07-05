@@ -95,7 +95,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
 
   selectedNodes = new Set<string>();
   dragging = false;
-  dragOffset = { x: 0, y: 0 };
+  dragStart = { x: 0, y: 0 };
   selectionBox: SelectionBox | null = null;
   isCtrlPressed = false;
   initialPositions: Record<string, { x: number, y: number }> = {};
@@ -457,9 +457,9 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
       
-      this.dragOffset = {
-        x: mouseX - node.x,
-        y: mouseY - node.y
+      this.dragStart = {
+        x: mouseX,
+        y: mouseY
       };
     }
   }
@@ -491,31 +491,40 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     } else if (this.dragging && this.selectedNodes.size > 0) {
-      // Move all selected nodes
-      const deltaX = mouseX - this.dragOffset.x;
-      const deltaY = mouseY - this.dragOffset.y;
+      // Move all selected nodes with group-aware boundary constraints
+      const deltaX = mouseX - this.dragStart.x;
+      const deltaY = mouseY - this.dragStart.y;
 
-      // Get the first selected node as reference
-      const firstSelectedId = Array.from(this.selectedNodes)[0];
-      const initialFirst = this.initialPositions[firstSelectedId];
+      // Calculate the movement limits for the entire group to maintain relative positions
+      let minAllowedDeltaX = deltaX;
+      let minAllowedDeltaY = deltaY;
+      
+      // Check constraints for all selected nodes
+      this.selectedNodes.forEach(nodeId => {
+        const initial = this.initialPositions[nodeId];
+        if (initial) {
+          // Constrain deltaX to prevent going below x = 0
+          const maxNegativeDeltaX = -initial.x;
+          minAllowedDeltaX = Math.max(minAllowedDeltaX, maxNegativeDeltaX);
+          
+          // Constrain deltaY to prevent going below y = 0  
+          const maxNegativeDeltaY = -initial.y;
+          minAllowedDeltaY = Math.max(minAllowedDeltaY, maxNegativeDeltaY);
+        }
+      });
 
-      if (initialFirst) {
-        const offsetX = deltaX - initialFirst.x;
-        const offsetY = deltaY - initialFirst.y;
-
-        // Create updates map for the service
-        const updates = new Map<string, { x: number; y: number }>();
-        this.selectedNodes.forEach(nodeId => {
-          const initial = this.initialPositions[nodeId];
-          if (initial) {
-            updates.set(nodeId, {
-              x: Math.max(0, initial.x + offsetX),
-              y: Math.max(0, initial.y + offsetY)
-            });
-          }
-        });
-        this.graphState.updateNodePositions(updates);
-      }
+      // Create updates map for the service - apply same constrained delta to ALL selected nodes
+      const updates = new Map<string, { x: number; y: number }>();
+      this.selectedNodes.forEach(nodeId => {
+        const initial = this.initialPositions[nodeId];
+        if (initial) {
+          updates.set(nodeId, {
+            x: initial.x + minAllowedDeltaX,  // ✅ Group-constrained movement
+            y: initial.y + minAllowedDeltaY   // ✅ Group-constrained movement
+          });
+        }
+      });
+      this.graphState.updateNodePositions(updates);
     }
   }
 
@@ -523,6 +532,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.dragging = false;
     this.selectionBox = null;
     this.initialPositions = {};
+    this.dragStart = { x: 0, y: 0 };
   }
 
   private handleCanvasMouseDown(event: MouseEvent): void {
