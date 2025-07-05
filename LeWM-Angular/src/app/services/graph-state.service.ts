@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { GraphNode } from '../models/graph-node.model';
 import { GraphEdge } from '../models/graph-edge.model';
+import { ConnectionStateService } from './connection-state.service';
 
 @Injectable({
   providedIn: 'root'
@@ -20,24 +21,14 @@ export class GraphStateService {
     ]},
   ];
   
-  private readonly defaultEdges: GraphEdge[] = [
-    { id: 'conn_1', from: 'power.+9V', to: 'reg.IN' },
-    { id: 'conn_2', from: 'power.GND', to: 'reg.GND' },
-    { id: 'conn_3', from: 'reg.OUT', to: 'amp1.VCC' },
-    { id: 'conn_4', from: 'mic1.OUT', to: 'r1.A' },
-    { id: 'conn_5', from: 'r1.B', to: 'amp1.+IN' },
-  ];
-
-  // Use _nodes and _edges for internal state management
+  // Use _nodes for internal node state management
   private readonly _nodes = new BehaviorSubject<GraphNode[]>(this.loadFromLocalStorage() || this.defaultNodes);
-  private readonly _edges = new BehaviorSubject<GraphEdge[]>(this.defaultEdges);
 
-  // Expose the nodes and edges as observables for components to subscribe to
+  // Expose nodes as observable for components to subscribe to
   readonly nodes$ = this._nodes.asObservable();
-  readonly edges$ = this._edges.asObservable();
-
-  constructor() {
-    //
+  private readonly connections = inject(ConnectionStateService);
+  get edges$() {
+    return this.connections.edges$;
   }
 
   // Method to get the current snapshot of nodes
@@ -114,24 +105,24 @@ export class GraphStateService {
     this._nodes.next(currentNodes.filter(node => !ids.includes(node.id)));
     
     // Also remove edges connected to deleted nodes
-    const currentEdges = this._edges.getValue();
+    const currentEdges = this.connections.getEdges();
     const filteredEdges = currentEdges.filter(edge => {
       const [fromNodeId] = edge.from.split('.');
       const [toNodeId] = edge.to.split('.');
       return !ids.includes(fromNodeId) && !ids.includes(toNodeId);
     });
-    
+
     const removedConnections = currentEdges.length - filteredEdges.length;
     if (removedConnections > 0) {
       console.log(`Removed ${removedConnections} connections due to node deletion`);
     }
-    
-    this._edges.next(filteredEdges);
+
+    this.connections.setEdges(filteredEdges);
   }
 
   // Method to get the current snapshot of edges
   getEdges(): GraphEdge[] {
-    return this._edges.getValue();
+    return this.connections.getEdges();
   }
 
   /**
@@ -139,17 +130,7 @@ export class GraphStateService {
    * @param edge The GraphEdge object to add.
    */
   addEdge(edge: GraphEdge): void {
-    const currentEdges = this._edges.getValue();
-    // Determine unique ID for new edge
-    let newId = edge.id || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const exists = (id: string) => currentEdges.some(e => e.id === id);
-    if (exists(newId)) {
-      do {
-        newId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      } while (exists(newId));
-    }
-    const newEdge = { ...edge, id: newId };
-    this._edges.next([...currentEdges, newEdge]);
+    this.connections.addEdge(edge);
   }
 
   /**
@@ -157,8 +138,7 @@ export class GraphStateService {
    * @param edgeId The ID of the edge to remove.
    */
   removeEdge(edgeId: string): void {
-    const currentEdges = this._edges.getValue();
-    this._edges.next(currentEdges.filter(edge => edge.id !== edgeId));
+    this.connections.removeEdge(edgeId);
   }
 
   /**
@@ -167,37 +147,14 @@ export class GraphStateService {
    * @param updatedEdge The updated edge data.
    */
   updateEdge(edgeId: string, updatedEdge: GraphEdge): void {
-    const currentEdges = this._edges.getValue();
-    const edgeIndex = currentEdges.findIndex(e => e.id === edgeId);
-    if (edgeIndex === -1) {
-      console.warn(`Edge with id ${edgeId} not found`);
-      return;
-    }
-    // Ensure unique ID if changed
-    let newId: string = updatedEdge.id ?? edgeId;
-    if (newId !== edgeId) {
-      const existsOther = (id: string) => currentEdges.some((e, idx) => idx !== edgeIndex && e.id === id);
-      if (existsOther(newId)) {
-        do {
-          newId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        } while (existsOther(newId));
-      }
-    } else {
-      newId = edgeId;
-    }
-    const newEdge = { ...updatedEdge, id: newId };
-    const updatedEdges = [...currentEdges];
-    updatedEdges[edgeIndex] = newEdge;
-    this._edges.next(updatedEdges);
+    this.connections.updateEdge(edgeId, updatedEdge);
   }
 
   /**
    * Notifies subscribers of edge state changes (for selection, hover, etc.)
    */
   notifyEdgeStateChange(): void {
-    // Force notification by re-emitting current edges
-    const currentEdges = this._edges.getValue();
-    this._edges.next([...currentEdges]);
+    this.connections.notifyEdgeStateChange();
   }
 
   /**
@@ -257,7 +214,7 @@ export class GraphStateService {
    * @returns The number of connections removed.
    */
   removeConnectionsForPin(nodeId: string, pinName: string): number {
-    const currentEdges = this._edges.getValue();
+    const currentEdges = this.connections.getEdges();
     const pinReference = `${nodeId}.${pinName}`;
     
     const validEdges = currentEdges.filter(edge => 
@@ -267,7 +224,7 @@ export class GraphStateService {
     const removedCount = currentEdges.length - validEdges.length;
     
     if (removedCount > 0) {
-      this._edges.next(validEdges);
+      this.connections.setEdges(validEdges);
       console.log(`Removed ${removedCount} connections for pin ${nodeId}.${pinName}`);
     }
     
@@ -279,13 +236,13 @@ export class GraphStateService {
    * @returns The number of orphaned connections removed.
    */
   cleanupOrphanedConnections(): number {
-    const currentEdges = this._edges.getValue();
+    const currentEdges = this.connections.getEdges();
     const validEdges = currentEdges.filter(edge => this.isConnectionValid(edge));
     
     const removedCount = currentEdges.length - validEdges.length;
     
     if (removedCount > 0) {
-      this._edges.next(validEdges);
+      this.connections.setEdges(validEdges);
       console.log(`Cleaned up ${removedCount} orphaned connections`);
     }
     
@@ -316,7 +273,7 @@ export class GraphStateService {
    * @returns A summary of the validation results.
    */
   validateConnectionIntegrity(): { totalConnections: number; validConnections: number; removedConnections: number } {
-    const currentEdges = this._edges.getValue();
+    const currentEdges = this.connections.getEdges();
     const totalConnections = currentEdges.length;
     
     const validEdges = currentEdges.filter(edge => this.isConnectionValid(edge));
@@ -324,7 +281,7 @@ export class GraphStateService {
     const removedConnections = totalConnections - validConnections;
     
     if (removedConnections > 0) {
-      this._edges.next(validEdges);
+      this.connections.setEdges(validEdges);
       console.log(`Connection integrity validation: removed ${removedConnections} orphaned connections out of ${totalConnections} total`);
     }
     
@@ -372,7 +329,7 @@ export class GraphStateService {
     localStorage.removeItem('lewm-graph-nodes');
     localStorage.removeItem('lewm-enhanced-pin-properties'); // Clear enhanced properties too
     this._nodes.next(this.defaultNodes);
-    this._edges.next(this.defaultEdges);
+    this.connections.resetToDefaults();
     console.log('🔄 Reset to default data');
   }
 }
