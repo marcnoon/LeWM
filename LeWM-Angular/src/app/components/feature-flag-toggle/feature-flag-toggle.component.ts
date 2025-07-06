@@ -36,6 +36,5 @@ export class FeatureFlagToggleComponent implements OnInit {
 
   toggle(feature: FeatureGraphNode, state: boolean): void {
     this.featureService.setFeatureEnabled(feature.name, state);
-    feature.enabled = state;
   }
 }
