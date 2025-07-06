@@ -1,3 +1,5 @@
+import { PinTextStyle } from "../interfaces/pin.interface";
+
 export interface GraphNode {
   id: string; // Unique identifier for the node
   type: string; // Generic type (e.g., 'basic', 'complex', 'circuit-resistor')
@@ -15,5 +17,6 @@ export interface Pin {
   x: number;
   y: number;
   name: string;
+  textStyle?: PinTextStyle;
 }
 

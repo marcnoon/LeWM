@@ -6,12 +6,14 @@ import { FileService } from '../services/file.service';
 import { GraphEdge } from '../models/graph-edge.model';
 import { GraphNode } from '../models/graph-node.model';
 import { DEFAULT_PIN_TEXT_STYLE } from '../interfaces/pin.interface';
+import { ConnectionStateService } from '../services/connection-state.service';
 
 describe('FileMode', () => {
   let fileMode: FileMode;
   let mockGraphState: jasmine.SpyObj<GraphStateService>;
   let mockPinState: jasmine.SpyObj<PinStateService>;
   let mockFileService: jasmine.SpyObj<FileService>;
+  let connectionStateService: ConnectionStateService;
 
   beforeEach(() => {
     const graphStateSpy = jasmine.createSpyObj('GraphStateService', [
@@ -28,13 +30,15 @@ describe('FileMode', () => {
       providers: [
         { provide: GraphStateService, useValue: graphStateSpy },
         { provide: PinStateService, useValue: pinStateSpy },
-        { provide: FileService, useValue: fileServiceSpy }
+        { provide: FileService, useValue: fileServiceSpy },
+        ConnectionStateService
       ]
     });
 
     mockGraphState = TestBed.inject(GraphStateService) as jasmine.SpyObj<GraphStateService>;
     mockPinState = TestBed.inject(PinStateService) as jasmine.SpyObj<PinStateService>;
     mockFileService = TestBed.inject(FileService) as jasmine.SpyObj<FileService>;
+    connectionStateService = TestBed.inject(ConnectionStateService);
 
     fileMode = new FileMode(mockGraphState, mockPinState, mockFileService);
   });
@@ -339,7 +343,7 @@ describe('FileMode', () => {
   describe('Real Integration Test', () => {
     it('should verify import/export round-trip preserves all connection metadata', () => {
       // This test uses real services to ensure no properties are lost
-      const realGraphState = new GraphStateService();
+      const realGraphState = TestBed.inject(GraphStateService);
       const realPinState = new PinStateService();
       const realFileMode = new FileMode(realGraphState, realPinState, mockFileService);
 

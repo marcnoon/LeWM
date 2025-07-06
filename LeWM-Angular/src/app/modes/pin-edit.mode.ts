@@ -81,6 +81,9 @@ export class PinEditMode implements GraphMode {
   async deactivate(): Promise<void> {
     console.log('Pin Edit mode deactivating - ensuring data consistency...');
     
+    // Commit changes before deactivating
+    this.commitPinChanges();
+
     // Validate pin consistency before deactivation
     const validation = this.pinState.validatePinConsistency(this.graphState);
     if (!validation.isValid) {
@@ -101,6 +104,30 @@ export class PinEditMode implements GraphMode {
     this.pinState.setPinModeActive(false);
     
     console.log('✅ Pin Edit mode deactivated with data consistency ensured');
+  }
+
+  private commitPinChanges(): void {
+    const updatedPins = this.pinState.getAllPins();
+    if (updatedPins.size === 0) {
+      console.log('No pin changes to commit.');
+      return;
+    }
+
+    console.log(`Committing ${updatedPins.size} pin changes to GraphStateService.`);
+
+    // Create a map to group pins by nodeId
+    const pinsByNode = new Map<string, Pin[]>();
+    updatedPins.forEach(pin => {
+      if (!pinsByNode.has(pin.nodeId)) {
+        pinsByNode.set(pin.nodeId, []);
+      }
+      pinsByNode.get(pin.nodeId)!.push(pin);
+    });
+
+    // Update each node with its new set of pins
+    pinsByNode.forEach((pins, nodeId) => {
+      this.graphState.updateNodePins(nodeId, pins);
+    });
   }
 
   handleNodeClick(node: GraphNode): boolean {

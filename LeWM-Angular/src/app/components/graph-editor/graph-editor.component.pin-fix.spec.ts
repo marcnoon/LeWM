@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { GraphEditorComponent } from './graph-editor.component';
 import { GraphStateService } from '../../services/graph-state.service';
 import { ModeManagerService } from '../../services/mode-manager.service';
@@ -47,7 +48,7 @@ describe('GraphEditorComponent - Pin Mode Enter Key Fix', () => {
     modeManagerSpy.getActiveMode.and.returnValue(mockPinEditMode);
 
     await TestBed.configureTestingModule({
-      imports: [GraphEditorComponent],
+      imports: [GraphEditorComponent, HttpClientTestingModule],
       providers: [
         { provide: GraphStateService, useValue: jasmine.createSpyObj('GraphStateService', ['nodes', 'edges']) },
         { provide: ModeManagerService, useValue: modeManagerSpy },

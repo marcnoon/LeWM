@@ -387,4 +387,44 @@ describe('GraphEditorComponent', () => {
       expect(component.showPinDialog).toBe(true); // Dialog should remain open
     });
   });
+
+  describe('Pin and Text Positioning', () => {
+    it('should correctly position pins and text when switching between pin mode and normal mode', () => {
+      // 1. Create a node with a pin
+      const testNode: GraphNode = {
+        id: 'test-node-pos',
+        x: 200,
+        y: 200,
+        width: 150,
+        height: 80,
+        type: 'test',
+        label: 'Test Node Position',
+        pins: [{ x: 0, y: 40, name: 'testPin' }]
+      };
+      component['graphState'].addNode(testNode);
+      fixture.detectChanges();
+
+      // 2. Switch to pin-edit mode
+      component.switchToPinEditMode();
+      fixture.detectChanges();
+
+      // 3. Check the pin and text positions in pin-edit mode
+      let pinElement = fixture.nativeElement.querySelector(`[data-pin-id="${testNode.id}.testPin"]`);
+      let textElement = fixture.nativeElement.querySelector(`[data-pin-id="${testNode.id}.testPin"] text`);
+      
+      expect(pinElement.getAttribute('transform')).toBe('translate(200, 240)');
+      expect(textElement.getAttribute('x')).toBe('10');
+
+      // 4. Switch back to normal mode
+      component.switchToNormalMode();
+      fixture.detectChanges();
+
+      // 5. Check the pin and text positions again
+      pinElement = fixture.nativeElement.querySelector(`[data-pin-id="${testNode.id}.testPin"]`);
+      textElement = fixture.nativeElement.querySelector(`[data-pin-id="${testNode.id}.testPin"] text`);
+
+      expect(pinElement.getAttribute('transform')).toBe('translate(200, 240)');
+      expect(textElement.getAttribute('x')).toBe('10');
+    });
+  });
 });

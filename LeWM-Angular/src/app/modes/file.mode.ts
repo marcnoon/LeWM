@@ -193,51 +193,55 @@ export class FileMode implements GraphMode {
     });
 
     // 2. Import pins
-    data.pins.forEach((pin: Pin) => {
-      // Add pin to node
-      const nodes = this.graphState.getNodes();
-      const node = nodes.find(n => n.id === pin.nodeId);
-      if (node) {
-        const updatedNode = {
-          ...node,
-          pins: [...(node.pins || []), {
-            name: pin.label,
-            x: pin.position.x || 0,
-            y: pin.position.y || 0,
-            side: pin.position.side,
-            offset: pin.position.offset
-          }]
-        };
-        this.graphState.updateNode(pin.nodeId, updatedNode);
-        
-        // Also sync to PinStateService for pin editing
-        this.pinState.importPin({
-          ...pin,
-          id: pin.id,
-          nodeId: pin.nodeId,
-          label: pin.label,
-          position: pin.position,
-          pinType: pin.pinType,
-          pinStyle: pin.pinStyle,
-          textStyle: { ...DEFAULT_PIN_TEXT_STYLE },
-          isInput: pin.pinType === 'input' || pin.pinType === 'bidirectional',
-          isOutput: pin.pinType === 'output' || pin.pinType === 'bidirectional',
-          pinNumber: '',
-          signalName: '',
-          pinSize: 4,
-          pinColor: '#000000',
-          showPinNumber: false
-        });
-      }
-    });
+    if (data.pins) {
+      data.pins.forEach((pin: Pin) => {
+        // Add pin to node
+        const nodes = this.graphState.getNodes();
+        const node = nodes.find(n => n.id === pin.nodeId);
+        if (node) {
+          const updatedNode = {
+            ...node,
+            pins: [...(node.pins || []), {
+              name: pin.label,
+              x: pin.position.x || 0,
+              y: pin.position.y || 0,
+              side: pin.position.side,
+              offset: pin.position.offset
+            }]
+          };
+          this.graphState.updateNode(pin.nodeId, updatedNode);
+          
+          // Also sync to PinStateService for pin editing
+          this.pinState.importPin({
+            ...pin,
+            id: pin.id,
+            nodeId: pin.nodeId,
+            label: pin.label,
+            position: pin.position,
+            pinType: pin.pinType,
+            pinStyle: pin.pinStyle,
+            textStyle: { ...DEFAULT_PIN_TEXT_STYLE },
+            isInput: pin.pinType === 'input' || pin.pinType === 'bidirectional',
+            isOutput: pin.pinType === 'output' || pin.pinType === 'bidirectional',
+            pinNumber: '',
+            signalName: '',
+            pinSize: 4,
+            pinColor: '#000000',
+            showPinNumber: false
+          });
+        }
+      });
+    }
 
     // 3. Import connections
-    data.connections.forEach((conn: GraphEdge) => {
-      // Use GraphStateService to add edge with all properties preserved
-      this.graphState.addEdge(conn);
-    });
+    if (data.connections) {
+      data.connections.forEach((conn: GraphEdge) => {
+        // Use GraphStateService to add edge with all properties preserved
+        this.graphState.addEdge(conn);
+      });
+    }
 
-    console.log(`Imported graph: ${data.nodes.length} nodes, ${data.pins.length} pins, ${data.connections.length} connections`);
+    console.log(`Imported graph: ${data.nodes.length} nodes, ${data.pins?.length || 0} pins, ${data.connections?.length || 0} connections`);
   }
 
   private getAllPins(): Pin[] {

@@ -90,4 +90,5 @@ export interface LegacyPin {
   offset?: number;
   type?: 'input' | 'output' | 'bidirectional' | 'power' | 'ground';
   style?: PinStyle;
+  textStyle?: PinTextStyle;
 }

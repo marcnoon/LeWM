@@ -426,6 +426,10 @@ export class PinStateService {
     return result;
   }
 
+  getAllPins(): Map<string, Pin> {
+    return this.pinsSubject.value;
+  }
+
   /**
    * Validates that pin data is consistent between PinStateService and legacy system
    * @param graphStateService Reference to GraphStateService for validation

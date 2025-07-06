@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { GraphNode } from '../models/graph-node.model';
 import { GraphEdge } from '../models/graph-edge.model';
 import { ConnectionStateService } from './connection-state.service';
+import { DEFAULT_PIN_TEXT_STYLE } from '../interfaces/pin.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -10,14 +11,14 @@ import { ConnectionStateService } from './connection-state.service';
 export class GraphStateService {
   // Default initial data
   private readonly defaultNodes: GraphNode[] = [
-    { id: 'power', type: 'power', x: 100, y: 150, width: 80, height: 60, label: '9V Battery', pins: [{x: 80, y: 20, name: '+9V'}, {x: 80, y: 40, name: 'GND'}] },
-    { id: 'reg', type: 'ic', x: 250, y: 150, width: 60, height: 40, label: 'LM7805', pins: [{x: 0, y: 20, name: 'IN'}, {x: 30, y: 40, name: 'GND'}, {x: 60, y: 20, name: 'OUT'}] },
-    { id: 'mic1', type: 'component', x: 100, y: 250, width: 40, height: 40, label: 'MIC1', pins: [{x: 40, y: 20, name: 'OUT'}, {x: 20, y: 40, name: 'GND'}] },
-    { id: 'r1', type: 'resistor', x: 180, y: 270, width: 60, height: 20, label: '10kΩ', pins: [{x: 0, y: 10, name: 'A'}, {x: 60, y: 10, name: 'B'}] },
+    { id: 'power', type: 'power', x: 100, y: 150, width: 80, height: 60, label: '9V Battery', pins: [{x: 80, y: 20, name: '+9V', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 80, y: 40, name: 'GND', textStyle: DEFAULT_PIN_TEXT_STYLE}] },
+    { id: 'reg', type: 'ic', x: 250, y: 150, width: 60, height: 40, label: 'LM7805', pins: [{x: 0, y: 20, name: 'IN', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 30, y: 40, name: 'GND', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 60, y: 20, name: 'OUT', textStyle: DEFAULT_PIN_TEXT_STYLE}] },
+    { id: 'mic1', type: 'component', x: 100, y: 250, width: 40, height: 40, label: 'MIC1', pins: [{x: 40, y: 20, name: 'OUT', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 20, y: 40, name: 'GND', textStyle: DEFAULT_PIN_TEXT_STYLE}] },
+    { id: 'r1', type: 'resistor', x: 180, y: 270, width: 60, height: 20, label: '10kΩ', pins: [{x: 0, y: 10, name: 'A', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 60, y: 10, name: 'B', textStyle: DEFAULT_PIN_TEXT_STYLE}] },
     { id: 'amp1', type: 'ic', x: 300, y: 230, width: 80, height: 60, label: 'LM386', pins: [
-      {x: 0, y: 15, name: 'GAIN'}, {x: 0, y: 30, name: '-IN'}, {x: 0, y: 45, name: '+IN'},
-      {x: 20, y: 60, name: 'GND'}, {x: 40, y: 60, name: 'VCC'}, {x: 60, y: 60, name: 'BYP'},
-      {x: 80, y: 45, name: 'OUT'}, {x: 80, y: 15, name: 'VS'}
+      {x: 0, y: 15, name: 'GAIN', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 0, y: 30, name: '-IN', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 0, y: 45, name: '+IN', textStyle: DEFAULT_PIN_TEXT_STYLE},
+      {x: 20, y: 60, name: 'GND', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 40, y: 60, name: 'VCC', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 60, y: 60, name: 'BYP', textStyle: DEFAULT_PIN_TEXT_STYLE},
+      {x: 80, y: 45, name: 'OUT', textStyle: DEFAULT_PIN_TEXT_STYLE}, {x: 80, y: 15, name: 'VS', textStyle: DEFAULT_PIN_TEXT_STYLE}
     ]},
   ];
   
@@ -84,6 +85,51 @@ export class GraphStateService {
     this.saveToLocalStorage();
     
     console.log(`💾 Node ${nodeId} updated and saved to localStorage`);
+  }
+
+  /**
+   * Updates only the pins of a specific node.
+   * @param nodeId The ID of the node to update.
+   * @param pins The new array of pins for the node.
+   */
+  updateNodePins(nodeId: string, pins: any[]): void {
+    const currentNodes = this._nodes.getValue();
+    const nodeIndex = currentNodes.findIndex(n => n.id === nodeId);
+
+    if (nodeIndex === -1) {
+      console.warn(`Node with id ${nodeId} not found for pin update`);
+      return;
+    }
+
+    console.log(`📝 Updating pins for node ${nodeId}`);
+    const updatedNodes = [...currentNodes];
+    updatedNodes[nodeIndex] = {
+      ...updatedNodes[nodeIndex],
+      pins: pins.map(p => ({
+        // Convert from Pin to LegacyPin format for storage
+        name: p.label,
+        x: p.position.x,
+        y: p.position.y,
+        side: p.position.side,
+        offset: p.position.offset,
+        // Copy other relevant properties
+        pinType: p.pinType,
+        isInput: p.isInput,
+        isOutput: p.isOutput,
+        dataType: p.dataType,
+        pinNumber: p.pinNumber,
+        signalName: p.signalName,
+        pinSize: p.pinSize,
+        pinColor: p.pinColor,
+        showPinNumber: p.showPinNumber,
+        textStyle: p.textStyle,
+        pinStyle: p.pinStyle,
+      }))
+    };
+    
+    this._nodes.next(updatedNodes);
+    this.saveToLocalStorage();
+    console.log(`💾 Pins for node ${nodeId} updated and saved.`);
   }
 
   /**
@@ -312,7 +358,17 @@ export class GraphStateService {
     try {
       const saved = localStorage.getItem('lewm-graph-nodes');
       if (saved) {
-        const nodes = JSON.parse(saved);
+        const nodes = JSON.parse(saved) as GraphNode[];
+        // Ensure all pins have a textStyle property
+        nodes.forEach(node => {
+          if (node.pins) {
+            node.pins.forEach(pin => {
+              if (!pin.textStyle) {
+                pin.textStyle = DEFAULT_PIN_TEXT_STYLE;
+              }
+            });
+          }
+        });
         console.log('📥 Loaded nodes from localStorage');
         return nodes;
       }
