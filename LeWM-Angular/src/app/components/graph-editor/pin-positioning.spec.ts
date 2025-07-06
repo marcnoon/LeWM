@@ -1,5 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { GraphEditorComponent } from './graph-editor.component';
+import { GraphStateService } from '../../services/graph-state.service';
+import { ModeManagerService } from '../../services/mode-manager.service';
+import { PinStateService } from '../../services/pin-state.service';
+import { FileService } from '../../services/file.service';
 import { GraphNode } from '../../models/graph-node.model';
 import { Pin, DEFAULT_PIN_TEXT_STYLE, DEFAULT_PIN_STYLE } from '../../interfaces/pin.interface';
 
@@ -9,7 +15,14 @@ describe('Pin Positioning', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GraphEditorComponent]
+      imports: [GraphEditorComponent, HttpClientTestingModule],
+      providers: [
+        GraphStateService,
+        ModeManagerService,
+        PinStateService,
+        FileService
+      ],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA]
     }).compileComponents();
 
     fixture = TestBed.createComponent(GraphEditorComponent);
@@ -100,7 +113,7 @@ describe('Pin Positioning', () => {
         },
         textStyle: {
           ...DEFAULT_PIN_TEXT_STYLE,
-          offset: { x: 10, y: 5 }
+          offset: { x: 3, y: 2 }
         },
         pinStyle: { ...DEFAULT_PIN_STYLE },
         isInput: true,
@@ -114,8 +127,8 @@ describe('Pin Positioning', () => {
       };
 
       const textPosition = component.calculatePinTextPosition(pin, node);
-      expect(textPosition.x).toBe(130); // 120 + 10 (pin pos + text offset)
-      expect(textPosition.y).toBe(135); // 130 + 5
+      expect(textPosition.x).toBe(123); // 120 + 3 (pin pos + text offset)
+      expect(textPosition.y).toBe(132); // 130 + 2
     });
   });
 
