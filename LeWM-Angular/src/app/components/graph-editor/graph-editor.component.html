@@ -1,13 +1,16 @@
 <div class="graph-editor">
   <div class="toolbar" [style.width.px]="toolbarWidth">
     <h3>Node Library</h3>
-    <div class="node-buttons">
+    <div class="node-buttons" *ngIf="graphNodeEnabled$ | async">
       <button *ngFor="let node of availableNodes" 
               (click)="addNode(node.type)"
               (keydown.enter)="addNode(node.type)"
               class="node-btn">
         + {{ node.label }}
       </button>
+    </div>
+    <div class="node-buttons-disabled" *ngIf="(graphNodeEnabled$ | async) === false">
+      <p class="feature-disabled-message">Node creation is disabled. Enable the 'Graph Node' feature to create nodes.</p>
     </div>
     
     <div class="controls">
@@ -74,6 +77,9 @@
         </button>
       </div>
     </div>
+    
+    <!-- Feature Flags -->
+    <app-feature-flag-toggle></app-feature-flag-toggle>
   </div>
   
   <!-- Resize handle -->

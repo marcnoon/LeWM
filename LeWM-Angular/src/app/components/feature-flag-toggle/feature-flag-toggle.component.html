@@ -1,0 +1,18 @@
+<div class="feature-flag-toggle">
+  <h4>Feature Flags</h4>
+  <div class="feature-list" *ngIf="featureGraph$ | async as featureGraph">
+    <div *ngFor="let feature of featureGraph.features" class="feature-item">
+      <label class="feature-toggle">
+        <input 
+          type="checkbox" 
+          [checked]="isFeatureEnabled(feature.name)"
+          (change)="toggleFeature(feature.name)"
+        >
+        <span class="feature-name">{{ getFeatureDisplayName(feature) }}</span>
+        <span class="feature-id" *ngIf="feature.dependencies && feature.dependencies.length > 0">
+          (depends on: {{ feature.dependencies.join(', ') }})
+        </span>
+      </label>
+    </div>
+  </div>
+</div>

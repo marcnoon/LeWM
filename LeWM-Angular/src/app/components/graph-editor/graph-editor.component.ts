@@ -8,6 +8,7 @@ import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { PinSyncService } from '../../services/pin-sync.service';
 import { FileService } from '../../services/file.service';
+import { FeatureGraphService } from '../../services/feature-graph.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { Pin } from '../../interfaces/pin.interface';
 import { NormalMode } from '../../modes/normal.mode';
@@ -24,6 +25,7 @@ import { PinNameDialogComponent } from '../pin-name-dialog/pin-name-dialog.compo
 import { PinLayoutEditorComponent } from '../pin-layout-editor/pin-layout-editor.component';
 import { HandleComponent } from '../handle/handle';
 import { PinModeToolbarComponent } from '../pin-mode-toolbar/pin-mode-toolbar.component';
+import { FeatureFlagToggleComponent } from '../feature-flag-toggle/feature-flag-toggle.component';
 
 interface AvailableNode {
   type: string;
@@ -59,7 +61,8 @@ interface LegacyPin {
     PinNameDialogComponent,
     PinLayoutEditorComponent,
     HandleComponent,
-    PinModeToolbarComponent
+    PinModeToolbarComponent,
+    FeatureFlagToggleComponent
   ],
   templateUrl: './graph-editor.component.html',
   styleUrl: './graph-editor.component.scss'
@@ -152,10 +155,15 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   private pinSync = inject(PinSyncService);
   private fileService = inject(FileService);
   private cdr = inject(ChangeDetectorRef);
+  private featureGraphService = inject(FeatureGraphService);
+
+  // Feature flag observables
+  graphNodeEnabled$: Observable<boolean>;
 
   constructor() {
     // The mode manager will handle mode creation and management
     // Initialize with a null mode - will be set during ngOnInit
+    this.graphNodeEnabled$ = this.featureGraphService.isFeatureEnabled$('graph.node');
   }
 
   ngOnInit(): void {
@@ -351,6 +359,12 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   addNode(type: string): void {
+    // Check if graph.node feature is enabled
+    if (!this.featureGraphService.isFeatureEnabled('graph.node')) {
+      console.warn('Node creation is disabled: graph.node feature is not enabled');
+      return;
+    }
+
     const template = this.availableNodes.find(c => c.type === type);
     if (!template) return;
 
