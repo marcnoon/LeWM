@@ -353,6 +353,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   addNode(type: string): void {
+    // Use synchronous method for imperative checks
     if (!this.featureService.isFeatureEnabled('graph.node')) {
       console.warn('graph.node feature is disabled');
       return;

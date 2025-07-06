@@ -119,4 +119,105 @@ describe('FeatureGraphService', () => {
     expect(service.getEnabledFeatures()).toEqual([]);
     expect(service.isFeatureEnabled('any-feature')).toBe(false);
   });
+
+  // Test new observable methods
+  it('should provide observable for feature enabled state', async () => {
+    const testGraph: FeatureGraph = {
+      features: [
+        { id: 'feature1', name: 'basic-feature', enabled: true },
+        { id: 'feature2', name: 'disabled-feature', enabled: false }
+      ]
+    };
+    
+    const loadPromise = service.loadFeatures();
+    
+    const req = httpMock.expectOne('assets/features/public/dev.graph.json');
+    req.flush(testGraph);
+    
+    await loadPromise;
+    
+    service.isFeatureEnabled$('basic-feature').subscribe(enabled => {
+      expect(enabled).toBe(true);
+    });
+    
+    service.isFeatureEnabled$('disabled-feature').subscribe(enabled => {
+      expect(enabled).toBe(false);
+    });
+    
+    service.isFeatureEnabled$('non-existent-feature').subscribe(enabled => {
+      expect(enabled).toBe(false);
+    });
+  });
+
+  it('should provide observable for enabled features list', async () => {
+    const testGraph: FeatureGraph = {
+      features: [
+        { id: 'feature1', name: 'basic-feature', enabled: true },
+        { id: 'feature2', name: 'disabled-feature', enabled: false }
+      ]
+    };
+    
+    const loadPromise = service.loadFeatures();
+    
+    const req = httpMock.expectOne('assets/features/public/dev.graph.json');
+    req.flush(testGraph);
+    
+    await loadPromise;
+    
+    service.getEnabledFeatures$().subscribe(features => {
+      expect(features).toEqual(['basic-feature']);
+    });
+  });
+
+  it('should provide observable for all features', async () => {
+    const testGraph: FeatureGraph = {
+      features: [
+        { id: 'feature1', name: 'basic-feature', enabled: true },
+        { id: 'feature2', name: 'disabled-feature', enabled: false }
+      ]
+    };
+    
+    const loadPromise = service.loadFeatures();
+    
+    const req = httpMock.expectOne('assets/features/public/dev.graph.json');
+    req.flush(testGraph);
+    
+    await loadPromise;
+    
+    service.getAllFeatures$().subscribe(features => {
+      expect(features).toEqual(testGraph.features);
+    });
+  });
+
+  it('should update observables when features are modified', (done) => {
+    const testGraph: FeatureGraph = {
+      features: [
+        { id: 'feature1', name: 'basic-feature', enabled: false }
+      ]
+    };
+    
+    service.loadFeatures().then(() => {
+      let checkCount = 0;
+      
+      // Subscribe to the observable to monitor changes
+      service.isFeatureEnabled$('basic-feature').subscribe(enabled => {
+        checkCount++;
+        
+        if (checkCount === 1) {
+          // First emission should be false (initial state)
+          expect(enabled).toBe(false);
+          
+          // Enable the feature to trigger the second emission
+          service.setFeatureEnabled('basic-feature', true);
+        } else if (checkCount === 2) {
+          // Second emission should be true (after enabling)
+          expect(enabled).toBe(true);
+          done();
+        }
+      });
+    });
+    
+    const req = httpMock.expectOne('assets/features/public/dev.graph.json');
+    req.flush(testGraph);
+  });
 });

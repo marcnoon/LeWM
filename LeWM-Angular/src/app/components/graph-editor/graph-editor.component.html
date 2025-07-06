@@ -1,7 +1,7 @@
 <div class="graph-editor">
   <div class="toolbar" [style.width.px]="toolbarWidth">
     <h3>Node Library</h3>
-    <div class="node-buttons" *ngIf="featureService.isFeatureEnabled('graph.node')">
+    <div class="node-buttons" *ngIf="(featureService.isFeatureEnabled$('graph.node') | async)">
       <button *ngFor="let node of availableNodes" 
               (click)="addNode(node.type)"
               (keydown.enter)="addNode(node.type)"

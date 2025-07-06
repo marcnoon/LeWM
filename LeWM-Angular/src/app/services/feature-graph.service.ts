@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { FeatureGraph, FeatureGraphNode } from '../interfaces/feature-graph.interface';
 import { environment } from '../../environments/environment';
 
@@ -10,6 +11,7 @@ import { environment } from '../../environments/environment';
 export class FeatureGraphService {
   private featureGraph: FeatureGraph | null = null;
   private readonly featuresLoaded$ = new BehaviorSubject<boolean>(false);
+  private readonly featureGraphSubject$ = new BehaviorSubject<FeatureGraph | null>(null);
 
   private http = inject(HttpClient);
 
@@ -27,10 +29,12 @@ export class FeatureGraphService {
       
       console.log(`Loaded ${this.featureGraph.features.length} features`);
       this.featuresLoaded$.next(true);
+      this.featureGraphSubject$.next(this.featureGraph);
     } catch (error) {
       console.warn('Failed to load feature graph, falling back to empty feature set', error);
       this.featureGraph = { features: [] };
       this.featuresLoaded$.next(true);
+      this.featureGraphSubject$.next(this.featureGraph);
     }
   }
 
@@ -49,6 +53,23 @@ export class FeatureGraphService {
   }
 
   /**
+   * Observable method to check if a feature is enabled
+   * @param featureName The name of the feature to check
+   * @returns Observable that emits true if the feature is enabled
+   */
+  isFeatureEnabled$(featureName: string): Observable<boolean> {
+    return this.featureGraphSubject$.pipe(
+      map(graph => {
+        if (!graph) {
+          return false;
+        }
+        // Use the same logic as the synchronous method
+        return this.checkFeatureEnabled(featureName, new Set());
+      })
+    );
+  }
+
+  /**
    * Gets all enabled features
    * @returns Array of enabled feature names
    */
@@ -63,10 +84,37 @@ export class FeatureGraphService {
   }
 
   /**
+   * Observable method to get all enabled features
+   * @returns Observable that emits array of enabled feature names
+   */
+  getEnabledFeatures$(): Observable<string[]> {
+    return this.featureGraphSubject$.pipe(
+      map(graph => {
+        if (!graph) {
+          return [];
+        }
+        return graph.features
+          .filter(feature => this.isFeatureEnabled(feature.name))
+          .map(feature => feature.name);
+      })
+    );
+  }
+
+  /**
    * Returns all features with their current state
    */
   getAllFeatures(): FeatureGraphNode[] {
     return this.featureGraph ? [...this.featureGraph.features] : [];
+  }
+
+  /**
+   * Observable method to get all features with their current state
+   * @returns Observable that emits array of all features
+   */
+  getAllFeatures$(): Observable<FeatureGraphNode[]> {
+    return this.featureGraphSubject$.pipe(
+      map(graph => graph ? [...graph.features] : [])
+    );
   }
 
   /**
@@ -77,6 +125,7 @@ export class FeatureGraphService {
     if (feature) {
       feature.enabled = enabled;
       this.featuresLoaded$.next(true);
+      this.featureGraphSubject$.next(this.featureGraph);
     }
   }
 

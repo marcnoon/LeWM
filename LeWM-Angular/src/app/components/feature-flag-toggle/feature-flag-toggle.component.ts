@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
 import { FeatureGraphService } from '../../services/feature-graph.service';
 import { FeatureGraphNode } from '../../interfaces/feature-graph.interface';
 
@@ -9,11 +10,11 @@ import { FeatureGraphNode } from '../../interfaces/feature-graph.interface';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="feature-toggle" *ngIf="features.length">
+    <div class="feature-toggle" *ngIf="(features$ | async) as features">
       <div *ngFor="let feature of features" class="feature-row">
         <label>
           <input type="checkbox" [checked]="feature.enabled"
-                 (change)="toggle(feature, $event.target.checked)" />
+                 (change)="toggle(feature, $any($event.target).checked)" />
           {{ feature.name }}
         </label>
       </div>
@@ -24,14 +25,12 @@ import { FeatureGraphNode } from '../../interfaces/feature-graph.interface';
     .feature-row { margin-bottom: 0.25rem; }
   `]
 })
-export class FeatureFlagToggleComponent implements OnInit {
-  features: FeatureGraphNode[] = [];
+export class FeatureFlagToggleComponent {
+  features$: Observable<FeatureGraphNode[]>;
   private featureService = inject(FeatureGraphService);
 
-  ngOnInit(): void {
-    this.featureService.featuresLoaded.subscribe(() => {
-      this.features = this.featureService.getAllFeatures();
-    });
+  constructor() {
+    this.features$ = this.featureService.getAllFeatures$();
   }
 
   toggle(feature: FeatureGraphNode, state: boolean): void {
