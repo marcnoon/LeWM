@@ -1,0 +1,58 @@
+.feature-flag-toggle {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}
+
+.feature-flag-toggle h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+}
+
+.feature-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.feature-toggle input[type="checkbox"] {
+  margin: 0;
+  transform: scale(0.9);
+}
+
+.feature-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.feature-id {
+  color: #666;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.feature-toggle input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feature-toggle input[type="checkbox"]:disabled + .feature-name {
+  color: #999;
+}

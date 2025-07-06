@@ -44,6 +44,7 @@ export class AppComponent {
       if (loaded) {
         console.log('Feature Flag System Status:');
         console.log('- basic-graph-editing enabled:', this.featureGraphService.isFeatureEnabled('basic-graph-editing'));
+        console.log('- graph.node enabled:', this.featureGraphService.isFeatureEnabled('graph.node'));
         console.log('- advanced-features enabled:', this.featureGraphService.isFeatureEnabled('advanced-features'));
         console.log('- non-existent-feature enabled:', this.featureGraphService.isFeatureEnabled('non-existent-feature'));
         console.log('- all enabled features:', this.featureGraphService.getEnabledFeatures());

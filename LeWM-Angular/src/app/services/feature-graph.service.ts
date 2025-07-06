@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, map } from 'rxjs';
 import { FeatureGraph } from '../interfaces/feature-graph.interface';
 import { environment } from '../../environments/environment';
 
@@ -10,6 +10,7 @@ import { environment } from '../../environments/environment';
 export class FeatureGraphService {
   private featureGraph: FeatureGraph | null = null;
   private readonly featuresLoaded$ = new BehaviorSubject<boolean>(false);
+  private readonly featureGraph$ = new BehaviorSubject<FeatureGraph | null>(null);
 
   private http = inject(HttpClient);
 
@@ -26,10 +27,12 @@ export class FeatureGraphService {
       this.featureGraph = graph || { features: [] };
       
       console.log(`Loaded ${this.featureGraph.features.length} features`);
+      this.featureGraph$.next(this.featureGraph);
       this.featuresLoaded$.next(true);
     } catch (error) {
       console.warn('Failed to load feature graph, falling back to empty feature set', error);
       this.featureGraph = { features: [] };
+      this.featureGraph$.next(this.featureGraph);
       this.featuresLoaded$.next(true);
     }
   }
@@ -46,6 +49,39 @@ export class FeatureGraphService {
     }
 
     return this.checkFeatureEnabled(featureName, new Set());
+  }
+
+  /**
+   * Observable that emits whether a feature is enabled
+   * @param featureName The name of the feature to check
+   * @returns Observable<boolean> that emits true if the feature is enabled
+   */
+  isFeatureEnabled$(featureName: string): Observable<boolean> {
+    return this.featureGraph$.pipe(
+      map(graph => {
+        if (!graph) return false;
+        this.featureGraph = graph;
+        return this.checkFeatureEnabled(featureName, new Set());
+      })
+    );
+  }
+
+  /**
+   * Toggle a feature at runtime
+   * @param featureName The name of the feature to toggle
+   */
+  toggleFeature(featureName: string): void {
+    if (!this.featureGraph) {
+      console.warn('Feature graph not loaded yet');
+      return;
+    }
+
+    const feature = this.featureGraph.features.find(f => f.name === featureName);
+    if (feature) {
+      feature.enabled = !feature.enabled;
+      this.featureGraph$.next(this.featureGraph);
+      console.log(`Feature ${featureName} toggled to ${feature.enabled}`);
+    }
   }
 
   /**
@@ -67,6 +103,13 @@ export class FeatureGraphService {
    */
   get featuresLoaded(): Observable<boolean> {
     return this.featuresLoaded$.asObservable();
+  }
+
+  /**
+   * Observable for the complete feature graph
+   */
+  get featureGraphObservable(): Observable<FeatureGraph | null> {
+    return this.featureGraph$.asObservable();
   }
 
   /**

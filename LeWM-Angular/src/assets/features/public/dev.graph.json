@@ -6,6 +6,12 @@
       "enabled": true
     },
     {
+      "id": "graph.node",
+      "name": "graph.node",
+      "enabled": true,
+      "dependencies": ["basic-graph-editing"]
+    },
+    {
       "id": "advanced-features",
       "name": "advanced-features", 
       "enabled": false,
