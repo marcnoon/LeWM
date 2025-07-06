@@ -8,7 +8,19 @@
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 250px;
+  max-width: 280px;
   z-index: 1000;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  
+  /* Ensure toolbar doesn't overlap with graph content */
+  @media (max-width: 1200px) {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 10px auto;
+    max-width: 100%;
+  }
 }
 
 .toolbar-section {
