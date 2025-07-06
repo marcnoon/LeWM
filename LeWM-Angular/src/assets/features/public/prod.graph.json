@@ -1,3 +1,9 @@
 {
-  "features": []
+  "features": [
+    {
+      "id": "graph-node",
+      "name": "graph.node",
+      "enabled": true
+    }
+  ]
 }

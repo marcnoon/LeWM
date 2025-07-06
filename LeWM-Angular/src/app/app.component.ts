@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { GraphEditorComponent } from './components/graph-editor/graph-editor.component';
 import { HandleComponent } from './components/handle/handle';
+import { FeatureFlagToggleComponent } from './components/feature-flag-toggle/feature-flag-toggle.component';
 
 @Component({
   selector: 'app-root',
@@ -16,7 +17,8 @@ import { HandleComponent } from './components/handle/handle';
     CommonModule,
     RouterModule,
     GraphEditorComponent,
-    HandleComponent
+    HandleComponent,
+    FeatureFlagToggleComponent
   ],
   styleUrl: './app.component.scss'
 })

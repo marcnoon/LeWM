@@ -91,6 +91,12 @@ src/assets/features/
       "name": "advanced-features",
       "enabled": false,
       "dependencies": ["basic-graph-editing"]
+    },
+    {
+      "id": "graph-node",
+      "name": "graph.node",
+      "enabled": true,
+      "dependencies": ["basic-graph-editing"]
     }
   ]
 }
@@ -123,6 +129,14 @@ export class MyComponent {
 <ng-container *ngIf="featureGraphService.isFeatureEnabled('advanced-editing')">
   <advanced-editor></advanced-editor>
 </ng-container>
+```
+
+#### Runtime Toggle Component
+
+The `FeatureFlagToggleComponent` allows users to enable or disable features at runtime.
+
+```html
+<app-feature-flag-toggle></app-feature-flag-toggle>
 ```
 
 ## Enhanced Features Documentation

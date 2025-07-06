@@ -8,6 +8,7 @@ import { ModeManagerService } from '../../services/mode-manager.service';
 import { PinStateService } from '../../services/pin-state.service';
 import { PinSyncService } from '../../services/pin-sync.service';
 import { FileService } from '../../services/file.service';
+import { FeatureGraphService } from '../../services/feature-graph.service';
 import { GraphMode } from '../../interfaces/graph-mode.interface';
 import { Pin } from '../../interfaces/pin.interface';
 import { NormalMode } from '../../modes/normal.mode';
@@ -151,7 +152,12 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   private pinState = inject(PinStateService);
   private pinSync = inject(PinSyncService);
   private fileService = inject(FileService);
+  private featureService = inject(FeatureGraphService);
   private cdr = inject(ChangeDetectorRef);
+
+  /** Whether graph nodes can be added */
+  isGraphNodeEnabled = false;
+  private featureSubscription?: Subscription;
 
   constructor() {
     // The mode manager will handle mode creation and management
@@ -188,6 +194,12 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.edgesSubscription = this.edges$.subscribe(edges => {
       this.currentEdges = edges;
     });
+
+    // Track feature flag state
+    this.featureSubscription = this.featureService.featuresLoaded.subscribe(() => {
+      this.isGraphNodeEnabled = this.featureService.isFeatureEnabled('graph.node');
+      this.cdr.markForCheck();
+    });
     
     // Subscribe to pin layout editor visibility
     this.pinLayoutEditorSubscription = this.pinState.layoutEditorVisible$.subscribe(visible => {
@@ -218,6 +230,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.edgesSubscription?.unsubscribe();
     this.modeSubscription?.unsubscribe();
     this.pinLayoutEditorSubscription?.unsubscribe();
+    this.featureSubscription?.unsubscribe();
   }
 
   ngAfterViewInit(): void {
@@ -351,6 +364,10 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   addNode(type: string): void {
+    if (!this.featureService.isFeatureEnabled('graph.node')) {
+      console.warn('graph.node feature is disabled');
+      return;
+    }
     const template = this.availableNodes.find(c => c.type === type);
     if (!template) return;
 

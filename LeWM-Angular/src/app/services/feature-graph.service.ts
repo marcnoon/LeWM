@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { FeatureGraph } from '../interfaces/feature-graph.interface';
+import { FeatureGraph, FeatureGraphNode } from '../interfaces/feature-graph.interface';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -60,6 +60,24 @@ export class FeatureGraphService {
     return this.featureGraph.features
       .filter(feature => this.isFeatureEnabled(feature.name))
       .map(feature => feature.name);
+  }
+
+  /**
+   * Returns all features with their current state
+   */
+  getAllFeatures(): FeatureGraphNode[] {
+    return this.featureGraph ? [...this.featureGraph.features] : [];
+  }
+
+  /**
+   * Enables or disables a feature at runtime
+   */
+  setFeatureEnabled(featureName: string, enabled: boolean): void {
+    const feature = this.featureGraph?.features.find(f => f.name === featureName);
+    if (feature) {
+      feature.enabled = enabled;
+      this.featuresLoaded$.next(true);
+    }
   }
 
   /**
