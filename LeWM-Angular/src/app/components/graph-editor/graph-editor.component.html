@@ -227,7 +227,9 @@
                     [attr.data-node-id]="node.id"
                     [attr.data-pin-name]="pin.name"
                     class="pin-circle"
-                    style="pointer-events: none; transition: all 0.2s ease-in-out;" />
+                    [style.pointer-events]="currentMode?.name === 'pin-edit' ? 'auto' : 'none'"
+                    style="transition: all 0.2s ease-in-out; cursor: pointer;"
+                    (mousedown)="onPinMouseDown($event, node.id, pin.name)" />
             
             <!-- Pin label -->
             <text *ngIf="!isPinSelectedInEnhancedMode(node.id, pin.name)"
@@ -237,7 +239,9 @@
                   [attr.fill]="isPinSelectedLegacy(node.id, pin.name) ? '#ff6b35' : (isPinHovered(node.id, pin.name) ? '#ff6b35' : '#666')"
                   [attr.font-weight]="isPinSelectedLegacy(node.id, pin.name) ? 'bold' : 'normal'"
                   font-size="10"
-                  style="pointer-events: none; transition: fill 0.2s ease-in-out;">
+                  [style.pointer-events]="currentMode?.name === 'pin-edit' ? 'auto' : 'none'"
+                  style="transition: fill 0.2s ease-in-out; cursor: pointer;"
+                  (mousedown)="onPinMouseDown($event, node.id, pin.name)">
               {{ pin.name }}
             </text>
           </g>
