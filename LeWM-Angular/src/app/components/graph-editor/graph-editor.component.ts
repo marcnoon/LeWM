@@ -152,7 +152,7 @@ export class GraphEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   private pinState = inject(PinStateService);
   private pinSync = inject(PinSyncService);
   private fileService = inject(FileService);
-  private featureService = inject(FeatureGraphService);
+  public featureService = inject(FeatureGraphService);
   private cdr = inject(ChangeDetectorRef);
 
   constructor() {
