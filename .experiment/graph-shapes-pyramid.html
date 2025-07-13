@@ -1,108 +1,133 @@
-How do I make a proper pyramid each time?  <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
+
 <body>
     <div id="person" class="block"></div>
     <div id="pyramidContainer"></div>
     <div class="middleBlock">Middle</div>
-<style>
-body {
-    position: relative; /* Ensure the body is the reference for the block's absolute positioning */
-    min-height: 100vh; /* Ensure the body takes at least the full viewport height */
-    overflow: hidden;
-}
+    <style>
+        body {
+            position: relative;
+            /* Ensure the body is the reference for the block's absolute positioning */
+            min-height: 100vh;
+            /* Ensure the body takes at least the full viewport height */
+            overflow: hidden;
+        }
 
-.block {
-    width: 50px;
-    height: 50px;
-    background-color: grey;
-    position: absolute; /* Position the block absolutely within the body */
-    animation: moveAroundViewport 8s linear infinite; /* 4 moves * 2s each = 8s total duration */
-}
+        .block {
+            width: 50px;
+            height: 50px;
+            background-color: grey;
+            position: absolute;
+            /* Position the block absolutely within the body */
+            animation: moveAroundViewport 8s linear infinite;
+            /* 4 moves * 2s each = 8s total duration */
+        }
 
-.middleBlock {
-    position: absolute;
-    left: 50vw;
-    top: 5vw;
-}
+        .middleBlock {
+            position: absolute;
+            left: 50vw;
+            top: 5vw;
+        }
 
-@keyframes moveAroundViewport {
-    0% {
-        top: 0;
-        left: 0;
-    }
-    25% {
-        top: 0;
-        left: calc(100vw - 100px - 15px); /* Move right to the full width of the viewport minus the block's width */
-    }
-    50% {
-        top: calc(100vh - 100px); /* Move down to the full height of the viewport minus the block's height */
-        left: calc(100vw - 100px - 15px);
-    }
-    75% {
-        top: calc(100vh - 100px);
-        left: 0; /* Move left to the start of the viewport */
-    }
-    100% {
-        top: 0; /* Move up to the start of the viewport */
-        left: 0;
-    }
-}
+        @keyframes moveAroundViewport {
+            0% {
+                top: 0;
+                left: 0;
+            }
 
-.paused {
-    animation-play-state: paused !important;
-}
+            25% {
+                top: 0;
+                left: calc(100vw - 100px - 15px);
+                /* Move right to the full width of the viewport minus the block's width */
+            }
 
-#pyramidContainer {
-    position: relative;
-    height: 10vh; /* Adjust based on your needs */
-    width: 10vw;  /* Adjust based on your needs */
-}
+            50% {
+                top: calc(100vh - 100px);
+                /* Move down to the full height of the viewport minus the block's height */
+                left: calc(100vw - 100px - 15px);
+            }
 
-/* .block {
+            75% {
+                top: calc(100vh - 100px);
+                left: 0;
+                /* Move left to the start of the viewport */
+            }
+
+            100% {
+                top: 0;
+                /* Move up to the start of the viewport */
+                left: 0;
+            }
+        }
+
+        .paused {
+            animation-play-state: paused !important;
+        }
+
+        #pyramidContainer {
+            position: relative;
+            /* Changed to relative for centering */
+            left: 50%;
+            /* Move the container's left edge to the center of the screen */
+            transform: translateX(-50%);
+            /* Shift the container left by half its own width */
+
+            /* Smoothly animate any changes to width and height */
+            transition: width 0.2s ease, height 0.2s ease;
+        }
+
+        /* .block {
     width: 50px;
     height: 50px;
     position: absolute;
     background-color: grey;
     /* Initial position off-screen or hidden */
-    top: -60px;
-    left: 50%;
-    transform: translateX(50%);
-    text-align: center;
-    vertical-align: auto;
-    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-} */
-
-
-</style>
+        top: -60px;
+        left: 50%;
+        transform: translateX(50%);
+        text-align: center;
+        vertical-align: auto;
+        font-family: 'Gill Sans',
+        'Gill Sans MT',
+        Calibri,
+        'Trebuchet MS',
+        sans-serif;
+        */
+    </style>
     <script>
-const pyramidContainer = document.getElementById('pyramidContainer');
-const personBlock = document.getElementById('person');
+        const pyramidContainer = document.getElementById('pyramidContainer');
+        const personBlock = document.getElementById('person');
 
-// --- Pyramid State ---
-let level = 0;
-let blocksInCurrentLevel = 0;
-let totalBlocks = 0;
-const maxBlocks = 21; // Example: builds a 6-level pyramid
-const blockWidth = 50;
-const blockHeight = 50;
+        // --- Pyramid State ---
+        let level = 0;
+        let blocksInCurrentLevel = 0;
+        let totalBlocks = 0;
+        const maxBlocks = 210; // Example: builds a 6-level pyramid
+        const blockWidth = 50;
+        const blockHeight = 50;
 
-// --- Animation Control ---
-let isPaused = false;
-document.addEventListener('click', () => {
-    isPaused = !isPaused;
-    personBlock.classList.toggle('paused', isPaused);
-});
+        // --- Animation Control ---
+        let isPaused = false;
+        document.addEventListener('click', () => {
+            isPaused = !isPaused;
+            personBlock.classList.toggle('paused', isPaused);
+        });
 
-// --- Main Function to Add a Block ---
+        // --- Main Function to Add a Block ---
 function addBlockToPyramid() {
     if (totalBlocks >= maxBlocks) {
-        clearInterval(pyramidBuilder); // Stop when the pyramid is complete
+        clearInterval(pyramidBuilder);
         return;
     }
 
-    // 1. Create the new block and style it
+    // ✅ Update the container's height as we add new levels
+    const requiredHeight = (level + 1) * blockHeight;
+    pyramidContainer.style.height = `${requiredHeight}px`;
+
+    // 1. Create the block (no changes here)
     const block = document.createElement('div');
-    block.className = 'block paused'; // New blocks are part of the pyramid, not the separate animation
+    block.className = 'block paused';
     block.style.width = `${blockWidth}px`;
     block.style.height = `${blockHeight}px`;
     block.textContent = totalBlocks;
@@ -111,41 +136,49 @@ function addBlockToPyramid() {
     block.style.alignItems = 'center';
     block.style.justifyContent = 'center';
     block.style.fontFamily = 'monospace';
-    
-    // Set initial position (top-center of container) for the drop-in animation
     block.style.top = `-${blockHeight}px`;
     block.style.left = `calc(50% - ${blockWidth / 2}px)`;
     pyramidContainer.appendChild(block);
 
-    // 2. Calculate the block's final position in the pyramid
-    const blocksInThisLevel = level + 1;
-    const levelWidth = blocksInThisLevel * blockWidth;
+    // 2. Calculate the block's final position
+    const levelWidth = (level + 1) * blockWidth;
     
-    // This is the key: Center the entire row relative to the container
-    const startX = (pyramidContainer.offsetWidth / 2) - (levelWidth / 2);
-
+    // ✅ THE FIX: Center the current level within the container's *final* width.
+    const startX = (pyramidMaxWidth / 2) - (levelWidth / 2);
+    
     const finalTop = level * blockHeight;
     const finalLeft = startX + (blocksInCurrentLevel * blockWidth);
 
-    // 3. Animate the block from its start position to its final position
+    // 3. Animate the block (no changes here)
     block.animate([
         { top: block.style.top, left: block.style.left },
         { top: `${finalTop}px`, left: `${finalLeft}px` }
     ], {
-        duration: 800, // Animation speed
-        fill: 'forwards' // Keeps the block in its final position
+        duration: 800,
+        fill: 'forwards'
     });
 
-    // 4. Update the state for the *next* block (in one single place) ✅
+    // 4. Update the state (no changes here)
     totalBlocks++;
     blocksInCurrentLevel++;
-    if (blocksInCurrentLevel >= blocksInThisLevel) {
+    if (blocksInCurrentLevel >= (level + 1)) {
         level++;
-        blocksInCurrentLevel = 0; // Reset for the next level
+        blocksInCurrentLevel = 0;
     }
 }
 
-// --- Start the process with a single, clean timer ---
-const pyramidBuilder = setInterval(addBlockToPyramid, 1000); // Add one block every second    </script>
+        // --- NEW: Pre-calculate the final pyramid size ---
+
+        // This formula finds the number of levels based on the total number of blocks
+        const finalLevels = Math.ceil((Math.sqrt(8 * maxBlocks + 1) - 1) / 2);
+        const pyramidMaxWidth = finalLevels * blockWidth;
+
+        // Set the container to its final width from the start
+        pyramidContainer.style.width = `${pyramidMaxWidth}px`;
+
+        // --- Start the process with a single, clean timer ---
+        const pyramidBuilder = setInterval(addBlockToPyramid, 200);
+    </script>
 </body>
+
 </html>
