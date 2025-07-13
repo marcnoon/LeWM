@@ -76,126 +76,76 @@ body {
 </style>
     <script>
 const pyramidContainer = document.getElementById('pyramidContainer');
-let lastPosition = { top: 60, left: 50 }; // Initial position
-let level = 0; // Current level of the pyramid
-let blocksInLevel = 0; // Number of blocks in the current level
-let totalBlocks = 0; // Total number of blocks created
+const personBlock = document.getElementById('person');
 
-function createBlock() {
-    const block = document.createElement('div');
-    block.classList.add('block');
-    block.classList.add('paused');
-    block.style.top = `${lastPosition.top}px`;
-    block.style.left = `${lastPosition.left}%`;
-    block.id = `block${totalBlocks + 1}`;
-    pyramidContainer.appendChild(block);
-    return block;
-}
+// --- Pyramid State ---
+let level = 0;
+let blocksInCurrentLevel = 0;
+let totalBlocks = 0;
+const maxBlocks = 21; // Example: builds a 6-level pyramid
+const blockWidth = 50;
+const blockHeight = 50;
 
+// --- Animation Control ---
 let isPaused = false;
-let maxBlocks = 50;
-
-document.addEventListener('click', function() {
-    isPaused = !isPaused; // Toggle the pause state
-    const blocks = document.querySelectorAll('.block');
-    
-    blocks.forEach(block => {
-        if (isPaused) {
-            block.classList.add('paused');
-            //animation.pause();
-        } else {
-            block.classList.remove('paused');
-            //animation.play();
-        }
-    });
+document.addEventListener('click', () => {
+    isPaused = !isPaused;
+    personBlock.classList.toggle('paused', isPaused);
 });
 
-const intervalId = setInterval(addBlockToPyramid, 1500); // Store the interval ID
+// --- Main Function to Add a Block ---
+function addBlockToPyramid() {
+    if (totalBlocks >= maxBlocks) {
+        clearInterval(pyramidBuilder); // Stop when the pyramid is complete
+        return;
+    }
 
-var blockCounter = 0;
-function moveBlock(block) {
-    const middleBlock = document.querySelector('.middleBlock');
-    const middleBlockRect = middleBlock.getBoundingClientRect();
-    // Calculate the new position based on the current level and blocks in the level
-    const blocksInCurrentLevel = level + 1;
-    const totalWidthOfBlocks = blocksInCurrentLevel * 50; // Assuming each block is 50px wide
-    const leftOffset = (middleBlockRect.left - totalWidthOfBlocks) / 2; // Centering the blocks in the level, assuming container is 300px wide
+    // 1. Create the new block and style it
+    const block = document.createElement('div');
+    block.className = 'block paused'; // New blocks are part of the pyramid, not the separate animation
+    block.style.width = `${blockWidth}px`;
+    block.style.height = `${blockHeight}px`;
+    block.textContent = totalBlocks;
+    block.style.color = 'white';
+    block.style.display = 'flex';
+    block.style.alignItems = 'center';
+    block.style.justifyContent = 'center';
+    block.style.fontFamily = 'monospace';
+    
+    // Set initial position (top-center of container) for the drop-in animation
+    block.style.top = `-${blockHeight}px`;
+    block.style.left = `calc(50% - ${blockWidth / 2}px)`;
+    pyramidContainer.appendChild(block);
 
-    const newPosition = {
-        top: middleBlockRect.top + (level + 1) * 50, // Moving down for each level
-        left: leftOffset + (blocksInLevel * 50) // Positioning blocks from left to right in the current level
-    };
+    // 2. Calculate the block's final position in the pyramid
+    const blocksInThisLevel = level + 1;
+    const levelWidth = blocksInThisLevel * blockWidth;
+    
+    // This is the key: Center the entire row relative to the container
+    const startX = (pyramidContainer.offsetWidth / 2) - (levelWidth / 2);
 
-    // Create a paragraph element
-    const counterParagraph = document.createElement('p');
-    counterParagraph.textContent = blockCounter++; // Set the text content to the block counter
-    counterParagraph.style.position = 'absolute'; // Ensure the paragraph is positioned within the block
-    counterParagraph.style.width = '100%';
-    counterParagraph.style.height = '100%';
-    counterParagraph.style.display = 'flex';
-    counterParagraph.style.alignItems = 'center';
-    counterParagraph.style.justifyContent = 'center';
-    counterParagraph.style.verticalAlign = 'center';
-    counterParagraph.style.color = 'white'; // Set text color (optional)
-    counterParagraph.innerText = blockCounter++;
-    // Append the paragraph to the block
-    block.appendChild(counterParagraph);
+    const finalTop = level * blockHeight;
+    const finalLeft = startX + (blocksInCurrentLevel * blockWidth);
 
-    // Animate the block to the new position
-    const animation = block.animate([
-        { top: block.style.top, left: block.style.left },
-        { top: `${newPosition.top}px`, left: `${newPosition.left}%` }
-    ], {
-        duration: 1000, // 1 second for the animation
-        fill: 'forwards' // Keep the block at the final position
-    });
-
-    // Animate the block to the new position
+    // 3. Animate the block from its start position to its final position
     block.animate([
         { top: block.style.top, left: block.style.left },
-        { top: `${newPosition.top}px`, left: `${newPosition.left}%` }
+        { top: `${finalTop}px`, left: `${finalLeft}px` }
     ], {
-        duration: 1000, // 1 second for the animation
-        fill: 'forwards' // Keep the block at the final position
+        duration: 800, // Animation speed
+        fill: 'forwards' // Keeps the block in its final position
     });
 
-    // Update the last position
-    lastPosition = newPosition;
-
-    // Manage the level and blocks in the level
-    blocksInLevel++;
-    if (blocksInLevel > level) {
+    // 4. Update the state for the *next* block (in one single place) ✅
+    totalBlocks++;
+    blocksInCurrentLevel++;
+    if (blocksInCurrentLevel >= blocksInThisLevel) {
         level++;
-        blocksInLevel = 0;
+        blocksInCurrentLevel = 0; // Reset for the next level
     }
 }
 
-function addBlockToPyramid() {
-    if (totalBlocks < maxBlocks) { // Check if the maximum number of blocks is reached
-        const newBlock = createBlock();
-        moveBlock(newBlock);
-        totalBlocks++;
-        blocksInLevel++;
-        
-        // Check if the current level is filled
-        if (blocksInLevel > level) {
-            level++;
-            blocksInLevel = 0;
-        }
-    } else {
-        // Optional: Stop the interval if the maximum number of blocks is reached
-        clearInterval(intervalId);
-    }
-}
-
-
-// Start the process
-addBlockToPyramid();
-
-// Add more blocks with some delay
-setInterval(addBlockToPyramid, 1500); // Adjust the interval as needed
-
-
-    </script>
+// --- Start the process with a single, clean timer ---
+const pyramidBuilder = setInterval(addBlockToPyramid, 1000); // Add one block every second    </script>
 </body>
 </html>
