@@ -3,5 +3,6 @@
 # LeWM - Level With Me
 ## A Type-Safe Visual Graph Editor
 
-**🌐 Live Demo:** [Moved UserLevelUp/LeWM](https://marcnoon.github.io/LeWM/)
+**🌐 Live Demo on UserLevelUp:** [Moved UserLevelUp/LeWM](https://marcnoon.github.io/LeWM/)
 
+**🌐 LeWM has Moved to User Level Up github repo:** [UserLevelUp/LeWM]([https://marcnoon.github.io/LeWM/](https://github.com/UserLevelUp/LeWM))
